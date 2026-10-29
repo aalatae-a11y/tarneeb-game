@@ -1,5 +1,3 @@
-flask
-flask-socketio
-eventlet
-gunicorn
-setuptools
+Flask==3.0.2
+Flask-SocketIO==5.3.6
+simple-websocket==0.10.0
