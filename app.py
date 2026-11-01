@@ -152,7 +152,6 @@ class TarneebRoom:
         self.players[winner_idx]['tricks_won'] += 1
         self.last_trick_winner_name = self.players[winner_idx]['name']
 
-        # قانون القس وكينج الهاس
         has_ace = any(p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'A' for p in self.current_trick)
         has_king = any(p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'K' for p in self.current_trick)
         
@@ -225,11 +224,13 @@ def on_join(data):
 
 @socketio.on('start_game')
 def on_start(data):
-    room = ROOMS.get(data.get('room'))
-    if room and not room.game_started:
-        room.fill_with_bots()
-        room.game_started = True
-        room.start_new_round()
+    room_id = data.get('room')
+    room = ROOMS.get(room_id)
+    if room:
+        if not room.game_started:
+            room.fill_with_bots()
+            room.game_started = True
+            room.start_new_round()
         broadcast_state(room)
         trigger_bot_actions(room)
 
@@ -319,6 +320,7 @@ def get_player_idx_by_sid(room, sid):
     return -1
 
 def broadcast_state(room):
+    # إرسال الحالة لكل لاعب في الغرفة بناءً على ورقه الفردي لتجنب أخطاء الاتصال الفردي
     for p in room.players:
         if not p['is_bot'] and p['sid']:
             p_state = {
@@ -336,7 +338,10 @@ def broadcast_state(room):
                 'min_bid': get_min_bid(p['score']),
                 'players': [{'name': x['name'], 'score': x['score'], 'bid': x['bid'], 'tricks_won': x['tricks_won'], 'is_bot': x['is_bot'], 'cards_count': len(x['hand'])} for x in room.players]
             }
-            socketio.emit('game_update', p_state, to=p['sid'])
+            socketio.emit('game_update', p_state, room=p['sid'])
+            
+    # دعم إضافي للبث العام للغرفة في حال وجود اتصال مفتوح بالاتحاد العام
+    socketio.emit('room_ping', {'status': 'active'}, room=room.room_id)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
