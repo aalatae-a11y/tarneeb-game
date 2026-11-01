@@ -229,8 +229,8 @@ def on_start(data):
         room.fill_with_bots()
         room.game_started = True
         room.start_new_round()
+        run_bots_sync(room)
         broadcast_state(room)
-        socketio.start_background_task(run_bot_turn, room)
 
 @socketio.on('next_round')
 def on_next_round(data):
@@ -240,8 +240,8 @@ def on_next_round(data):
             for p in room.players: p['score'] = 0
             room.dealer_idx = 0
         room.start_new_round()
+        run_bots_sync(room)
         broadcast_state(room)
-        socketio.start_background_task(run_bot_turn, room)
 
 @socketio.on('submit_bid')
 def on_bid(data):
@@ -250,8 +250,8 @@ def on_bid(data):
         p_idx = get_player_idx_by_sid(room, request.sid)
         if p_idx == room.current_turn:
             room.process_bid(p_idx, int(data.get('bid', 2)))
+            run_bots_sync(room)
             broadcast_state(room)
-            socketio.start_background_task(run_bot_turn, room)
 
 @socketio.on('play_card')
 def on_play_card(data):
@@ -266,39 +266,32 @@ def on_play_card(data):
                 return
             
             res = room.play_card(p_idx, card)
-            broadcast_state(room)
             if res:
-                socketio.start_background_task(clear_trick_delayed, room)
-            socketio.start_background_task(run_bot_turn, room)
+                broadcast_state(room)
+                time.sleep(1)
+                room.current_trick = []
+            
+            run_bots_sync(room)
+            broadcast_state(room)
 
-def clear_trick_delayed(room):
-    socketio.sleep(1.5)
-    room.current_trick = []
-    broadcast_state(room)
-
-def run_bot_turn(room):
-    socketio.sleep(0.5)
+def run_bots_sync(room):
+    # تشغيل أدوار البوتات تلقائياً حتى ياتي دور اللاعب البشري
     while room.game_started and room.state in ['BIDDING', 'PLAYING']:
         p_idx = room.current_turn
         p = room.players[p_idx]
         if not p['is_bot']:
             break
         
-        socketio.sleep(0.8)
-        
         if room.state == 'BIDDING':
             min_b = get_min_bid(p['score'])
             room.process_bid(p_idx, min_b)
-            broadcast_state(room)
         elif room.state == 'PLAYING':
             valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
             if valid_cards:
                 chosen = random.choice(valid_cards)
                 res = room.play_card(p_idx, chosen)
-                broadcast_state(room)
                 if res:
-                    socketio.start_background_task(clear_trick_delayed, room)
-                    break
+                    room.current_trick = []
         else:
             break
 
@@ -329,3 +322,4 @@ def broadcast_state(room):
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    
