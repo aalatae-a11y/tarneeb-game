@@ -269,14 +269,23 @@ def on_play_card(data):
             res = room.play_card(p_idx, card)
             broadcast_state(room)
             if res:
-                socketio.sleep(1.5)
-                room.current_trick = []
-                broadcast_state(room)
-            trigger_bot_actions(room)
+                socketio.start_background_task(delayed_trick_clear, room)
+            else:
+                trigger_bot_actions(room)
 
 def trigger_bot_actions(room):
-    while room.game_started and room.players[room.current_turn]['is_bot'] and room.state in ['BIDDING', 'PLAYING']:
-        socketio.sleep(1)
+    if not room.game_started:
+        return
+    
+    if room.players[room.current_turn]['is_bot'] and room.state in ['BIDDING', 'PLAYING']:
+        socketio.start_background_task(delayed_bot_action, room)
+
+def delayed_bot_action(room):
+    socketio.sleep(0.8)
+    with app.app_context():
+        if not room.game_started or not room.players[room.current_turn]['is_bot']:
+            return
+            
         p_idx = room.current_turn
         p = room.players[p_idx]
         
@@ -284,6 +293,7 @@ def trigger_bot_actions(room):
             min_b = get_min_bid(p['score'])
             room.process_bid(p_idx, min_b)
             broadcast_state(room)
+            trigger_bot_actions(room)
         
         elif room.state == 'PLAYING':
             valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
@@ -292,9 +302,16 @@ def trigger_bot_actions(room):
                 res = room.play_card(p_idx, chosen)
                 broadcast_state(room)
                 if res:
-                    socketio.sleep(1.5)
-                    room.current_trick = []
-                    broadcast_state(room)
+                    socketio.start_background_task(delayed_trick_clear, room)
+                else:
+                    trigger_bot_actions(room)
+
+def delayed_trick_clear(room):
+    socketio.sleep(1.2)
+    with app.app_context():
+        room.current_trick = []
+        broadcast_state(room)
+        trigger_bot_actions(room)
 
 def get_player_idx_by_sid(room, sid):
     for p in room.players:
