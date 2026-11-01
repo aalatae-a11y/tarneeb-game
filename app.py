@@ -6,7 +6,8 @@ from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tarneeb_libya_secret_key_2026'
-socketio = SocketIO(app, cors_allowed_origins="*")
+# استخدام async_mode لتثبيت الاتصال وتجنب فقدان الجلسات على السيرفرات السحابية
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 ROOMS = {}
 
@@ -226,6 +227,7 @@ def on_join(data):
 def on_start(data):
     room = ROOMS.get(data.get('room'))
     if room and not room.game_started:
+        room.fill_and_start = True
         room.fill_with_bots()
         room.game_started = True
         room.start_new_round()
@@ -275,7 +277,6 @@ def on_play_card(data):
             broadcast_state(room)
 
 def run_bots_sync(room):
-    # تشغيل أدوار البوتات تلقائياً حتى ياتي دور اللاعب البشري
     while room.game_started and room.state in ['BIDDING', 'PLAYING']:
         p_idx = room.current_turn
         p = room.players[p_idx]
@@ -322,4 +323,3 @@ def broadcast_state(room):
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
-    
