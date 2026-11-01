@@ -14,20 +14,16 @@
         button { background: #27ae60; color: white; cursor: pointer; font-weight: bold; }
         button:hover { background: #219150; }
 
-        /* حاوية اللعبة لتكون مرنة وقابلة للتمرير الخفيف إذا لزم الأمر بدون قص العناصر */
         #game-board { display: none; width: 100%; min-height: 100vh; position: relative; background: #0f522e; flex-direction: column; justify-content: space-between; padding: 8px; }
 
-        /* الشريط العلوي المرتب الذي يضمن ظهور زر البدء دائماً */
         .top-bar { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 8px; z-index: 25; margin-bottom: 8px; }
         .top-bar h3 { font-size: 13px; color: #fff; }
         .top-bar button { width: auto; padding: 6px 12px; font-size: 12px; margin: 0; background: #27ae60; }
 
-        /* لوحة النتائج */
         .scoreboard { background: rgba(0, 0, 0, 0.9); border: 1px solid #f1c40f; border-radius: 6px; padding: 6px; width: 120px; z-index: 30; font-size: 10px; position: absolute; top: 55px; left: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
         .scoreboard h4 { color: #f1c40f; margin-bottom: 3px; border-bottom: 1px solid #444; padding-bottom: 2px; text-align: center; font-size: 10px; }
         .score-item { display: flex; justify-content: space-between; margin: 2px 0; }
 
-        /* الطاولة المتجاوبة */
         .table-area { position: relative; width: 100%; max-width: 450px; height: 260px; margin: 10px auto; border: 6px solid #5c3a21; border-radius: 100px; background: #136938; box-shadow: inset 0 0 25px rgba(0,0,0,0.7); flex-shrink: 0; }
         
         .player-slot { position: absolute; padding: 3px 6px; background: rgba(0,0,0,0.85); border-radius: 5px; font-size: 9px; min-width: 80px; text-align: center; z-index: 5; }
@@ -73,7 +69,6 @@
 
         .trick-winner-badge { position: absolute; top: -24px; left: 50%; transform: translateX(-50%); background: #f1c40f; color: black; font-weight: bold; padding: 2px 6px; border-radius: 3px; font-size: 9px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
 
-        /* منطقة أوراق اليد في الأسفل بوضوح كامل */
         .hand-area { background: rgba(0,0,0,0.6); padding: 8px; border-radius: 8px; text-align: center; margin-top: 10px; }
         .hand-cards { display: flex; justify-content: center; gap: -12px; padding: 4px; overflow-x: auto; width: 100%; }
 
@@ -93,19 +88,16 @@
     </div>
 
     <div id="game-board">
-        <!-- لوحة النتائج -->
         <div class="scoreboard">
             <h4>لوحة النقاط 📊</h4>
             <div id="scoreboard-list"></div>
         </div>
 
-        <!-- شريط علوي يضم الغرفة وزر بدء اللعبة بوضوح -->
         <div class="top-bar">
             <h3>الغرفة: <span id="room-display"></span></h3>
             <button id="start-btn" onclick="startGame()">بدء اللعبة</button>
         </div>
 
-        <!-- الطاولة -->
         <div class="table-area">
             <div id="slot-0" class="player-slot p-0"></div>
             <div id="slot-1" class="player-slot p-1"></div>
@@ -117,20 +109,17 @@
             </div>
         </div>
 
-        <!-- نافذة الطلبات -->
         <div id="bid-modal">
             <h3 style="font-size: 14px; margin-bottom: 8px;">اختر الطلبة (طلبك الإجباري):</h3>
             <div id="bid-options"></div>
         </div>
 
-        <!-- نافذة نهاية الشوط -->
         <div id="round-modal">
             <h2 id="round-title" style="font-size: 15px;">انتهى الشوط!</h2>
             <p id="round-desc" style="margin: 6px 0; font-size: 12px;"></p>
             <button onclick="nextRound()" style="background: #27ae60; width: auto; padding: 5px 10px; font-size: 12px;">الشوط التالي</button>
         </div>
 
-        <!-- أوراق اليد وحالة اللعبة في الأسفل -->
         <div class="hand-area">
             <h4 id="status-msg" style="margin-bottom: 4px; color: #f1c40f; font-size: 11px;">في انتظار بدء اللعبة...</h4>
             <div class="hand-cards" id="my-hand"></div>
@@ -175,6 +164,7 @@
                 document.getElementById('start-btn').style.display = 'none';
             }
 
+            // إظهار نافذة الطلبات بشكل مؤكد إذا كان دور اللاعب
             if(data.state === 'BIDDING' && data.current_turn === myIndex) {
                 showBidModal(data.min_bid);
             } else {
@@ -255,7 +245,7 @@
             const area = document.getElementById('trick-area');
             const badgeArea = document.getElementById('winner-badge-area');
             
-            area.querySelectorAll('.played-card').forEach(el => el.remove());
+            area.querySelectorAll('.played-card').forEach.call(area.querySelectorAll('.played-card'), el => el.remove());
             badgeArea.innerHTML = '';
 
             if(lastWinner && (!trick || trick.length === 0)) {
@@ -287,7 +277,8 @@
             b0.onclick = () => submitBid(0);
             opts.appendChild(b0);
 
-            for(let i = minBid; i <= 13; i++) {
+            let startBid = (minBid > 2) ? minBid : 2;
+            for(let i = startBid; i <= 13; i++) {
                 if(i === 6 || i === 8 || i === 10 || i === 11 || i === 12) continue;
                 let b = document.createElement('button');
                 b.className = 'bid-btn'; b.innerText = i;
