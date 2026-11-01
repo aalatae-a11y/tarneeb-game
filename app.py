@@ -1,6 +1,7 @@
 import os
 import random
 import time
+import threading
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room
 
@@ -152,7 +153,6 @@ class TarneebRoom:
         self.players[winner_idx]['tricks_won'] += 1
         self.last_trick_winner_name = self.players[winner_idx]['name']
 
-        # قانون القس وكينج الهاس
         has_ace = any(p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'A' for p in self.current_trick)
         has_king = any(p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'K' for p in self.current_trick)
         
@@ -269,32 +269,39 @@ def on_play_card(data):
             res = room.play_card(p_idx, card)
             broadcast_state(room)
             if res:
-                socketio.sleep(1.5)
+                time.sleep(1.5)
                 room.current_trick = []
                 broadcast_state(room)
             trigger_bot_actions(room)
 
 def trigger_bot_actions(room):
-    while room.game_started and room.players[room.current_turn]['is_bot'] and room.state in ['BIDDING', 'PLAYING']:
-        socketio.sleep(1)
-        p_idx = room.current_turn
-        p = room.players[p_idx]
-        
-        if room.state == 'BIDDING':
-            min_b = get_min_bid(p['score'])
-            room.process_bid(p_idx, min_b)
-            broadcast_state(room)
-        
-        elif room.state == 'PLAYING':
-            valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
-            if valid_cards:
-                chosen = random.choice(valid_cards)
-                res = room.play_card(p_idx, chosen)
+    def bot_thread():
+        time.sleep(0.5)
+        while room.game_started and room.state in ['BIDDING', 'PLAYING']:
+            p_idx = room.current_turn
+            p = room.players[p_idx]
+            if not p['is_bot']:
+                break
+            time.sleep(1)
+            
+            if room.state == 'BIDDING':
+                min_b = get_min_bid(p['score'])
+                room.process_bid(p_idx, min_b)
                 broadcast_state(room)
-                if res:
-                    socketio.sleep(1.5)
-                    room.current_trick = []
+            elif room.state == 'PLAYING':
+                valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
+                if valid_cards:
+                    chosen = random.choice(valid_cards)
+                    res = room.play_card(p_idx, chosen)
                     broadcast_state(room)
+                    if res:
+                        time.sleep(1.5)
+                        room.current_trick = []
+                        broadcast_state(room)
+            else:
+                break
+
+    threading.Thread(target=bot_thread, daemon=True).start()
 
 def get_player_idx_by_sid(room, sid):
     for p in room.players:
@@ -323,3 +330,4 @@ def broadcast_state(room):
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+                               
