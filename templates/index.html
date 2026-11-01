@@ -3,138 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة طرنيب ليبية أونلاين</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <title>طرنيب ليبي أونلاين</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: #1a1a1a; color: white; text-align: center; display: flex; flex-direction: column; min-height: 100vh; }
+        #login-box { margin: auto; padding: 30px; background: #2c3e50; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+        input, button { padding: 12px 20px; font-size: 16px; margin: 10px; border-radius: 6px; border: none; }
+        button { background: #27ae60; color: white; cursor: pointer; font-weight: bold; }
+        button:hover { background: #219150; }
+        #game-board { display: none; flex-direction: column; flex: 1; position: relative; background: #0f522e; padding: 20px; }
+        .table-area { position: relative; width: 100%; max-width: 800px; height: 450px; margin: 20px auto; border: 12px solid #5c3a21; border-radius: 150px; background: #136938; box-shadow: inset 0 0 50px rgba(0,0,0,0.6); }
+        .player-slot { position: absolute; padding: 10px 15px; background: rgba(0,0,0,0.7); border-radius: 8px; font-size: 14px; min-width: 110px; }
+        .p-0 { bottom: -20px; left: 50%; transform: translateX(-50%); border: 2px solid #f1c40f; }
+        .p-1 { left: 10px; top: 50%; transform: translateY(-50%); }
+        .p-2 { top: -20px; left: 50%; transform: translateX(-50%); }
+        .p-3 { right: 10px; top: 50%; transform: translateY(-50%); }
+        .active-turn { box-shadow: 0 0 15px #f1c40f; border-color: #f1c40f; }
+        .trick-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; gap: 10px; }
+        .hand-cards { display: flex; justify-content: center; gap: -20px; margin-top: auto; padding: 10px; overflow-x: auto; }
+        .card { width: 65px; height: 95px; background: white; color: black; border-radius: 6px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 2px 2px 8px rgba(0,0,0,0.4); transition: transform 0.2s; user-select: none; }
+        .card:hover { transform: translateY(-15px); }
+        .card.red { color: #e74c3c; }
+        .card.black { color: #2c3e50; }
+        #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #34495e; padding: 25px; border-radius: 10px; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .bid-btn { background: #e67e22; padding: 10px 15px; margin: 5px; }
+    </style>
 </head>
-<body class="bg-emerald-900 text-white font-sans min-h-screen flex flex-col items-center justify-between p-4">
+<body>
 
-    <!-- شاشة الدخول -->
-    <div id="login-screen" class="bg-emerald-800 p-6 rounded-2xl shadow-2xl w-full max-w-md text-center mt-20 border border-emerald-600">
-        <h1 class="text-3xl font-bold mb-6 text-yellow-300">لعبة طرنيب ليبية</h1>
-        <input type="text" id="player-name" placeholder="أدخل اسمك الكريم..." class="w-full p-3 mb-4 rounded-xl bg-emerald-900 border border-emerald-500 text-white text-center focus:outline-none">
-        <input type="text" id="room-name" placeholder="اسم الغرفة (مثال: libya123)" class="w-full p-3 mb-6 rounded-xl bg-emerald-900 border border-emerald-500 text-white text-center focus:outline-none">
-        <button onclick="joinGame()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-emerald-950 font-bold p-3 rounded-xl shadow-lg transition duration-200">دخول الطاولة</button>
+    <div id="login-box">
+        <h2>طرنيب ليبي أونلاين 🇱🇾</h2>
+        <br>
+        <input type="text" id="username" placeholder="اسمك الكامل" value="عبد الله">
+        <input type="text" id="room" placeholder="رمز الغرفة" value="tripoli">
+        <br>
+        <button onclick="joinGame()">دخول الغرفة</button>
     </div>
 
-    <!-- شاشة اللعب الرئيسية -->
-    <div id="game-screen" class="hidden w-full max-w-4xl flex flex-col justify-between h-screen py-2">
-        <div class="flex justify-between items-center bg-emerald-950/60 p-3 rounded-xl border border-emerald-700">
-            <div>الغرفة: <span id="room-display" class="font-bold text-yellow-300"></span></div>
-            <div>الحالة: <span id="game-status-text" class="text-yellow-400">في انتظار اللاعبين...</span></div>
-            <button onclick="fillBots()" id="start-btn" class="bg-blue-600 hover:bg-blue-700 px-4 py-1 rounded-lg text-sm font-bold">بدء اللعبة (إضافة بوتات)</button>
+    <div id="game-board">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3>الغرفة: <span id="room-display"></span></h3>
+            <button id="start-btn" onclick="startGame()">بدء اللعبة (إكمال بالبوتات)</button>
         </div>
 
-        <div class="relative flex-grow flex items-center justify-center my-4">
-            <div id="players-list" class="absolute inset-0 flex justify-between items-center pointer-events-none px-4"></div>
-            <div id="trick-container" class="bg-emerald-950/80 border-2 border-dashed border-emerald-600 w-72 h-72 rounded-3xl flex flex-wrap items-center justify-center gap-2 relative shadow-inner p-2">
-                <span class="text-emerald-400 text-xs absolute top-2">ساحة اللعب</span>
-            </div>
+        <div class="table-area">
+            <div id="slot-0" class="player-slot p-0">لاعب 1</div>
+            <div id="slot-1" class="player-slot p-1">لاعب 2</div>
+            <div id="slot-2" class="player-slot p-2">لاعب 3</div>
+            <div id="slot-3" class="player-slot p-3">لاعب 4</div>
+
+            <div class="trick-center" id="trick-area"></div>
         </div>
 
-        <!-- لوحة الطلبات -->
-        <div id="bidding-panel" class="hidden absolute inset-0 bg-black/70 flex items-center justify-center z-50">
-            <div class="bg-emerald-800 p-6 rounded-2xl text-center border border-emerald-600 shadow-2xl">
-                <h3 class="text-xl font-bold mb-4 text-yellow-300">اختر طلبك (عدد الأكلات)</h3>
-                <div class="grid grid-cols-4 gap-2 mb-4">
-                    <button onclick="submitBid(2)" class="bg-emerald-700 hover:bg-emerald-600 p-3 rounded-xl font-bold">2</button>
-                    <button onclick="submitBid(3)" class="bg-emerald-700 hover:bg-emerald-600 p-3 rounded-xl font-bold">3</button>
-                    <button onclick="submitBid(4)" class="bg-emerald-700 hover:bg-emerald-600 p-3 rounded-xl font-bold">4</button>
-                    <button onclick="submitBid(5)" class="bg-emerald-700 hover:bg-emerald-600 p-3 rounded-xl font-bold">5</button>
-                    <button onclick="submitBid(7)" class="bg-emerald-700 hover:bg-emerald-600 p-3 rounded-xl font-bold">7 (14ن)</button>
-                    <button onclick="submitBid(9)" class="bg-emerald-700 hover:bg-emerald-600 p-3 rounded-xl font-bold">9 (21ن)</button>
-                    <button onclick="submitBid(13)" class="bg-emerald-700 hover:bg-emerald-600 p-3 rounded-xl font-bold">كبوت (13)</button>
-                    <button onclick="submitBid(0)" class="bg-emerald-700 hover:bg-emerald-600 p-3 rounded-xl font-bold">صلاح (0)</button>
-                </div>
-            </div>
+        <div id="bid-modal">
+            <h3>اختر الطلبة (طلبك الإجباري):</h3>
+            <div id="bid-options"></div>
         </div>
 
-        <!-- يد اللاعب -->
-        <div class="bg-emerald-950 p-4 rounded-2xl border border-emerald-700 flex flex-col items-center">
-            <div class="text-sm mb-2 text-yellow-300 font-semibold">أوراقك في اليد:</div>
-            <div id="player-hand" class="flex gap-2 overflow-x-auto py-2 max-w-full"></div>
-        </div>
+        <h4 id="status-msg" style="margin-bottom: 10px; color: #f1c40f;">في انتظار بدء اللعبة...</h4>
+        <div class="hand-cards" id="my-hand"></div>
     </div>
 
     <script>
         const socket = io();
-        let currentRoom = '';
+        let myIndex = 0;
+        let currentRoom = "";
 
-        const suitSymbols = { 'hearts': '♥', 'spades': '♠', 'diamonds': '♦', 'clubs': '♣' };
-        const suitColors = { 'hearts': 'text-red-500', 'diamonds': 'text-red-500', 'spades': 'text-black', 'clubs': 'text-black' };
-        const valNames = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' };
+        const suitIcons = {'Hearts':'♥', 'Tiles':'♦', 'Clovers':'♣', 'Pikes':'♠'};
 
         function joinGame() {
-            const name = document.getElementById('player-name').value.trim();
-            const room = document.getElementById('room-name').value.trim();
-            if(!name || !room) { alert('الرجاء إدخال الاسم واسم الغرفة'); return; }
-            currentRoom = room;
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            document.getElementById('room-display').innerText = room;
-            socket.emit('join_game', { name, room });
+            const name = document.getElementById('username').value;
+            currentRoom = document.getElementById('room').value;
+            if(!name || !currentRoom) return alert("اكتب اسمك ورمز الغرفة");
+
+            socket.emit('join_game', {name: name, room: currentRoom});
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('game-board').style.display = 'flex';
+            document.getElementById('room-display').innerText = currentRoom;
         }
 
-        function fillBots() {
-            socket.emit('start_game', { room: currentRoom });
+        function startGame() {
+            socket.emit('start_game', {room: currentRoom});
+            document.getElementById('start-btn').style.display = 'none';
         }
 
-        function submitBid(bid) {
-            socket.emit('submit_bid', { room: currentRoom, bid });
-            document.getElementById('bidding-panel').classList.add('hidden');
-        }
+        socket.on('update_room', (data) => {
+            renderPlayers(data.players, -1);
+        });
 
-        function playCard(card) {
-            socket.emit('play_card', { room: currentRoom, card });
-        }
+        socket.on('game_update', (data) => {
+            myIndex = data.my_index;
+            renderPlayers(data.players, data.current_turn);
+            renderTrick(data.current_trick);
+            renderHand(data.my_hand);
 
-        socket.on('game_update', (state) => {
-            if(state.status === 'bidding') {
-                document.getElementById('game-status-text').innerText = 'مرحلة الطلب...';
-                document.getElementById('bidding-panel').classList.remove('hidden');
-            } else if(state.status === 'playing') {
-                document.getElementById('game-status-text').innerText = 'الدور للعب الأوراق';
-                document.getElementById('bidding-panel').classList.add('hidden');
-                document.getElementById('start-btn').classList.add('hidden');
-            } else if(state.status === 'ended') {
-                document.getElementById('game-status-text').innerText = 'انتهت اللعبة!';
+            // إظهار نافذة الطلب عند دورك
+            if(data.state === 'BIDDING' && data.current_turn === myIndex) {
+                showBidModal(data.min_bid);
+            } else {
+                document.getElementById('bid-modal').style.display = 'none';
             }
 
-            // عرض اللاعبين
-            const listDiv = document.getElementById('players-list');
-            listDiv.innerHTML = '';
-            state.players.forEach((p, idx) => {
-                const pBox = document.createElement('div');
-                pBox.className = `p-3 rounded-xl bg-emerald-950/90 border ${idx === state.current_turn ? 'border-yellow-400 shadow-lg shadow-yellow-500/20' : 'border-emerald-700'} text-center text-xs`;
-                pBox.innerHTML = `<div class="font-bold text-yellow-300">${p.name}</div><div>النقاط: ${p.score}</div><div>الكروت: ${p.cards_count}</div>`;
-                listDiv.appendChild(pBox);
-            });
-
-            // عرض الأوراق المطروحة في الساحة
-            const trickDiv = document.getElementById('trick-container');
-            trickDiv.innerHTML = '<span class="text-emerald-400 text-xs absolute top-2">ساحة اللعب</span>';
-            state.trick.forEach(t => {
-                const cardEl = document.createElement('div');
-                const vDisplay = valNames[t.card.val] || t.card.val;
-                cardEl.className = `bg-white ${suitColors[t.card.suit]} w-12 h-16 rounded-lg flex flex-col items-center justify-center font-bold text-lg shadow-md border border-gray-300 mt-4`;
-                cardEl.innerHTML = `<span>${vDisplay}</span><span class="text-sm">${suitSymbols[t.card.suit]}</span>`;
-                trickDiv.appendChild(cardEl);
-            });
-
-            // عرض يد اللاعب الخاصة به
-            const handDiv = document.getElementById('player-hand');
-            handDiv.innerHTML = '';
-            if(state.my_hand) {
-                state.my_hand.forEach(card => {
-                    const cardBtn = document.createElement('button');
-                    const vDisplay = valNames[card.val] || card.val;
-                    cardBtn.className = `bg-white ${suitColors[card.suit]} w-14 h-20 rounded-xl flex flex-col items-center justify-center font-bold text-xl shadow-lg border-2 border-gray-200 hover:scale-105 transition transform`;
-                    cardBtn.innerHTML = `<span>${vDisplay}</span><span class="text-lg">${suitSymbols[card.suit]}</span>`;
-                    cardBtn.onclick = () => playCard(card);
-                    handDiv.appendChild(cardBtn);
-                });
+            // حالة السير
+            if(data.state === 'BIDDING') {
+                document.getElementById('status-msg').innerText = "مرحلة اختيار الطلبات...";
+            } else if(data.state === 'PLAYING') {
+                document.getElementById('status-msg').innerText = (data.current_turn === myIndex) ? "دورك للعب ورقة!" : "في انتظار باقي اللاعبين...";
             }
         });
+
+        socket.on('error', (data) => alert(data.msg));
+
+        function renderPlayers(players, turn) {
+            players.forEach((p, idx) => {
+                // تدوير المقاعد ليصبح اللاعب دائمًا في الأسفل
+                let UI_idx = (idx - myIndex + 4) % 4;
+                let slot = document.getElementById(`slot-${UI_idx}`);
+                slot.className = `player-slot p-${UI_idx} ${idx === turn ? 'active-turn' : ''}`;
+                slot.innerHTML = `<b>${p.name}</b> ${p.is_bot ? '(بوت)' : ''}<br>النقاط: ${p.score}<br>الطلب: ${p.bid} | الأكلات: ${p.tricks_won}`;
+            });
+        }
+
+        function renderHand(hand) {
+            const handDiv = document.getElementById('my-hand');
+            handDiv.innerHTML = '';
+            if(!hand) return;
+            hand.forEach(card => {
+                let cardEl = document.createElement('div');
+                let isRed = card.suit === 'Hearts' || card.suit === 'Tiles';
+                cardEl.className = `card ${isRed ? 'red' : 'black'}`;
+                cardEl.innerHTML = `<div>${card.rank}</div><div>${suitIcons[card.suit]}</div>`;
+                cardEl.onclick = () => socket.emit('play_card', {room: currentRoom, card: card});
+                handDiv.appendChild(cardEl);
+            });
+        }
+
+        function renderTrick(trick) {
+            const area = document.getElementById('trick-area');
+            area.innerHTML = '';
+            if(!trick) return;
+            trick.forEach(play => {
+                let c = play.card;
+                let isRed = c.suit === 'Hearts' || c.suit === 'Tiles';
+                let cardEl = document.createElement('div');
+                cardEl.className = `card ${isRed ? 'red' : 'black'}`;
+                cardEl.innerHTML = `<div>${c.rank}</div><div>${suitIcons[c.suit]}</div>`;
+                area.appendChild(cardEl);
+            });
+        }
+
+        function showBidModal(minBid) {
+            const modal = document.getElementById('bid-modal');
+            const opts = document.getElementById('bid-options');
+            opts.innerHTML = '';
+            modal.style.display = 'block';
+
+            // زر 0
+            let b0 = document.createElement('button');
+            b0.className = 'bid-btn'; b0.innerText = '0';
+            b0.onclick = () => submitBid(0);
+            opts.appendChild(b0);
+
+            // أزرار الطلب بناءً على الحد الأدنى
+            for(let i = minBid; i <= 13; i++) {
+                if(i === 6 || i === 8 || i === 10 || i === 11 || i === 12) continue; // أرقام غير مطبقة بالطرنيب
+                let b = document.createElement('button');
+                b.className = 'bid-btn'; b.innerText = i;
+                b.onclick = () => submitBid(i);
+                opts.appendChild(b);
+            }
+        }
+
+        function submitBid(val) {
+            socket.emit('submit_bid', {room: currentRoom, bid: val});
+            document.getElementById('bid-modal').style.display = 'none';
+        }
     </script>
 </body>
 </html>
