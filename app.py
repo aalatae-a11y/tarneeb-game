@@ -2,16 +2,15 @@ import os
 import random
 import time
 from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tarneeb_libya_secret_key_2026'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# تخزين الغرف وحالة الألعاب في الذاكرة
 ROOMS = {}
 
-SUITS = ['Hearts', 'Tiles', 'Clovers', 'Pikes']  # Hearts = قلب أحمر (حاكم)
+SUITS = ['Hearts', 'Tiles', 'Clovers', 'Pikes']
 RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 RANK_VALUES = {r: i for i, r in enumerate(RANKS, start=2)}
 
@@ -32,20 +31,26 @@ def get_min_bid(score):
 class TarneebRoom:
     def __init__(self, room_id):
         self.room_id = room_id
-        self.players = []  # قائمة اللاعبين [{id, name, is_bot, sid, score, hand, bids, tricks}]
+        self.players = []
         self.game_started = False
         self.dealer_idx = 0
         self.current_turn = 0
-        self.state = 'WAITING'  # WAITING, BIDDING, PLAYING, ROUND_OVER
+        self.state = 'WAITING'  # WAITING, BIDDING, PLAYING, ROUND_OVER, GAME_OVER
         self.total_bids = 0
         self.bids_collected = 0
-        self.current_trick = [] # [{player_idx, card}]
+        self.current_trick = []
         self.trick_lead_suit = None
         self.round_first_card_played = False
-        self.trump_suit = 'Hearts'
+        self.winner_message = ""
+        self.last_trick_winner_name = ""
 
     def add_player(self, name, sid=None, is_bot=False):
-        if len(self.players) >= 4: return False
+        for p in self.players:
+            if p['name'] == name and not p['is_bot']:
+                p['sid'] = sid
+                return p['idx']
+
+        if len(self.players) >= 4: return None
         idx = len(self.players)
         self.players.append({
             'idx': idx,
@@ -57,7 +62,7 @@ class TarneebRoom:
             'bid': 0,
             'tricks_won': 0
         })
-        return True
+        return idx
 
     def fill_with_bots(self):
         bot_count = 1
@@ -79,16 +84,15 @@ class TarneebRoom:
         self.trick_lead_suit = None
         self.current_trick = []
         self.round_first_card_played = False
+        self.last_trick_winner_name = ""
 
     def process_bid(self, player_idx, bid_val):
         p = self.players[player_idx]
         min_b = get_min_bid(p['score'])
         
-        # التأكد من الحد الأدنى ما لم يطلب صفر
         if bid_val != 0 and bid_val < min_b and bid_val != 13:
             bid_val = min_b
 
-        # الشرط الإجباري: الموزع يغطي العجز إذا لم يصل المجموع إلى 11
         if player_idx == self.dealer_idx:
             needed = 11 - self.total_bids
             if needed > 0 and bid_val < needed:
@@ -106,14 +110,10 @@ class TarneebRoom:
 
     def validate_card_play(self, player_idx, card):
         p = self.players[player_idx]
-        
-        # القوانين الأساسية: عدم لعب الهاس أول ورقة بالجولة
         if not self.round_first_card_played and card['suit'] == 'Hearts':
-            # إلا إذا كانت يده كلها هاس
             if not all(c['suit'] == 'Hearts' for c in p['hand']):
-                return False, "ممنوع تنزل قلب أحمر (هاس) في أول أكلة بالجولة!"
+                return False, "ممنوع تنزل قلب أحمر في أول أكلة!"
 
-        # إجبارية اتباع النوع (Suit)
         if self.trick_lead_suit:
             has_lead_suit = any(c['suit'] == self.trick_lead_suit for c in p['hand'])
             if has_lead_suit and card['suit'] != self.trick_lead_suit:
@@ -138,7 +138,6 @@ class TarneebRoom:
             return None
 
     def resolve_trick(self):
-        # تحديد الفائز بالرقعة
         winning_play = self.current_trick[0]
         for play in self.current_trick[1:]:
             curr_c = play['card']
@@ -151,12 +150,13 @@ class TarneebRoom:
 
         winner_idx = winning_play['player_idx']
         self.players[winner_idx]['tricks_won'] += 1
+        self.last_trick_winner_name = self.players[winner_idx]['name']
 
-        # تطبيق قانون القس وكينج الهاس (Hearts)
-        has_ace_hearts = any(p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'A' for p in self.current_trick)
-        has_king_hearts = any(p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'K' for p in self.current_trick)
+        # قانون القس وكينج الهاس
+        has_ace = any(p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'A' for p in self.current_trick)
+        has_king = any(p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'K' for p in self.current_trick)
         
-        if has_ace_hearts and has_king_hearts:
+        if has_ace and has_king:
             for p in self.current_trick:
                 if p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'A':
                     self.players[p['player_idx']]['score'] += 5
@@ -168,17 +168,17 @@ class TarneebRoom:
         self.trick_lead_suit = None
         self.current_turn = winner_idx
 
-        # فحص انتهاء الشوط (13 أكلة)
         if sum(p['tricks_won'] for p in self.players) == 13:
-            self.calculate_round_scores()
-            self.dealer_idx = (self.dealer_idx + 1) % 4
-            self.state = 'ROUND_OVER'
+            game_ended = self.calculate_round_scores()
+            if game_ended:
+                self.state = 'GAME_OVER'
+            else:
+                self.state = 'ROUND_OVER'
+                self.dealer_idx = (self.dealer_idx + 1) % 4
 
         return {'winner': winner_idx, 'trick': completed_trick}
 
     def calculate_round_scores(self):
-        game_over = False
-        winner_name = ""
         for p in self.players:
             bid = p['bid']
             won = p['tricks_won']
@@ -190,16 +190,17 @@ class TarneebRoom:
             elif bid == 9:
                 p['score'] += 21 if won >= 9 else -21
             elif bid == 13:
-                p['score'] += 52 if won == 13 else -52
+                if won == 13: p['score'] += 52
+                else: p['score'] -= 52
             else:
                 p['score'] += bid if won >= bid else -bid
 
-            if p['score'] >= 31:
-                game_over = True
-                winner_name = p['name']
-
-        if game_over:
-            self.state = 'GAME_OVER'
+        max_score = max(p['score'] for p in self.players)
+        if max_score >= 31:
+            winners = [p['name'] for p in self.players if p['score'] == max_score]
+            self.winner_message = f"🏆 مبروك للبطل: {' و '.join(winners)} لتجاوز 31 نقطة!"
+            return True
+        return False
 
 @app.route('/')
 def index():
@@ -207,33 +208,41 @@ def index():
 
 @socketio.on('join_game')
 def on_join(data):
-    room_id = data.get('room', 'default')
-    player_name = data.get('name', 'لاعب')
+    room_id = data.get('room', 'tripoli')
+    player_name = data.get('name', 'عبد الله')
     join_room(room_id)
 
     if room_id not in ROOMS:
         ROOMS[room_id] = TarneebRoom(room_id)
     
     room = ROOMS[room_id]
+    idx = room.add_player(player_name, sid=request.sid)
+    if idx is None:
+        emit('error', {'msg': 'الغرفة مكتملة!'})
+        return
     
-    if not room.game_started:
-        added = room.add_player(player_name, sid=request.sid)
-        if not added:
-            emit('error', {'msg': 'الغرفة مكتملة!'})
-            return
-        
-        emit('update_room', get_room_state(room), to=room_id)
+    broadcast_state(room)
 
 @socketio.on('start_game')
 def on_start(data):
-    room_id = data.get('room')
-    room = ROOMS.get(room_id)
+    room = ROOMS.get(data.get('room'))
     if room and not room.game_started:
         room.fill_with_bots()
         room.game_started = True
         room.start_new_round()
         broadcast_state(room)
-        check_bot_turn(room)
+        trigger_bot_actions(room)
+
+@socketio.on('next_round')
+def on_next_round(data):
+    room = ROOMS.get(data.get('room'))
+    if room and room.state in ['ROUND_OVER', 'GAME_OVER']:
+        if room.state == 'GAME_OVER':
+            for p in room.players: p['score'] = 0
+            room.dealer_idx = 0
+        room.start_new_round()
+        broadcast_state(room)
+        trigger_bot_actions(room)
 
 @socketio.on('submit_bid')
 def on_bid(data):
@@ -243,7 +252,7 @@ def on_bid(data):
         if p_idx == room.current_turn:
             room.process_bid(p_idx, int(data.get('bid', 2)))
             broadcast_state(room)
-            check_bot_turn(room)
+            trigger_bot_actions(room)
 
 @socketio.on('play_card')
 def on_play_card(data):
@@ -261,33 +270,30 @@ def on_play_card(data):
             broadcast_state(room)
             if res:
                 socketio.sleep(1.5)
+                room.current_trick = []
                 broadcast_state(room)
-            check_bot_turn(room)
+            trigger_bot_actions(room)
 
-def check_bot_turn(room):
+def trigger_bot_actions(room):
     while room.game_started and room.players[room.current_turn]['is_bot'] and room.state in ['BIDDING', 'PLAYING']:
         socketio.sleep(1)
-        curr_bot = room.players[room.current_turn]
-        bot_idx = room.current_turn
+        p_idx = room.current_turn
+        p = room.players[p_idx]
         
         if room.state == 'BIDDING':
-            min_b = get_min_bid(curr_bot['score'])
-            room.process_bid(bot_idx, min_b)
+            min_b = get_min_bid(p['score'])
+            room.process_bid(p_idx, min_b)
             broadcast_state(room)
         
         elif room.state == 'PLAYING':
-            # ذكاء اصطناعي مبسط للبوت للعب كارت قانوني
-            valid_cards = []
-            for c in curr_bot['hand']:
-                ok, _ = room.validate_card_play(bot_idx, c)
-                if ok: valid_cards.append(c)
-            
+            valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
             if valid_cards:
-                chosen_card = random.choice(valid_cards)
-                res = room.play_card(bot_idx, chosen_card)
+                chosen = random.choice(valid_cards)
+                res = room.play_card(p_idx, chosen)
                 broadcast_state(room)
                 if res:
                     socketio.sleep(1.5)
+                    room.current_trick = []
                     broadcast_state(room)
 
 def get_player_idx_by_sid(room, sid):
@@ -295,26 +301,25 @@ def get_player_idx_by_sid(room, sid):
         if p['sid'] == sid: return p['idx']
     return -1
 
-def get_room_state(room):
-    return {
-        'room_id': room.room_id,
-        'game_started': room.game_started,
-        'state': room.state,
-        'current_turn': room.current_turn,
-        'dealer_idx': room.dealer_idx,
-        'total_bids': room.total_bids,
-        'current_trick': room.current_trick,
-        'players': [{'name': p['name'], 'score': p['score'], 'bid': p['bid'], 'tricks_won': p['tricks_won'], 'is_bot': p['is_bot'], 'cards_count': len(p['hand'])} for p in room.players]
-    }
-
 def broadcast_state(room):
     for p in room.players:
         if not p['is_bot'] and p['sid']:
-            p_state = get_room_state(room)
-            p_state['my_hand'] = p['hand']
-            p_state['my_index'] = p['idx']
-            p_state['min_bid'] = get_min_bid(p['score'])
+            p_state = {
+                'room_id': room.room_id,
+                'game_started': room.game_started,
+                'state': room.state,
+                'current_turn': room.current_turn,
+                'dealer_idx': room.dealer_idx,
+                'total_bids': room.total_bids,
+                'current_trick': room.current_trick,
+                'winner_message': room.winner_message,
+                'last_winner': room.last_trick_winner_name,
+                'my_index': p['idx'],
+                'my_hand': p['hand'],
+                'min_bid': get_min_bid(p['score']),
+                'players': [{'name': x['name'], 'score': x['score'], 'bid': x['bid'], 'tricks_won': x['tricks_won'], 'is_bot': x['is_bot'], 'cards_count': len(x['hand'])} for x in room.players]
+            }
             socketio.emit('game_update', p_state, to=p['sid'])
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
