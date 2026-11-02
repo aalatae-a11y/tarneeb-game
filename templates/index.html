@@ -127,7 +127,11 @@
     </div>
 
     <script>
-        const socket = io();
+        // فرض استخدام وسائل اتصال مستقرة على السيرفرات السحابية
+        const socket = io({
+            transports: ['websocket', 'polling']
+        });
+
         let myIndex = 0;
         let currentRoom = "";
         const suitIcons = {'Hearts':'♥', 'Tiles':'♦', 'Clovers':'♣', 'Pikes':'♠'};
@@ -164,7 +168,6 @@
                 document.getElementById('start-btn').style.display = 'none';
             }
 
-            // إظهار نافذة الطلبات بشكل مؤكد إذا كان دور اللاعب
             if(data.state === 'BIDDING' && data.current_turn === myIndex) {
                 showBidModal(data.min_bid);
             } else {
@@ -245,7 +248,7 @@
             const area = document.getElementById('trick-area');
             const badgeArea = document.getElementById('winner-badge-area');
             
-            area.querySelectorAll('.played-card').forEach.call(area.querySelectorAll('.played-card'), el => el.remove());
+            area.querySelectorAll('.played-card').forEach(el => el.remove());
             badgeArea.innerHTML = '';
 
             if(lastWinner && (!trick || trick.length === 0)) {
