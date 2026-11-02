@@ -67,7 +67,7 @@ class TarneebRoom:
     def fill_with_bots(self):
         bot_count = 1
         while len(self.players) < 4:
-            self.add_player(f"بوت {bot_count}", is_bot=True)
+            self.add_player(f"لاعب {bot_count}", is_bot=True)
             bot_count += 1
 
     def start_new_round(self):
@@ -256,10 +256,9 @@ def on_play_card(data):
             
             res = room.play_card(p_idx, card)
             if res:
-                # الحفاظ على الأكلة ظاهرة في المنتصف مؤقتاً قبل مسحها
                 room.current_trick = res['trick']
                 broadcast_state(room)
-                time.sleep(1.2)
+                socketio.sleep(1.2)
                 room.current_trick = []
             
             run_bots_sync(room)
@@ -283,7 +282,7 @@ def run_bots_sync(room):
                 if res:
                     room.current_trick = res['trick']
                     broadcast_state(room)
-                    time.sleep(1.2)
+                    socketio.sleep(1.2)
                     room.current_trick = []
         else:
             break
