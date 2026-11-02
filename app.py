@@ -35,6 +35,7 @@ class TarneebRoom:
         self.dealer_idx = 0
         self.current_turn = 0
         self.state = 'WAITING'
+        self.Cross_score = 0
         self.total_bids = 0
         self.bids_collected = 0
         self.current_trick = []
@@ -66,7 +67,7 @@ class TarneebRoom:
     def fill_with_bots(self):
         bot_count = 1
         while len(self.players) < 4:
-            self.add_player(f"لاعب {bot_count}", is_bot=True)
+            self.add_player(f"بوت {bot_count}", is_bot=True)
             bot_count += 1
 
     def start_new_round(self):
@@ -152,7 +153,6 @@ class TarneebRoom:
         self.last_trick_winner_name = self.players[winner_idx]['name']
 
         completed_trick = list(self.current_trick)
-        self.current_trick = []
         self.trick_lead_suit = None
         self.current_turn = winner_idx
         self.round_first_card_played = False
@@ -256,6 +256,12 @@ def on_play_card(data):
                 return
             
             res = room.play_card(p_idx, card)
+            if res:
+                room.current_trick = res['trick']
+                broadcast_state(room)
+                socketio.sleep(1)
+                room.current_trick = []
+            
             run_bots_sync(room)
             broadcast_state(room)
 
@@ -273,7 +279,12 @@ def run_bots_sync(room):
             valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
             if valid_cards:
                 chosen = random.choice(valid_cards)
-                room.play_card(p_idx, chosen)
+                res = room.play_card(p_idx, chosen)
+                if res:
+                    room.current_trick = res['trick']
+                    broadcast_state(room)
+                    socketio.sleep(1)
+                    room.current_trick = []
         else:
             break
 
@@ -303,4 +314,3 @@ def broadcast_state(room):
             socketio.emit('game_update', p_state, to=p['sid'])
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
