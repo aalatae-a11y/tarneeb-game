@@ -6,7 +6,6 @@ from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tarneeb_libya_secret_key_2026'
-# استخدام async_mode لتثبيت الاتصال وتجنب فقدان الجلسات على السيرفرات السحابية
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 ROOMS = {}
@@ -36,7 +35,7 @@ class TarneebRoom:
         self.game_started = False
         self.dealer_idx = 0
         self.current_turn = 0
-        self.state = 'WAITING'  # WAITING, BIDDING, PLAYING, ROUND_OVER, GAME_OVER
+        self.state = 'WAITING'
         self.total_bids = 0
         self.bids_collected = 0
         self.current_trick = []
@@ -164,7 +163,6 @@ class TarneebRoom:
                     self.players[p['player_idx']]['score'] -= 5
 
         completed_trick = list(self.current_trick)
-        self.current_trick = []
         self.trick_lead_suit = None
         self.current_turn = winner_idx
 
@@ -227,7 +225,6 @@ def on_join(data):
 def on_start(data):
     room = ROOMS.get(data.get('room'))
     if room and not room.game_started:
-        room.fill_and_start = True
         room.fill_with_bots()
         room.game_started = True
         room.start_new_round()
@@ -269,8 +266,9 @@ def on_play_card(data):
             
             res = room.play_card(p_idx, card)
             if res:
+                # اكتملت الأكلة، نعرضها لفترة قصيرة ثم نمسحها ونستمر
                 broadcast_state(room)
-                time.sleep(1)
+                time.sleep(1.2)
                 room.current_trick = []
             
             run_bots_sync(room)
@@ -292,6 +290,8 @@ def run_bots_sync(room):
                 chosen = random.choice(valid_cards)
                 res = room.play_card(p_idx, chosen)
                 if res:
+                    broadcast_state(room)
+                    time.sleep(1.2)
                     room.current_trick = []
         else:
             break
