@@ -18,19 +18,15 @@
 
         #game-board { display: none; width: 100vw; height: 100dvh; position: relative; background: #1c1c1e; flex-direction: column; justify-content: space-between; align-items: center; overflow: hidden; padding-bottom: 5px; }
 
-        /* الشريط العلوي مطابق للصورة تماماً (أيقونات اليسار واليمين ورقم الغرفة بالوسط) */
         .header-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; z-index: 20; }
         .header-icons { display: flex; gap: 12px; align-items: center; }
         .icon-btn { font-size: 18px; color: #8e8e93; cursor: pointer; }
 
-        /* لوحة النقاط المتقاطعة (أعلى اليسار) */
         .cross-score { position: absolute; top: 48px; left: 15px; background: rgba(0,0,0,0.85); border-radius: 8px; padding: 6px; display: grid; grid-template-columns: repeat(3, 20px); grid-template-rows: repeat(3, 20px); gap: 2px; text-align: center; font-size: 10px; font-weight: bold; z-index: 15; border: 1px solid #333; }
         .cross-score div { display: flex; justify-content: center; align-items: center; }
 
-        /* الطاولة المستطيلة ذات الزوايا الدائرية */
         .table-container { position: relative; width: 90%; height: 50dvh; margin-top: 5px; border: 6px solid #d1d1d6; border-radius: 32px; background: #24a148; box-shadow: inset 0 0 25px rgba(0,0,0,0.7); flex-shrink: 0; }
 
-        /* مواقع اللاعبين وأفاتارهم */
         .player-node { position: absolute; display: flex; flex-direction: column; align-items: center; z-index: 10; }
         .node-top { top: -38px; left: 50%; transform: translateX(-50%); }
         .node-left { left: -32px; top: 40%; transform: translateY(-50%); }
@@ -38,14 +34,12 @@
 
         .avatar-circle { width: 52px; height: 52px; border-radius: 50%; background: #636366; border: 3px solid #ffcc00; display: flex; justify-content: center; align-items: center; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         
-        /* مروحة الأوراق فوق اللاعب العلوي */
         .fan-cards { position: absolute; top: -14px; width: 50px; height: 25px; z-index: -1; }
         .fan-card-back { position: absolute; width: 12px; height: 20px; background: #c72c2c; border: 1px solid #fff; border-radius: 2px; transform-origin: bottom center; }
 
         .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 2px 8px; border-radius: 10px; margin-top: 2px; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #444; }
         .bid-badge { font-size: 10px; background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-top: 2px; border: 1px solid #444; }
 
-        /* الأوراق في وسط الطاولة */
         .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 120px; height: 120px; z-index: 5; }
         .played-card { position: absolute; width: 42px; height: 58px; background: white; border-radius: 5px; border: 1px solid #ccc; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; font-size: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
         .played-card.red { color: #d03b29; }
@@ -56,7 +50,6 @@
         .pos-2 { top: 0; left: 50%; transform: translateX(-50%); }
         .pos-3 { right: 0; top: 50%; transform: translateY(-50%); }
 
-        /* المنطقة السفلى (أوراقك وصورتك) */
         .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 20; padding-bottom: 5px; }
         .hand-cards-container { display: flex; justify-content: center; width: 98%; padding: 4px 0; overflow-x: auto; }
         
@@ -93,7 +86,6 @@
     </div>
 
     <div id="game-board">
-        <!-- الشريط العلوي المطابق للصورة -->
         <div class="header-bar">
             <div class="header-icons">
                 <span class="icon-btn">💬</span>
@@ -106,16 +98,13 @@
             </div>
         </div>
 
-        <!-- لوحة النقاط المتقاطعة -->
         <div class="cross-score">
             <div></div><div id="score-top">0</div><div></div>
             <div id="score-left">0</div><div style="color:#ffcc00">41</div><div id="score-right">0</div>
             <div></div><div id="score-bottom">0</div><div></div>
         </div>
 
-        <!-- الطاولة -->
         <div class="table-container">
-            <!-- اللاعب العلوي -->
             <div class="player-node node-top">
                 <div class="fan-cards">
                     <div class="fan-card-back" style="transform: rotate(-15deg);"></div>
@@ -127,25 +116,21 @@
                 <div class="bid-badge" id="bid-2">2 / 0</div>
             </div>
 
-            <!-- اللاعب الأيسر -->
             <div class="player-node node-left">
                 <div class="avatar-circle" id="avatar-1">👤</div>
                 <div class="player-name" id="name-1">لاعب 1</div>
                 <div class="bid-badge" id="bid-1">2 / 0</div>
             </div>
 
-            <!-- اللاعب الأيمن -->
             <div class="player-node node-right">
                 <div class="avatar-circle" id="avatar-3">👤</div>
                 <div class="player-name" id="name-3">لاعب 3</div>
                 <div class="bid-badge" id="bid-3">2 / 0</div>
             </div>
 
-            <!-- الأوراق في المنتصف -->
             <div class="center-trick" id="trick-area"></div>
         </div>
 
-        <!-- المنطقة السفلية -->
         <div class="bottom-section">
             <div class="hand-cards-container" id="my-hand"></div>
             <div class="bottom-info">
@@ -160,13 +145,11 @@
             </div>
         </div>
 
-        <!-- نافذة الطلبات -->
         <div id="bid-modal">
             <h3>اختر الطلبة</h3>
             <div class="bid-grid" id="bid-options"></div>
         </div>
 
-        <!-- نافذة الشوط -->
         <div id="round-modal">
             <h3 id="round-title" style="color:#34c759; margin-bottom:10px;">انتهى الشوط</h3>
             <p id="round-desc" style="font-size:12px; margin-bottom:15px;"></p>
@@ -178,14 +161,22 @@
         const socket = io({ transports: ['websocket', 'polling'] });
         let myIndex = 0;
         let currentRoom = "";
+        let savedName = "";
         const suitIcons = {'Hearts':'♥', 'Tiles':'♦', 'Clovers':'♣', 'Pikes':'♠'};
 
-        function joinGame() {
-            const name = document.getElementById('username').value.trim();
-            currentRoom = document.getElementById('room').value.trim();
-            if(!name || !currentRoom) return alert("يرجى كتابة الاسم ورمز الغرفة");
+        // إعادة الاتصال والانضمام تلقائياً لو حدث انقطاع في الشبكة لتجنب تجميد اللعبة
+        socket.on('connect', () => {
+            if (currentRoom && savedName) {
+                socket.emit('join_game', {name: savedName, room: currentRoom});
+            }
+        });
 
-            socket.emit('join_game', {name: name, room: currentRoom});
+        function joinGame() {
+            savedName = document.getElementById('username').value.trim();
+            currentRoom = document.getElementById('room').value.trim();
+            if(!savedName || !currentRoom) return alert("يرجى كتابة الاسم ورمز الغرفة");
+
+            socket.emit('join_game', {name: savedName, room: currentRoom});
             document.getElementById('login-box').style.display = 'none';
             document.getElementById('game-board').style.display = 'flex';
             document.getElementById('room-display').innerText = currentRoom;
