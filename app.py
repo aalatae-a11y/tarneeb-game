@@ -152,16 +152,6 @@ class TarneebRoom:
         self.players[winner_idx]['tricks_won'] += 1
         self.last_trick_winner_name = self.players[winner_idx]['name']
 
-        has_ace = any(p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'A' for p in self.current_trick)
-        has_king = any(p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'K' for p in self.current_trick)
-        
-        if has_ace and has_king:
-            for p in self.current_trick:
-                if p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'A':
-                    self.players[p['player_idx']]['score'] += 5
-                if p['card']['suit'] == 'Hearts' and p['card']['rank'] == 'K':
-                    self.players[p['player_idx']]['score'] -= 5
-
         completed_trick = list(self.current_trick)
         self.trick_lead_suit = None
         self.current_turn = winner_idx
@@ -266,7 +256,8 @@ def on_play_card(data):
             
             res = room.play_card(p_idx, card)
             if res:
-                # اكتملت الأكلة، نعرضها لفترة قصيرة ثم نمسحها ونستمر
+                # الحفاظ على الأكلة ظاهرة في المنتصف مؤقتاً قبل مسحها
+                room.current_trick = res['trick']
                 broadcast_state(room)
                 time.sleep(1.2)
                 room.current_trick = []
@@ -290,6 +281,7 @@ def run_bots_sync(room):
                 chosen = random.choice(valid_cards)
                 res = room.play_card(p_idx, chosen)
                 if res:
+                    room.current_trick = res['trick']
                     broadcast_state(room)
                     time.sleep(1.2)
                     room.current_trick = []
