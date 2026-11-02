@@ -1,6 +1,5 @@
 import os
 import random
-import time
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room
 
@@ -153,8 +152,10 @@ class TarneebRoom:
         self.last_trick_winner_name = self.players[winner_idx]['name']
 
         completed_trick = list(self.current_trick)
+        self.current_trick = []
         self.trick_lead_suit = None
         self.current_turn = winner_idx
+        self.round_first_card_played = False
 
         if sum(p['tricks_won'] for p in self.players) == 13:
             game_ended = self.calculate_round_scores()
@@ -255,12 +256,6 @@ def on_play_card(data):
                 return
             
             res = room.play_card(p_idx, card)
-            if res:
-                room.current_trick = res['trick']
-                broadcast_state(room)
-                socketio.sleep(1.2)
-                room.current_trick = []
-            
             run_bots_sync(room)
             broadcast_state(room)
 
@@ -278,12 +273,7 @@ def run_bots_sync(room):
             valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
             if valid_cards:
                 chosen = random.choice(valid_cards)
-                res = room.play_card(p_idx, chosen)
-                if res:
-                    room.current_trick = res['trick']
-                    broadcast_state(room)
-                    socketio.sleep(1.2)
-                    room.current_trick = []
+                room.play_card(p_idx, chosen)
         else:
             break
 
