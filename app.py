@@ -38,6 +38,7 @@ class TarneebRoom:
         self.total_bids = 0
         self.bids_collected = 0
         self.current_trick = []
+        self.last_completed_trick = []  # لتخزين أخر أكلة
         self.trick_lead_suit = None
         self.round_first_card_played = False
         self.winner_message = ""
@@ -59,7 +60,8 @@ class TarneebRoom:
             'score': 0,
             'hand': [],
             'bid': 0,
-            'tricks_won': 0
+            'tricks_won': 0,
+            'won_cards_count': 0  # عدد الأوراق في كدس الأكلات لمن يأخذها
         })
         return idx
 
@@ -75,6 +77,7 @@ class TarneebRoom:
             p['hand'] = sorted(deck[p['idx']*13 : (p['idx']+1)*13], key=lambda x: (x['suit'], x['value']))
             p['bid'] = 0
             p['tricks_won'] = 0
+            p['won_cards_count'] = 0
         
         self.state = 'BIDDING'
         self.total_bids = 0
@@ -82,6 +85,7 @@ class TarneebRoom:
         self.current_turn = (self.dealer_idx + 1) % 4
         self.trick_lead_suit = None
         self.current_trick = []
+        self.last_completed_trick = []
         self.round_first_card_played = False
         self.last_trick_winner_name = ""
 
@@ -149,9 +153,13 @@ class TarneebRoom:
 
         winner_idx = winning_play['player_idx']
         self.players[winner_idx]['tricks_won'] += 1
+        self.players[winner_idx]['won_cards_count'] += 4
         self.last_trick_winner_name = self.players[winner_idx]['name']
 
+        self.last_completed_trick = list(self.current_trick)
         completed_trick = list(self.current_trick)
+        
+        self.current_trick = []
         self.trick_lead_suit = None
         self.current_turn = winner_idx
         self.round_first_card_played = False
@@ -255,14 +263,8 @@ def on_play_card(data):
                 return
             
             res = room.play_card(p_idx, card)
-            if res:
-                room.current_trick = res['trick']
-                broadcast_state(room)
-                socketio.sleep(1)
-                room.current_trick = []
-            
-            run_bots_sync(room)
             broadcast_state(room)
+            run_bots_sync(room)
 
 def run_bots_sync(room):
     while room.game_started and room.state in ['BIDDING', 'PLAYING']:
@@ -274,16 +276,13 @@ def run_bots_sync(room):
         if room.state == 'BIDDING':
             min_b = get_min_bid(p['score'])
             room.process_bid(p_idx, min_b)
+            broadcast_state(room)
         elif room.state == 'PLAYING':
             valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
             if valid_cards:
                 chosen = random.choice(valid_cards)
-                res = room.play_card(p_idx, chosen)
-                if res:
-                    room.current_trick = res['trick']
-                    broadcast_state(room)
-                    socketio.sleep(1)
-                    room.current_trick = []
+                room.play_card(p_idx, chosen)
+                broadcast_state(room)
         else:
             break
 
@@ -303,14 +302,24 @@ def broadcast_state(room):
                 'dealer_idx': room.dealer_idx,
                 'total_bids': room.total_bids,
                 'current_trick': room.current_trick,
+                'last_trick': room.last_completed_trick,
                 'winner_message': room.winner_message,
                 'last_winner': room.last_trick_winner_name,
                 'my_index': p['idx'],
                 'my_hand': p['hand'],
                 'min_bid': get_min_bid(p['score']),
-                'players': [{'name': x['name'], 'score': x['score'], 'bid': x['bid'], 'tricks_won': x['tricks_won'], 'is_bot': x['is_bot'], 'cards_count': len(x['hand'])} for x in room.players]
+                'players': [{
+                    'name': x['name'], 
+                    'score': x['score'], 
+                    'bid': x['bid'], 
+                    'tricks_won': x['tricks_won'], 
+                    'won_cards_count': x['won_cards_count'],
+                    'is_bot': x['is_bot'], 
+                    'cards_count': len(x['hand'])
+                } for x in room.players]
             }
             socketio.emit('game_update', p_state, to=p['sid'])
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+        
