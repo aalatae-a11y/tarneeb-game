@@ -35,7 +35,6 @@ class TarneebRoom:
         self.dealer_idx = 0
         self.current_turn = 0
         self.state = 'WAITING'
-        self.Cross_score = 0
         self.total_bids = 0
         self.bids_collected = 0
         self.current_trick = []
@@ -314,3 +313,4 @@ def broadcast_state(room):
             socketio.emit('game_update', p_state, to=p['sid'])
 
 if __name__ == '__main__':
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
