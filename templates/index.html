@@ -53,9 +53,9 @@
         .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 20; padding-bottom: 5px; }
         .hand-cards-container { display: flex; justify-content: center; width: 98%; padding: 4px 0; overflow-x: auto; }
         
-        .hand-card { width: 44px; height: 64px; background: white; border-radius: 6px; border: 1px solid #bbb; margin-left: -14px; display: flex; flex-direction: column; justify-content: space-between; padding: 4px; font-weight: bold; font-size: 13px; box-shadow: -2px 0 6px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.15s ease; flex-shrink: 0; }
+        .hand-card { width: 44px; height: 64px; background: white; border-radius: 6px; border: 1px solid #bbb; margin-left: -14px; display: flex; flex-direction: column; justify-content: space-between; padding: 4px; font-weight: bold; font-size: 13px; box-shadow: -2px 0 6px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.15s ease; flex-shrink: 0; z-index: 50; }
         .hand-card:first-child { margin-left: 0; }
-        .hand-card:active { transform: translateY(-10px); }
+        .hand-card:hover { transform: translateY(-10px); border-color: #34c759; }
         .hand-card.red { color: #d03b29; }
         .hand-card.black { color: #1c1c1e; }
 
@@ -164,7 +164,6 @@
         let savedName = "";
         const suitIcons = {'Hearts':'♥', 'Tiles':'♦', 'Clovers':'♣', 'Pikes':'♠'};
 
-        // إعادة الاتصال والانضمام تلقائياً لو حدث انقطاع في الشبكة لتجنب تجميد اللعبة
         socket.on('connect', () => {
             if (currentRoom && savedName) {
                 socket.emit('join_game', {name: savedName, room: currentRoom});
@@ -195,7 +194,7 @@
             myIndex = data.my_index;
             renderPlayers(data.players, data.current_turn);
             renderTrick(data.current_trick);
-            renderHand(data.my_hand);
+            renderHand(data.my_hand, data.current_turn === myIndex);
 
             if(data.state === 'BIDDING' && data.current_turn === myIndex) {
                 showBidModal(data.min_bid);
@@ -242,7 +241,7 @@
             });
         }
 
-        function renderHand(hand) {
+        function renderHand(hand, isMyTurn) {
             const handDiv = document.getElementById('my-hand');
             if(!handDiv) return;
             handDiv.innerHTML = '';
@@ -254,9 +253,11 @@
                 cardEl.className = `hand-card ${isRed ? 'red' : 'black'}`;
                 cardEl.innerHTML = `<div>${card.rank}</div><div style="text-align:center;">${suitIcons[card.suit]}</div>`;
                 
-                cardEl.onclick = () => {
+                // تفعيل الاستجابة المباشرة للنقر في دورك
+                cardEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     socket.emit('play_card', {room: currentRoom, card: card});
-                };
+                });
 
                 handDiv.appendChild(cardEl);
             });
