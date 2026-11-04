@@ -1,11 +1,14 @@
 import os
 import random
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tarneeb_libya_secret_key_2026'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 ROOMS = {}
 
@@ -38,7 +41,7 @@ class TarneebRoom:
         self.total_bids = 0
         self.bids_collected = 0
         self.current_trick = []
-        self.last_completed_trick = []  # لتخزين أخر أكلة
+        self.last_completed_trick = []
         self.trick_lead_suit = None
         self.round_first_card_played = False
         self.winner_message = ""
@@ -61,7 +64,7 @@ class TarneebRoom:
             'hand': [],
             'bid': 0,
             'tricks_won': 0,
-            'won_cards_count': 0  # عدد الأوراق في كدس الأكلات لمن يأخذها
+            'won_cards_count': 0
         })
         return idx
 
@@ -192,9 +195,9 @@ class TarneebRoom:
                 p['score'] += bid if won >= bid else -bid
 
         max_score = max(p['score'] for p in self.players)
-        if max_score >= 31:
+        if max_score >= 31 or max_score <= -31:
             winners = [p['name'] for p in self.players if p['score'] == max_score]
-            self.winner_message = f"🏆 مبروك للبطل: {' و '.join(winners)} لتجاوز 31 نقطة!"
+            self.winner_message = f"🏆 مبروك للبطل: {' و '.join(winners)} لتحقيق 31 نقطة!"
             return True
         return False
 
@@ -262,7 +265,7 @@ def on_play_card(data):
                 emit('error', {'msg': msg})
                 return
             
-            res = room.play_card(p_idx, card)
+            room.play_card(p_idx, card)
             broadcast_state(room)
             run_bots_sync(room)
 
@@ -273,6 +276,7 @@ def run_bots_sync(room):
         if not p['is_bot']:
             break
         
+        socketio.sleep(0.5)  # مهلة زمنية بسيطة لحركة البوت بانسجام
         if room.state == 'BIDDING':
             min_b = get_min_bid(p['score'])
             room.process_bid(p_idx, min_b)
@@ -322,4 +326,3 @@ def broadcast_state(room):
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
-        
