@@ -219,7 +219,7 @@
             renderPlayers(data.players, data.current_turn);
             renderTrick(data.current_trick);
             renderLastTrick(data.last_trick);
-            renderHand(data.my_hand);
+            renderHand(data.my_hand, data.current_turn === myIndex);
 
             if(data.state === 'BIDDING' && data.current_turn === myIndex) {
                 showBidModal(data.min_bid);
@@ -275,7 +275,7 @@
             });
         }
 
-        function renderHand(hand) {
+        function renderHand(hand, isMyTurn) {
             const handDiv = document.getElementById('my-hand');
             if(!handDiv) return;
             handDiv.innerHTML = '';
@@ -287,10 +287,15 @@
                 cardEl.className = `hand-card ${isRed ? 'red' : 'black'}`;
                 cardEl.innerHTML = `<div>${card.rank}</div><div style="text-align:center;">${suitIcons[card.suit]}</div>`;
                 
-                cardEl.onclick = (e) => {
-                    e.preventDefault();
+                // استخدام addEventListener صريح ومباشر لإرسال الكارت عند النقر
+                cardEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!isMyTurn) {
+                        alert("ليس دورك الآن!");
+                        return;
+                    }
                     socket.emit('play_card', {room: currentRoom, card: card});
-                };
+                });
 
                 handDiv.appendChild(cardEl);
             });
