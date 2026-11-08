@@ -192,6 +192,8 @@
         const socket = io({ transports: ['websocket', 'polling'] });
         let myIndex = 0;
         let currentRoom = "";
+        let currentTurnGlobal = -1;
+        let currentHandData = [];
         const suitIcons = {'Hearts':'♥', 'Tiles':'♦', 'Clovers':'♣', 'Pikes':'♠'};
 
         function joinGame() {
@@ -216,10 +218,13 @@
 
         socket.on('game_update', (data) => {
             myIndex = data.my_index;
+            currentTurnGlobal = data.current_turn;
+            currentHandData = data.my_hand;
+
             renderPlayers(data.players, data.current_turn);
             renderTrick(data.current_trick);
             renderLastTrick(data.last_trick);
-            renderHand(data.my_hand, data.current_turn === myIndex);
+            renderHand(data.my_hand);
 
             if(data.state === 'BIDDING' && data.current_turn === myIndex) {
                 showBidModal(data.min_bid);
@@ -275,28 +280,35 @@
             });
         }
 
-        function renderHand(hand, isMyTurn) {
+        // تفويض الأحداث (Event Delegation) على مستوى الحاوية لضمان عدم ضياع النقر أبداً
+        document.getElementById('my-hand').addEventListener('click', (e) => {
+            const cardEl = e.target.closest('.hand-card');
+            if (!cardEl) return;
+
+            if (currentTurnGlobal !== myIndex) {
+                alert("ليس دورك الآن!");
+                return;
+            }
+
+            const cardIndex = parseInt(cardEl.dataset.index);
+            const card = currentHandData[cardIndex];
+            if (card) {
+                socket.emit('play_card', {room: currentRoom, card: card});
+            }
+        });
+
+        function renderHand(hand) {
             const handDiv = document.getElementById('my-hand');
             if(!handDiv) return;
             handDiv.innerHTML = '';
             if(!hand) return;
 
-            hand.forEach(card => {
+            hand.forEach((card, index) => {
                 let cardEl = document.createElement('div');
                 let isRed = card.suit === 'Hearts' || card.suit === 'Tiles';
                 cardEl.className = `hand-card ${isRed ? 'red' : 'black'}`;
+                cardEl.dataset.index = index; // تخزين مؤشر الكرت
                 cardEl.innerHTML = `<div>${card.rank}</div><div style="text-align:center;">${suitIcons[card.suit]}</div>`;
-                
-                // استخدام addEventListener صريح ومباشر لإرسال الكارت عند النقر
-                cardEl.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (!isMyTurn) {
-                        alert("ليس دورك الآن!");
-                        return;
-                    }
-                    socket.emit('play_card', {room: currentRoom, card: card});
-                });
-
                 handDiv.appendChild(cardEl);
             });
         }
@@ -357,14 +369,4 @@
                 let b = document.createElement('button');
                 b.className = 'bid-btn'; b.innerText = i;
                 b.onclick = () => submitBid(i);
-                opts.appendChild(b);
-            }
-        }
-
-        function submitBid(val) {
-            socket.emit('submit_bid', {room: currentRoom, bid: val});
-            document.getElementById('bid-modal').style.display = 'none';
-        }
-    </script>
-</body>
-</html>
+  
