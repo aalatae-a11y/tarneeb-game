@@ -1,14 +1,11 @@
 import os
 import random
-import eventlet
-eventlet.monkey_patch()
-
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tarneeb_libya_secret_key_2026'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 ROOMS = {}
 
@@ -197,7 +194,7 @@ class TarneebRoom:
         max_score = max(p['score'] for p in self.players)
         if max_score >= 31 or max_score <= -31:
             winners = [p['name'] for p in self.players if p['score'] == max_score]
-            self.winner_message = f"🏆 مبروك للبطل: {' و '.join(winners)} لتحقيق 31 نقطة!"
+            self.winner_message = f"🏆 مبروك للبطل: {' و '.join(winners)} لتجاوز 31 نقطة!"
             return True
         return False
 
@@ -276,7 +273,7 @@ def run_bots_sync(room):
         if not p['is_bot']:
             break
         
-        socketio.sleep(0.5)  # مهلة زمنية بسيطة لحركة البوت بانسجام
+        socketio.sleep(0.4)
         if room.state == 'BIDDING':
             min_b = get_min_bid(p['score'])
             room.process_bid(p_idx, min_b)
