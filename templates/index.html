@@ -369,4 +369,14 @@
                 let b = document.createElement('button');
                 b.className = 'bid-btn'; b.innerText = i;
                 b.onclick = () => submitBid(i);
-  
+                opts.appendChild(b);
+            }
+        }
+
+        function submitBid(val) {
+            socket.emit('submit_bid', {room: currentRoom, bid: val});
+            document.getElementById('bid-modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
