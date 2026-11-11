@@ -193,7 +193,6 @@
         let myIndex = 0;
         let currentRoom = "";
         let currentTurnGlobal = -1;
-        let currentHandData = [];
         const suitIcons = {'Hearts':'♥', 'Tiles':'♦', 'Clovers':'♣', 'Pikes':'♠'};
 
         function joinGame() {
@@ -219,12 +218,11 @@
         socket.on('game_update', (data) => {
             myIndex = data.my_index;
             currentTurnGlobal = data.current_turn;
-            currentHandData = data.my_hand;
 
             renderPlayers(data.players, data.current_turn);
             renderTrick(data.current_trick);
             renderLastTrick(data.last_trick);
-            renderHand(data.my_hand);
+            renderHand(data.my_hand, data.current_turn === myIndex);
 
             if(data.state === 'BIDDING' && data.current_turn === myIndex) {
                 showBidModal(data.min_bid);
@@ -280,35 +278,29 @@
             });
         }
 
-        // تفويض الأحداث (Event Delegation) على مستوى الحاوية لضمان عدم ضياع النقر أبداً
-        document.getElementById('my-hand').addEventListener('click', (e) => {
-            const cardEl = e.target.closest('.hand-card');
-            if (!cardEl) return;
-
-            if (currentTurnGlobal !== myIndex) {
-                alert("ليس دورك الآن!");
-                return;
-            }
-
-            const cardIndex = parseInt(cardEl.dataset.index);
-            const card = currentHandData[cardIndex];
-            if (card) {
-                socket.emit('play_card', {room: currentRoom, card: card});
-            }
-        });
-
-        function renderHand(hand) {
+        // ربط الحدث مباشرة بكل كرت عند إنشائه لضمان استجابة فورية 100%
+        function renderHand(hand, isMyTurn) {
             const handDiv = document.getElementById('my-hand');
             if(!handDiv) return;
             handDiv.innerHTML = '';
             if(!hand) return;
 
-            hand.forEach((card, index) => {
+            hand.forEach(card => {
                 let cardEl = document.createElement('div');
                 let isRed = card.suit === 'Hearts' || card.suit === 'Tiles';
                 cardEl.className = `hand-card ${isRed ? 'red' : 'black'}`;
-                cardEl.dataset.index = index; // تخزين مؤشر الكرت
                 cardEl.innerHTML = `<div>${card.rank}</div><div style="text-align:center;">${suitIcons[card.suit]}</div>`;
+                
+                // ربط النقر بالكارت الفعلي مباشرة لمنع أي خطأ في الفهرسة
+                cardEl.onclick = (e) => {
+                    e.preventDefault();
+                    if (currentTurnGlobal !== myIndex) {
+                        alert("ليس دورك الآن!");
+                        return;
+                    }
+                    socket.emit('play_card', {room: currentRoom, card: card});
+                };
+
                 handDiv.appendChild(cardEl);
             });
         }
