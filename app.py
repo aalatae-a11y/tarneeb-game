@@ -226,8 +226,8 @@ def on_start(data):
         room.fill_with_bots()
         room.game_started = True
         room.start_new_round()
-        run_bots_sync(room)
         broadcast_state(room)
+        socketio.start_background_task(run_bots_async, room)
 
 @socketio.on('next_round')
 def on_next_round(data):
@@ -237,8 +237,8 @@ def on_next_round(data):
             for p in room.players: p['score'] = 0
             room.dealer_idx = 0
         room.start_new_round()
-        run_bots_sync(room)
         broadcast_state(room)
+        socketio.start_background_task(run_bots_async, room)
 
 @socketio.on('submit_bid')
 def on_bid(data):
@@ -247,8 +247,8 @@ def on_bid(data):
         p_idx = get_player_idx_by_sid(room, request.sid)
         if p_idx == room.current_turn:
             room.process_bid(p_idx, int(data.get('bid', 2)))
-            run_bots_sync(room)
             broadcast_state(room)
+            socketio.start_background_task(run_bots_async, room)
 
 @socketio.on('play_card')
 def on_play_card(data):
@@ -264,16 +264,18 @@ def on_play_card(data):
             
             room.play_card(p_idx, card)
             broadcast_state(room)
-            run_bots_sync(room)
+            socketio.start_background_task(run_bots_async, room)
 
-def run_bots_sync(room):
+def run_bots_async(room):
+    # استخدام نظام غير حظري (Background Task) لمنع تجميد خيوط الاتصال
+    socketio.sleep(0.4)
     while room.game_started and room.state in ['BIDDING', 'PLAYING']:
         p_idx = room.current_turn
         p = room.players[p_idx]
         if not p['is_bot']:
             break
         
-        socketio.sleep(0.4)
+        socketio.sleep(0.6)
         if room.state == 'BIDDING':
             min_b = get_min_bid(p['score'])
             room.process_bid(p_idx, min_b)
@@ -323,3 +325,4 @@ def broadcast_state(room):
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+        
