@@ -22,9 +22,9 @@ def create_deck():
     return deck
 
 def get_min_bid(score):
-    if score >= 30: return 5
-    if score >= 27: return 4
-    if score >= 21: return 3
+    if score >= 25: return 5
+    if score >= 20: return 4
+    if score >= 15: return 3
     return 2
 
 class TarneebRoom:
@@ -41,6 +41,7 @@ class TarneebRoom:
         self.last_completed_trick = []
         self.trick_lead_suit = None
         self.round_first_card_played = False
+        self.is_very_first_trick_of_game = True  # للتحقق من أول أكلة في اللعبة فقط
         self.winner_message = ""
         self.last_trick_winner_name = ""
 
@@ -58,6 +59,7 @@ class TarneebRoom:
             'sid': sid,
             'is_bot': is_bot,
             'score': 0,
+            'team': idx % 2,  # الفريق 0 (أنت وفريكك) والفريق 1
             'hand': [],
             'bid': 0,
             'tricks_won': 0,
@@ -113,9 +115,11 @@ class TarneebRoom:
 
     def validate_card_play(self, player_idx, card):
         p = self.players[player_idx]
-        if not self.round_first_card_played and card['suit'] == 'Hearts':
+        
+        # قانون القلب الأحمر: فقط في أول أكلة من أول دورة للعبة
+        if self.is_very_first_trick_of_game and not self.round_first_card_played and card['suit'] == 'Hearts':
             if not all(c['suit'] == 'Hearts' for c in p['hand']):
-                return False, "ممنوع تنزل قلب أحمر في أول أكلة!"
+                return False, "ممنوع تنزل قلب أحمر في أول أكلة باللعبة!"
 
         if self.trick_lead_suit:
             has_lead_suit = any(c['suit'] == self.trick_lead_suit for c in p['hand'])
@@ -163,6 +167,7 @@ class TarneebRoom:
         self.trick_lead_suit = None
         self.current_turn = winner_idx
         self.round_first_card_played = False
+        self.is_very_first_trick_of_game = False  # انتهت أول أكلة في اللعبة
 
         if sum(p['tricks_won'] for p in self.players) == 13:
             game_ended = self.calculate_round_scores()
@@ -175,26 +180,25 @@ class TarneebRoom:
         return {'winner': winner_idx, 'trick': completed_trick}
 
     def calculate_round_scores(self):
+        # حساب النقاط بنظام الفرق (الفريق 0 و الفريق 1)
+        team_tricks = [0, 0]
+        team_bids = [0, 0]
         for p in self.players:
-            bid = p['bid']
-            won = p['tricks_won']
-            
-            if bid == 0:
-                p['score'] += 5 if won == 0 else -5
-            elif bid == 7:
-                p['score'] += 14 if won >= 7 else -14
-            elif bid == 9:
-                p['score'] += 21 if won >= 9 else -21
-            elif bid == 13:
-                if won == 13: p['score'] += 52
-                else: p['score'] -= 52
-            else:
-                p['score'] += bid if won >= bid else -bid
+            team_tricks[p['team']] += p['tricks_won']
+            team_bids[p['team']] += p['bid']
+
+        for t in range(2):
+            b = team_bids[t]
+            w = team_tricks[t]
+            points = w if w >= b else -b
+            for p in self.players:
+                if p['team'] == t:
+                    p['score'] += points
 
         max_score = max(p['score'] for p in self.players)
         if max_score >= 31 or max_score <= -31:
             winners = [p['name'] for p in self.players if p['score'] == max_score]
-            self.winner_message = f"🏆 مبروك للبطل: {' و '.join(winners)} لتجاوز 31 نقطة!"
+            self.winner_message = f"🏆 مبروك للفريق الفائز: {' و '.join(winners)} لتحقيق 31 نقطة!"
             return True
         return False
 
@@ -299,6 +303,11 @@ def get_player_idx_by_sid(room, sid):
 def broadcast_state(room):
     for p in room.players:
         if not p['is_bot'] and p['sid']:
+            # حساب نقاط الصليب (الفريقين) لعرضها في لوحة النتائج العلوية اليسرى
+            team_scores = [0, 0]
+            for x in room.players:
+                team_scores[x['team']] = x['score']
+
             p_state = {
                 'room_id': room.room_id,
                 'game_started': room.game_started,
@@ -313,6 +322,7 @@ def broadcast_state(room):
                 'my_index': p['idx'],
                 'my_hand': p['hand'],
                 'min_bid': get_min_bid(p['score']),
+                'team_scores': team_scores,
                 'players': [{
                     'name': x['name'], 
                     'score': x['score'], 
