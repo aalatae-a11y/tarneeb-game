@@ -77,8 +77,13 @@ class TarneebRoom:
             bot_count += 1
 
     def check_redeal_eligibility(self, player_idx):
-        if self.round_number <= 1 or self.state != 'BIDDING' or self.bids_collected > 0:
-            return False
+        # متاح في أي دورة بشرط عدم اكتمال الطلبات أو في الدورة الأولى قبل اللعب
+        if self.round_number == 1:
+            if self.round_first_card_played: return False
+        else:
+            if self.state != 'BIDDING' or self.bids_collected > 0:
+                return False
+                
         hand = self.players[player_idx]['hand']
         if len(hand) != 13:
             return False
@@ -106,22 +111,23 @@ class TarneebRoom:
             p['won_cards_count'] = 0
             p['king_ace_delta'] = 0
         
-        self.total_bids = 0
-        self.bids_collected = 0
+        # الدورة الأولى: بدون طلبات (تبدأ PLAYING مباشرة) | باقي الدورات تبدأ BIDDING
+        if self.round_number == 1:
+            self.state = 'PLAYING'
+            self.total_bids = 0
+            self.bids_collected = 4
+        else:
+            self.state = 'BIDDING'
+            self.total_bids = 0
+            self.bids_collected = 0
+
+        self.current_turn = (self.dealer_idx + 1) % 4
         self.trick_lead_suit = None
         self.current_trick = []
         self.last_completed_trick = []
         self.round_first_card_played = False
         self.round_summary = []
         self.trick_winner_idx = None
-
-        # الدورة الأولى بدون طلبات: الدخول مباشرة للعب أونلاين
-        if self.round_number == 1:
-            self.state = 'PLAYING'
-            self.current_turn = (self.dealer_idx + 1) % 4
-        else:
-            self.state = 'BIDDING'
-            self.current_turn = (self.dealer_idx + 1) % 4
 
     def get_dealer_min_bid(self, player_idx):
         min_b = get_min_bid(self.players[player_idx]['score'])
@@ -251,10 +257,10 @@ class TarneebRoom:
             round_pts = 0
             reason = ""
 
-            # الدورة الأولى ليس فيها طلبات، تحسب النقاط حسب الأكلات مباشرة (كل أكلة بنقطة أو حسب رغبتكم، هنا نحتسب أكلات الدورة الأولى كمجموع نقاط أو أكلات)
+            # في الدورة الأولى (بدون طلبات): كل أكلة تحسب بنقطة واحدة مباشرة (+1 لكل أكلة)
             if self.round_number == 1:
                 round_pts = won
-                reason = f"أكل {won} أكلات (+{won})"
+                reason = f"أخذ {won} أكلة (+{won})"
             else:
                 if bid == 0:
                     if won == 0:
