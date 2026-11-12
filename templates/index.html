@@ -189,7 +189,13 @@
     </div>
 
     <script>
-        const socket = io({ transports: ['websocket', 'polling'] });
+        const socket = io({ 
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000
+        });
+
         let myIndex = 0;
         let currentRoom = "";
         let currentTurnGlobal = -1;
@@ -209,6 +215,13 @@
                 socket.emit('start_game', {room: currentRoom});
             }, 400);
         }
+
+        socket.on('connect', () => {
+            if (currentRoom) {
+                const name = document.getElementById('username').value.trim();
+                if(name) socket.emit('join_game', {name: name, room: currentRoom});
+            }
+        });
 
         function nextRound() {
             document.getElementById('round-modal').style.display = 'none';
@@ -278,7 +291,6 @@
             });
         }
 
-        // ربط الحدث مباشرة بكل كرت عند إنشائه لضمان استجابة فورية 100%
         function renderHand(hand, isMyTurn) {
             const handDiv = document.getElementById('my-hand');
             if(!handDiv) return;
@@ -291,7 +303,6 @@
                 cardEl.className = `hand-card ${isRed ? 'red' : 'black'}`;
                 cardEl.innerHTML = `<div>${card.rank}</div><div style="text-align:center;">${suitIcons[card.suit]}</div>`;
                 
-                // ربط النقر بالكارت الفعلي مباشرة لمنع أي خطأ في الفهرسة
                 cardEl.onclick = (e) => {
                     e.preventDefault();
                     if (currentTurnGlobal !== myIndex) {
