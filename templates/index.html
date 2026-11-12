@@ -22,7 +22,8 @@
         .header-icons { display: flex; gap: 12px; align-items: center; }
         .icon-btn { font-size: 18px; color: #8e8e93; cursor: pointer; }
 
-        .cross-score { position: absolute; top: 48px; left: 15px; background: rgba(0,0,0,0.85); border-radius: 8px; padding: 6px; display: grid; grid-template-columns: repeat(3, 20px); grid-template-rows: repeat(3, 20px); gap: 2px; text-align: center; font-size: 10px; font-weight: bold; z-index: 15; border: 1px solid #333; }
+        /* لوحة النتائج الصليب */
+        .cross-score { position: absolute; top: 48px; left: 15px; background: rgba(0,0,0,0.85); border-radius: 8px; padding: 6px; display: grid; grid-template-columns: repeat(3, 22px); grid-template-rows: repeat(3, 22px); gap: 2px; text-align: center; font-size: 11px; font-weight: bold; z-index: 15; border: 1px solid #333; }
         .cross-score div { display: flex; justify-content: center; align-items: center; }
 
         .last-trick-box { position: absolute; top: 48px; right: 15px; background: rgba(0,0,0,0.85); border: 1px solid #444; border-radius: 8px; padding: 5px; width: 65px; height: 65px; z-index: 15; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -54,20 +55,22 @@
         .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 2px 8px; border-radius: 10px; margin-top: 2px; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #444; }
         .bid-badge { font-size: 10px; background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-top: 2px; border: 1px solid #444; }
 
-        .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 120px; height: 120px; z-index: 5; }
-        .played-card { position: absolute; width: 42px; height: 58px; background: white; border-radius: 5px; border: 1px solid #ccc; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; font-size: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
+        /* منطقة وسط الطاولة وحركة الكروت */
+        .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130px; height: 130px; z-index: 5; }
+        .played-card { position: absolute; width: 44px; height: 60px; background: white; border-radius: 6px; border: 1px solid #ccc; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; font-size: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: all 0.3s ease-in-out; }
         .played-card.red { color: #d03b29; }
         .played-card.black { color: #1c1c1e; }
 
-        .pos-0 { bottom: 0; left: 50%; transform: translateX(-50%); }
-        .pos-1 { left: 0; top: 50%; transform: translateY(-50%); }
-        .pos-2 { top: 0; left: 50%; transform: translateX(-50%); }
-        .pos-3 { right: 0; top: 50%; transform: translateY(-50%); }
+        /* مواقع الكروت الأربعة في الوسط بوضوح تام */
+        .pos-0 { bottom: 0px; left: 50%; transform: translateX(-50%); }
+        .pos-1 { left: 5px; top: 50%; transform: translateY(-50%); }
+        .pos-2 { top: 0px; left: 50%; transform: translateX(-50%); }
+        .pos-3 { right: 5px; top: 50%; transform: translateY(-50%); }
 
         .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 20; padding-bottom: 5px; }
         .hand-cards-container { display: flex; justify-content: center; width: 98%; padding: 4px 0; overflow-x: auto; min-height: 80px; }
         
-        .hand-card { width: 46px; height: 68px; background: white; border-radius: 6px; border: 1px solid #bbb; margin-left: -12px; display: flex; flex-direction: column; justify-content: space-between; padding: 4px; font-weight: bold; font-size: 13px; box-shadow: -2px 0 6px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.1s ease; flex-shrink: 0; position: relative; z-index: 100; pointer-events: auto; }
+        .hand-card { width: 46px; height: 68px; background: white; border-radius: 6px; border: 1px solid #bbb; margin-left: -12px; display: flex; flex-direction: column; justify-content: space-between; padding: 4px; font-weight: bold; font-size: 13px; box-shadow: -2px 0 6px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.15s ease; flex-shrink: 0; position: relative; z-index: 100; pointer-events: auto; }
         .hand-card:first-child { margin-left: 0; }
         .hand-card:hover { transform: translateY(-12px); border-color: #34c759; z-index: 105; }
         .hand-card.red { color: #d03b29; }
@@ -112,9 +115,10 @@
             </div>
         </div>
 
+        <!-- لوحة النتائج العلوية اليسرى (الصليب) -->
         <div class="cross-score">
             <div></div><div id="score-top">0</div><div></div>
-            <div id="score-left">0</div><div style="color:#ffcc00">41</div><div id="score-right">0</div>
+            <div id="score-left">0</div><div style="color:#ffcc00; font-size:12px;">31</div><div id="score-right">0</div>
             <div></div><div id="score-bottom">0</div><div></div>
         </div>
 
@@ -158,6 +162,7 @@
                 <div class="bid-badge" id="bid-3">2 / 0</div>
             </div>
 
+            <!-- منطقة وسط الطاولة للكروت الأربعة -->
             <div class="center-trick" id="trick-area"></div>
         </div>
 
@@ -236,6 +241,7 @@
             renderTrick(data.current_trick);
             renderLastTrick(data.last_trick);
             renderHand(data.my_hand, data.current_turn === myIndex);
+            updateCrossScore(data.team_scores);
 
             if(data.state === 'BIDDING' && data.current_turn === myIndex) {
                 showBidModal(data.min_bid);
@@ -254,6 +260,15 @@
         });
 
         socket.on('error', (data) => alert(data.msg));
+
+        function updateCrossScore(teamScores) {
+            if(!teamScores) return;
+            // الفريق 0 (أنت وزميلك) والفريق 1 (الخصوم)
+            document.getElementById('score-bottom').innerText = teamScores[0];
+            document.getElementById('score-top').innerText = teamScores[0];
+            document.getElementById('score-left').innerText = teamScores[1];
+            document.getElementById('score-right').innerText = teamScores[1];
+        }
 
         function renderPlayers(players, turn) {
             players.forEach((p, idx) => {
