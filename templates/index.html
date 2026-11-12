@@ -57,7 +57,6 @@
         .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 1px 7px; border-radius: 8px; margin-top: 2px; max-width: 74px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #48484a; }
         .bid-badge { font-size: 10px; background: #000; color: #ffcc00; padding: 1px 7px; border-radius: 5px; font-weight: bold; margin-top: 2px; border: 1px solid #48484a; }
 
-        /* منطقة الكروت الـ 4 في الوسط */
         .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130px; height: 130px; z-index: 10; }
         .played-card { position: absolute; width: 42px; height: 58px; background: white; border-radius: 6px; border: 1px solid #bbb; display: flex; flex-direction: column; justify-content: space-between; padding: 3px 4px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.55); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
         .played-card.red { color: #d03b29; }
@@ -68,17 +67,7 @@
         .pos-2 { top: 0px; left: 50%; transform: translateX(-50%); }
         .pos-3 { right: 2px; top: 50%; transform: translateY(-50%); }
 
-        /* المرحلة 1: الكروت الأربعة تتلم على بعضها في منتصف الطاولة */
-        .gather-center {
-            top: 50% !important;
-            left: 50% !important;
-            bottom: auto !important;
-            right: auto !important;
-            transform: translate(-50%, -50%) rotate(8deg) scale(0.95) !important;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.8) !important;
-        }
-
-        /* المرحلة 2: الحزمة المتجمعة تطير نحو اللاعب اللي أكلها */
+        .gather-center { top: 50% !important; left: 50% !important; bottom: auto !important; right: auto !important; transform: translate(-50%, -50%) rotate(8deg) scale(0.95) !important; box-shadow: 0 6px 16px rgba(0,0,0,0.8) !important; }
         .fly-to-0 { top: 50% !important; left: 50% !important; transform: translate(-50%, 170px) scale(0.25) !important; opacity: 0 !important; }
         .fly-to-1 { top: 50% !important; left: 50% !important; transform: translate(-170px, -50%) scale(0.25) !important; opacity: 0 !important; }
         .fly-to-2 { top: 50% !important; left: 50% !important; transform: translate(-50%, -170px) scale(0.25) !important; opacity: 0 !important; }
@@ -86,8 +75,10 @@
 
         .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 25; }
         
+        /* إطالة مدة ظهور زر إعادة التوزيع وجعله مميزاً وبارزاً طوال فترة الطرح الأولية */
         .redeal-bar { margin-bottom: 6px; display: none; }
-        .redeal-btn { background: #ff3b30; color: white; border: 1.5px solid #fff; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(255,59,48,0.5); }
+        .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffcc00; padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.7); animation: pulse-btn 1.5s infinite; }
+        @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 74px; padding: 0 4px; overflow: hidden; }
         .hand-card { width: 42px; height: 66px; background: white; border-radius: 6px; border: 1px solid #999; display: flex; flex-direction: column; justify-content: space-between; padding: 3px 4px; font-weight: bold; font-size: 13px; box-shadow: -2px 0 5px rgba(0,0,0,0.35); cursor: pointer; transition: transform 0.12s ease; flex-shrink: 0; position: relative; }
@@ -98,7 +89,6 @@
         .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 0 8px; }
         .tricks-box { background: #000; padding: 5px 12px; border-radius: 8px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
 
-        /* نافذة مؤقت انتظار اللاعبين */
         #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(28,28,30,0.96); padding: 20px; border-radius: 18px; z-index: 180; border: 1px solid #48484a; width: 85%; max-width: 300px; text-align: center; box-shadow: 0 12px 35px rgba(0,0,0,0.9); }
         .timer-circle { width: 64px; height: 64px; border-radius: 50%; border: 4px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 22px; font-weight: bold; color: #ffcc00; margin: 12px auto; background: #161618; }
         .start-now-btn { background: #ffcc00; color: #000; border: none; padding: 10px 16px; border-radius: 10px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; margin-top: 10px; }
@@ -142,7 +132,7 @@
 
             <div class="room-center-info">
                 <div class="room-title" id="room-display">tripoli</div>
-                <div class="bids-counter" id="bids-status">الدورة 1 | الطلبات: 0 / 11</div>
+                <div class="bids-counter" id="bids-status">الدورة 1 | بدون طلبات</div>
             </div>
 
             <div class="last-trick-box">
@@ -161,7 +151,7 @@
                         <div class="won-pile" id="pile-2"></div>
                     </div>
                     <div class="player-name" id="name-2">في الانتظار..</div>
-                    <div class="bid-badge" id="bid-2">0 / 0</div>
+                    <div class="bid-badge" id="bid-2">-</div>
                 </div>
 
                 <div class="player-node node-left">
@@ -170,7 +160,7 @@
                         <div class="won-pile" id="pile-1"></div>
                     </div>
                     <div class="player-name" id="name-1">في الانتظار..</div>
-                    <div class="bid-badge" id="bid-1">0 / 0</div>
+                    <div class="bid-badge" id="bid-1">-</div>
                 </div>
 
                 <div class="player-node node-right">
@@ -179,7 +169,7 @@
                         <div class="won-pile" id="pile-3"></div>
                     </div>
                     <div class="player-name" id="name-3">في الانتظار..</div>
-                    <div class="bid-badge" id="bid-3">0 / 0</div>
+                    <div class="bid-badge" id="bid-3">-</div>
                 </div>
 
                 <div class="center-trick" id="trick-area"></div>
@@ -188,7 +178,7 @@
 
         <div class="bottom-section">
             <div class="redeal-bar" id="redeal-bar">
-                <button class="redeal-btn" onclick="requestRedeal()">🔄 طلب إعادة التوزيع (ورق ميت)</button>
+                <button class="redeal-btn" onclick="requestRedeal()">🔄 ورق ميت (إعادة توزيع)</button>
             </div>
 
             <div class="hand-cards-container" id="my-hand"></div>
@@ -196,7 +186,7 @@
             <div class="bottom-info">
                 <div class="tricks-box">
                     <span>أكلاتك:</span>
-                    <span id="my-tricks-count" style="color:#ffcc00; font-weight:bold;">0 / 0</span>
+                    <span id="my-tricks-count" style="color:#ffcc00; font-weight:bold;">0 / -</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; position:relative;">
                     <div class="won-pile bottom-won-pile" id="pile-0"></div>
@@ -206,7 +196,6 @@
             </div>
         </div>
 
-        <!-- نافذة مؤقت انتظار اللاعبين -->
         <div id="waiting-overlay">
             <h3 style="font-size:15px; color:#34c759;">في انتظار انضمام اللاعبين...</h3>
             <p id="joined-count-text" style="font-size:12px; color:#d1d1d6; margin-top:4px;">اللاعبون الحاليون: 1 / 4</p>
@@ -290,7 +279,6 @@
             currentTurnGlobal = data.current_turn;
             gameStateGlobal = data.state;
 
-            // إدارة نافذة مؤقت انتظار اللاعبين
             const waitBox = document.getElementById('waiting-overlay');
             if (!data.game_started) {
                 waitBox.style.display = 'block';
@@ -300,15 +288,20 @@
                 waitBox.style.display = 'none';
             }
 
-            document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
+            if (data.round_number === 1) {
+                document.getElementById('bids-status').innerText = `الدورة 1 | بدون طلبات (لعب حر)`;
+            } else {
+                document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
+            }
+            
+            // إطالة مدة ظهور زر إعادة التوزيع (يظهر طالما أن الشروط مطابقة ولم تُرمَ الورقة الأولى في الدورة الأولى، أو خلال مرحلة الطلبات في الدورات التالية)
             document.getElementById('redeal-bar').style.display = data.can_redeal ? 'block' : 'none';
 
-            renderPlayers(data.players, data.current_turn, data.dealer_idx);
+            renderPlayers(data.players, data.current_turn, data.dealer_idx, data.round_number);
             renderHand(data.my_hand);
             renderLastTrick(data.last_trick);
             updateCrossScore(data);
 
-            // عرض الكروت في الوسط + أنيميشن التجميع عند اكتمال الورقة الرابعة
             if (data.state === 'TRICK_PAUSE' && data.current_trick && data.current_trick.length === 4) {
                 if (!animatedThisTrick) {
                     animatedThisTrick = true;
@@ -316,13 +309,11 @@
 
                     let winnerUI = (data.trick_winner_idx - myIndex + 4) % 4;
 
-                    // 1. بعد 1.4 ثانية من رؤية الورقة الرابعة: الأربعة يتلمّون على بعض في الوسط
                     setTimeout(() => {
                         const cards = document.querySelectorAll('#trick-area .played-card');
                         cards.forEach(c => c.classList.add('gather-center'));
                     }, 1400);
 
-                    // 2. بعد 1.85 ثانية: الحزمة المجمعة تمشي للاعب الفائز بالأكلة
                     setTimeout(() => {
                         const cards = document.querySelectorAll('#trick-area .played-card');
                         cards.forEach(c => {
@@ -358,7 +349,7 @@
             });
         }
 
-        function renderPlayers(players, turn, dealerIdx) {
+        function renderPlayers(players, turn, dealerIdx, roundNum) {
             for (let ui = 0; ui < 4; ui++) {
                 let realIdx = (ui + myIndex) % 4;
                 const p = players[realIdx];
@@ -369,15 +360,17 @@
 
                 if (!p) {
                     if(nameEl) nameEl.innerText = "في الانتظار..";
-                    if(bidEl) bidEl.innerText = "- / -";
+                    if(bidEl) bidEl.innerText = "-";
                     continue;
                 }
 
                 if(nameEl) nameEl.innerText = p.name;
-                if(bidEl) bidEl.innerText = `${p.tricks_won} / ${p.bid}`;
+                if(bidEl) {
+                    bidEl.innerText = roundNum === 1 ? `${p.tricks_won}` : `${p.tricks_won} / ${p.bid}`;
+                }
 
                 if(ui === 0) {
-                    document.getElementById('my-tricks-count').innerText = `${p.tricks_won} / ${p.bid}`;
+                    document.getElementById('my-tricks-count').innerText = roundNum === 1 ? `${p.tricks_won}` : `${p.tricks_won} / ${p.bid}`;
                 }
 
                 if(pileEl) {
