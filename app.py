@@ -74,21 +74,18 @@ class TarneebRoom:
             bot_count += 1
 
     def check_redeal_eligibility(self, player_idx):
-        # لا ينطبق على أول توزيع في اللعبة
         if self.round_number <= 1 or self.state != 'BIDDING' or self.bids_collected > 0:
             return False
         hand = self.players[player_idx]['hand']
         if len(hand) != 13:
             return False
         
-        # 1. 7 كروت من نفس النوع
         suit_counts = {s: 0 for s in SUITS}
         for c in hand:
             suit_counts[c['suit']] += 1
         if any(count >= 7 for count in suit_counts.values()):
             return True
             
-        # 2. ملك القلب الأحمر وحيد دون أي كرت قلب أحمر آخر
         hearts = [c for c in hand if c['suit'] == 'Hearts']
         if len(hearts) == 1 and hearts[0]['rank'] == 'K':
             return True
@@ -131,7 +128,6 @@ class TarneebRoom:
         if player_idx == self.dealer_idx:
             needed = 11 - self.total_bids
             if needed > 0:
-                # الموزع يتحمل الفرق إجبارياً ولا يحق له طلب صفر إذا كان هناك نقص
                 if bid_val < needed:
                     bid_val = needed
             else:
@@ -154,7 +150,6 @@ class TarneebRoom:
     def validate_card_play(self, player_idx, card):
         p = self.players[player_idx]
         
-        # أول ورقة بعد التوزيع في كل دورة ممنوع تكون قلب أحمر (إلا إذا كانت اليد كلها قلوب)
         if not self.round_first_card_played and card['suit'] == 'Hearts':
             if not all(c['suit'] == 'Hearts' for c in p['hand']):
                 return False, "ممنوع تنزل قلب أحمر كأول ورقة بعد التوزيع!"
@@ -183,21 +178,22 @@ class TarneebRoom:
             return None
 
     def resolve_trick(self):
-        # فحص التقاء ملك القلب الأحمر (K Hearts) مع 1 القلب الأحمر (A Hearts)
-        king_owner = None
-        ace_owner = None
-        for play in self.current_trick:
-            if play['card']['suit'] == 'Hearts':
-                if play['card']['rank'] == 'K':
-                    king_owner = play['player_idx']
-                elif play['card']['rank'] == 'A':
-                    ace_owner = play['player_idx']
+        # قانون الكينج والآس (K♥ و A♥): مفعل فقط ابتداءً من الدورة الثانية (round_number > 1)
+        if self.round_number > 1:
+            king_owner = None
+            ace_owner = None
+            for play in self.current_trick:
+                if play['card']['suit'] == 'Hearts':
+                    if play['card']['rank'] == 'K':
+                        king_owner = play['player_idx']
+                    elif play['card']['rank'] == 'A':
+                        ace_owner = play['player_idx']
 
-        if king_owner is not None and ace_owner is not None:
-            self.players[king_owner]['score'] -= 5
-            self.players[king_owner]['king_ace_delta'] -= 5
-            self.players[ace_owner]['score'] += 5
-            self.players[ace_owner]['king_ace_delta'] += 5
+            if king_owner is not None and ace_owner is not None:
+                self.players[king_owner]['score'] -= 5
+                self.players[king_owner]['king_ace_delta'] -= 5
+                self.players[ace_owner]['score'] += 5
+                self.players[ace_owner]['king_ace_delta'] += 5
 
         winning_play = self.current_trick[0]
         for play in self.current_trick[1:]:
@@ -273,7 +269,6 @@ class TarneebRoom:
                     reason = "خسر الكبسة 13 (خسارة فورية!)"
                     instant_loser = p['name']
             else:
-                # 2, 3, 4, 5 (أو أي طلب آخر إجباري للموزع)
                 if won >= bid:
                     round_pts = bid
                     reason = f"حقق طلبه {bid} (+{bid})"
@@ -340,11 +335,20 @@ def on_join(data):
 def on_start(data):
     room = ROOMS.get(data.get('room'))
     if room and not room.game_started:
-        room.fill_with_bots()
-        room.game_started = True
-        room.start_new_round(increment_round=True)
-        broadcast_state(room)
-        socketio.start_background_task(run_bots_async, room)
+        # الانتظار لمدة 30 ثانية أو لحين اكتمال الـ 4 لاعبين حقيقيين
+        def wait_and_start():
+            elapsed = 0
+            while elapsed < 30 and len(room.players) < 4 and not any(p['is_bot'] for p in room.players):
+                socketio.sleep(1)
+                elapsed += 1
+            if not room.game_started:
+                room.fill_with_bots()
+                room.game_started = True
+                room.start_new_round(increment_round=True)
+                broadcast_state(room)
+                socketio.start_background_task(run_bots_async, room)
+
+        socketio.start_background_task(wait_and_start)
 
 @socketio.on('request_redeal')
 def on_redeal(data):
