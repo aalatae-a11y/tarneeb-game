@@ -7,84 +7,83 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background: #1c1c1e; color: white; height: 100dvh; width: 100vw; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        body { background: #1c1c1e; color: white; height: 100vh; height: 100dvh; width: 100vw; overflow: hidden; display: flex; justify-content: center; align-items: center; position: fixed; }
 
-        #login-box { padding: 25px; background: #2c2c2e; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); text-align: right; width: 90%; max-width: 350px; z-index: 100; border: 1px solid #3a3a3c; }
-        #login-box h2 { text-align: center; margin-bottom: 20px; color: #34c759; font-size: 22px; }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #8e8e93; }
-        input { padding: 12px; font-size: 15px; border-radius: 10px; border: 1px solid #3a3a3c; width: 100%; background: #1c1c1e; color: white; }
-        button.login-btn { padding: 14px; font-size: 16px; border-radius: 10px; border: none; width: 100%; background: #34c759; color: white; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        #login-box { padding: 20px; background: #2c2c2e; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); text-align: right; width: 90%; max-width: 330px; z-index: 100; border: 1px solid #3a3a3c; }
+        #login-box h2 { text-align: center; margin-bottom: 15px; color: #34c759; font-size: 20px; }
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; font-size: 12px; margin-bottom: 4px; color: #8e8e93; }
+        input { padding: 10px; font-size: 14px; border-radius: 8px; border: 1px solid #3a3a3c; width: 100%; background: #1c1c1e; color: white; }
+        button.login-btn { padding: 12px; font-size: 15px; border-radius: 8px; border: none; width: 100%; background: #34c759; color: white; cursor: pointer; font-weight: bold; margin-top: 8px; }
 
-        #game-board { display: none; width: 100vw; height: 100dvh; position: relative; background: #1c1c1e; flex-direction: column; justify-content: space-between; align-items: center; overflow: hidden; padding-bottom: 5px; }
+        #game-board { display: none; width: 100vw; height: 100vh; height: 100dvh; position: relative; background: #1c1c1e; flex-direction: column; justify-content: space-between; align-items: center; overflow: hidden; padding: 4px 0; }
 
-        .header-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; z-index: 20; }
-        .header-icons { display: flex; gap: 12px; align-items: center; }
-        .icon-btn { font-size: 18px; color: #8e8e93; cursor: pointer; }
+        .header-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; z-index: 20; flex-shrink: 0; }
+        .header-icons { display: flex; gap: 10px; align-items: center; }
+        .icon-btn { font-size: 16px; color: #8e8e93; cursor: pointer; }
 
-        /* لوحة النتائج الصليب */
-        .cross-score { position: absolute; top: 48px; left: 15px; background: rgba(0,0,0,0.85); border-radius: 8px; padding: 6px; display: grid; grid-template-columns: repeat(3, 22px); grid-template-rows: repeat(3, 22px); gap: 2px; text-align: center; font-size: 11px; font-weight: bold; z-index: 15; border: 1px solid #333; }
+        /* لوحة النتائج الفردية الصليب (اللاعبين الأربعة) */
+        .cross-score { position: absolute; top: 38px; left: 10px; background: rgba(0,0,0,0.9); border-radius: 8px; padding: 4px; display: grid; grid-template-columns: repeat(3, 24px); grid-template-rows: repeat(3, 24px); gap: 2px; text-align: center; font-size: 10px; font-weight: bold; z-index: 15; border: 1px solid #444; }
         .cross-score div { display: flex; justify-content: center; align-items: center; }
 
-        .last-trick-box { position: absolute; top: 48px; right: 15px; background: rgba(0,0,0,0.85); border: 1px solid #444; border-radius: 8px; padding: 5px; width: 65px; height: 65px; z-index: 15; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .last-trick-title { font-size: 8px; color: #aaa; margin-bottom: 2px; }
-        .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
-        .mini-card { width: 22px; height: 30px; background: white; border-radius: 2px; font-size: 8px; font-weight: bold; display: flex; justify-content: center; align-items: center; }
+        .last-trick-box { position: absolute; top: 38px; right: 10px; background: rgba(0,0,0,0.9); border: 1px solid #444; border-radius: 8px; padding: 4px; width: 60px; height: 60px; z-index: 15; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .last-trick-title { font-size: 7px; color: #aaa; margin-bottom: 2px; }
+        .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; }
+        .mini-card { width: 20px; height: 26px; background: white; border-radius: 2px; font-size: 7px; font-weight: bold; display: flex; justify-content: center; align-items: center; }
         .mini-card.red { color: #d03b29; }
         .mini-card.black { color: #000; }
 
-        .table-container { position: relative; width: 90%; height: 50dvh; margin-top: 5px; border: 6px solid #d1d1d6; border-radius: 32px; background: #24a148; box-shadow: inset 0 0 25px rgba(0,0,0,0.7); flex-shrink: 0; }
+        .table-container { position: relative; width: 94%; height: 46vh; margin: 2px auto; border: 4px solid #d1d1d6; border-radius: 24px; background: #24a148; box-shadow: inset 0 0 20px rgba(0,0,0,0.7); flex-shrink: 0; }
 
         .player-node { position: absolute; display: flex; flex-direction: column; align-items: center; z-index: 10; }
-        .node-top { top: -38px; left: 50%; transform: translateX(-50%); }
-        .node-left { left: -32px; top: 40%; transform: translateY(-50%); }
-        .node-right { right: -32px; top: 40%; transform: translateY(-50%); }
+        .node-top { top: -32px; left: 50%; transform: translateX(-50%); }
+        .node-left { left: -26px; top: 40%; transform: translateY(-50%); }
+        .node-right { right: -26px; top: 40%; transform: translateY(-50%); }
 
         .avatar-container { position: relative; display: flex; align-items: center; }
-        .avatar-circle { width: 52px; height: 52px; border-radius: 50%; background: #636366; border: 3px solid #ffcc00; display: flex; justify-content: center; align-items: center; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .avatar-circle { width: 44px; height: 44px; border-radius: 50%; background: #636366; border: 2px solid #ffcc00; display: flex; justify-content: center; align-items: center; position: relative; box-shadow: 0 3px 8px rgba(0,0,0,0.5); font-size: 16px; }
         
-        .won-pile { position: absolute; width: 26px; height: 36px; background: #c72c2c; border: 1px solid #fff; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); display: none; }
-        .node-top .won-pile { right: -32px; top: 10px; }
-        .node-left .won-pile { right: -32px; top: 10px; }
-        .node-right .won-pile { left: -32px; top: 10px; }
-        .bottom-won-pile { position: absolute; left: -35px; top: 5px; width: 26px; height: 36px; background: #c72c2c; border: 1px solid #fff; border-radius: 4px; display: none; }
+        .won-pile { position: absolute; width: 22px; height: 32px; background: #c72c2c; border: 1px solid #fff; border-radius: 3px; display: none; }
+        .node-top .won-pile { right: -26px; top: 8px; }
+        .node-left .won-pile { right: -26px; top: 8px; }
+        .node-right .won-pile { left: -26px; top: 8px; }
+        .bottom-won-pile { position: absolute; left: -30px; top: 4px; width: 22px; height: 32px; background: #c72c2c; border: 1px solid #fff; border-radius: 3px; display: none; }
 
-        .fan-cards { position: absolute; top: -14px; width: 50px; height: 25px; z-index: -1; }
-        .fan-card-back { position: absolute; width: 12px; height: 20px; background: #c72c2c; border: 1px solid #fff; border-radius: 2px; transform-origin: bottom center; }
+        .fan-cards { position: absolute; top: -12px; width: 40px; height: 20px; z-index: -1; }
+        .fan-card-back { position: absolute; width: 10px; height: 16px; background: #c72c2c; border: 1px solid #fff; border-radius: 2px; transform-origin: bottom center; }
 
-        .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 2px 8px; border-radius: 10px; margin-top: 2px; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #444; }
-        .bid-badge { font-size: 10px; background: #000; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-top: 2px; border: 1px solid #444; }
+        .player-name { font-size: 9px; background: rgba(0,0,0,0.85); padding: 1px 6px; border-radius: 8px; margin-top: 1px; max-width: 75px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #444; }
+        .bid-badge { font-size: 9px; background: #000; color: #fff; padding: 1px 6px; border-radius: 4px; font-weight: bold; margin-top: 1px; border: 1px solid #444; }
 
-        /* منطقة وسط الطاولة وحركة الكروت */
-        .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130px; height: 130px; z-index: 5; }
-        .played-card { position: absolute; width: 44px; height: 60px; background: white; border-radius: 6px; border: 1px solid #ccc; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; font-size: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: all 0.3s ease-in-out; }
+        /* منطقة وسط الطاولة */
+        .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 120px; height: 120px; z-index: 5; }
+        .played-card { position: absolute; width: 40px; height: 56px; background: white; border-radius: 5px; border: 1px solid #ccc; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; font-size: 11px; box-shadow: 0 3px 8px rgba(0,0,0,0.4); }
         .played-card.red { color: #d03b29; }
         .played-card.black { color: #1c1c1e; }
 
-        /* مواقع الكروت الأربعة في الوسط بوضوح تام */
-        .pos-0 { bottom: 0px; left: 50%; transform: translateX(-50%); }
-        .pos-1 { left: 5px; top: 50%; transform: translateY(-50%); }
-        .pos-2 { top: 0px; left: 50%; transform: translateX(-50%); }
-        .pos-3 { right: 5px; top: 50%; transform: translateY(-50%); }
+        .pos-0 { bottom: 2px; left: 50%; transform: translateX(-50%); }
+        .pos-1 { left: 2px; top: 50%; transform: translateY(-50%); }
+        .pos-2 { top: 2px; left: 50%; transform: translateX(-50%); }
+        .pos-3 { right: 2px; top: 50%; transform: translateY(-50%); }
 
-        .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 20; padding-bottom: 5px; }
-        .hand-cards-container { display: flex; justify-content: center; width: 98%; padding: 4px 0; overflow-x: auto; min-height: 80px; }
+        .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 20; padding-bottom: 4px; flex-shrink: 0; }
+        .hand-cards-container { display: flex; justify-content: center; width: 98%; padding: 2px 0; overflow-x: auto; min-height: 72px; }
         
-        .hand-card { width: 46px; height: 68px; background: white; border-radius: 6px; border: 1px solid #bbb; margin-left: -12px; display: flex; flex-direction: column; justify-content: space-between; padding: 4px; font-weight: bold; font-size: 13px; box-shadow: -2px 0 6px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.15s ease; flex-shrink: 0; position: relative; z-index: 100; pointer-events: auto; }
+        .hand-card { width: 42px; height: 62px; background: white; border-radius: 5px; border: 1px solid #bbb; margin-left: -10px; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; font-size: 12px; box-shadow: -2px 0 5px rgba(0,0,0,0.3); cursor: pointer; transition: transform 0.1s ease; flex-shrink: 0; position: relative; z-index: 100; pointer-events: auto; }
         .hand-card:first-child { margin-left: 0; }
-        .hand-card:hover { transform: translateY(-12px); border-color: #34c759; z-index: 105; }
+        .hand-card:hover { transform: translateY(-10px); border-color: #34c759; z-index: 105; }
         .hand-card.red { color: #d03b29; }
         .hand-card.black { color: #1c1c1e; }
 
-        .bottom-info { width: 92%; display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
-        .tricks-box { background: #000; padding: 6px 14px; border-radius: 8px; font-size: 11px; display: flex; gap: 10px; border: 1px solid #333; }
+        .bottom-info { width: 94%; display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+        .tricks-box { background: #000; padding: 4px 10px; border-radius: 6px; font-size: 10px; display: flex; gap: 8px; border: 1px solid #333; }
 
-        #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2c2c2e; padding: 15px; border-radius: 16px; z-index: 100; border: 1px solid #3a3a3c; width: 240px; text-align: center; }
-        #bid-modal h3 { font-size: 14px; margin-bottom: 12px; color: white; }
-        .bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-        .bid-btn { background: #ffcc00; color: #000; border: none; border-radius: 8px; padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer; }
+        #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2c2c2e; padding: 12px; border-radius: 14px; z-index: 100; border: 1px solid #3a3a3c; width: 230px; text-align: center; }
+        #bid-modal h3 { font-size: 13px; margin-bottom: 10px; color: white; }
+        .bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+        .bid-btn { background: #ffcc00; color: #000; border: none; border-radius: 6px; padding: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
 
-        #round-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2c2c2e; padding: 20px; border-radius: 16px; z-index: 100; border: 1px solid #3a3a3c; text-align: center; width: 260px; }
+        #round-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2c2c2e; padding: 15px; border-radius: 14px; z-index: 100; border: 1px solid #3a3a3c; text-align: center; width: 250px; }
     </style>
 </head>
 <body>
@@ -108,24 +107,24 @@
                 <span class="icon-btn">💬</span>
                 <span class="icon-btn">👤+</span>
             </div>
-            <div style="font-weight: bold; font-size: 14px;" id="room-display">400</div>
+            <div style="font-weight: bold; font-size: 13px;" id="room-display">tripoli</div>
             <div class="header-icons">
                 <span class="icon-btn">📻</span>
                 <span class="icon-btn">☰</span>
             </div>
         </div>
 
-        <!-- لوحة النتائج العلوية اليسرى (الصليب) -->
+        <!-- لوحة النتائج الفردية (الصليب): أعلى(2)، يسار(1)، يمين(3)، أسفل(0) -->
         <div class="cross-score">
             <div></div><div id="score-top">0</div><div></div>
-            <div id="score-left">0</div><div style="color:#ffcc00; font-size:12px;">31</div><div id="score-right">0</div>
+            <div id="score-left">0</div><div style="color:#ffcc00; font-size:11px;">31</div><div id="score-right">0</div>
             <div></div><div id="score-bottom">0</div><div></div>
         </div>
 
         <div class="last-trick-box">
             <div class="last-trick-title">آخر أكلة</div>
             <div class="mini-cards-grid" id="last-trick-cards">
-                <div style="font-size:8px; color:#777; grid-column: span 2; text-align:center;">لا توجد</div>
+                <div style="font-size:7px; color:#777; grid-column: span 2; text-align:center;">لا توجد</div>
             </div>
         </div>
 
@@ -162,7 +161,7 @@
                 <div class="bid-badge" id="bid-3">2 / 0</div>
             </div>
 
-            <!-- منطقة وسط الطاولة للكروت الأربعة -->
+            <!-- وسط الطاولة -->
             <div class="center-trick" id="trick-area"></div>
         </div>
 
@@ -171,12 +170,12 @@
             <div class="bottom-info">
                 <div class="tricks-box">
                     <span>أكلات</span>
-                    <span id="my-tricks-count" style="color:#ffcc00; font-weight:bold;">0 / 5</span>
+                    <span id="my-tricks-count" style="color:#ffcc00; font-weight:bold;">0 / 2</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px; position:relative;">
+                <div style="display:flex; align-items:center; gap:6px; position:relative;">
                     <div class="won-pile bottom-won-pile" id="pile-0"></div>
                     <div class="player-name" id="name-0" style="background:none; border:none;">أنت</div>
-                    <div class="avatar-circle" style="width:42px; height:42px;" id="avatar-0">👤</div>
+                    <div class="avatar-circle" style="width:38px; height:38px; font-size:14px;" id="avatar-0">👤</div>
                 </div>
             </div>
         </div>
@@ -187,9 +186,9 @@
         </div>
 
         <div id="round-modal">
-            <h3 id="round-title" style="color:#34c759; margin-bottom:10px;">انتهى الشوط</h3>
-            <p id="round-desc" style="font-size:12px; margin-bottom:15px;"></p>
-            <button onclick="nextRound()" style="background:#34c759; border:none; padding:8px 16px; color:white; border-radius:8px; font-weight:bold;">متابعة</button>
+            <h3 id="round-title" style="color:#34c759; margin-bottom:8px;">انتهى الشوط</h3>
+            <p id="round-desc" style="font-size:11px; margin-bottom:12px;"></p>
+            <button onclick="nextRound()" style="background:#34c759; border:none; padding:8px 14px; color:white; border-radius:6px; font-weight:bold;">متابعة</button>
         </div>
     </div>
 
@@ -241,7 +240,6 @@
             renderTrick(data.current_trick);
             renderLastTrick(data.last_trick);
             renderHand(data.my_hand, data.current_turn === myIndex);
-            updateCrossScore(data.team_scores);
 
             if(data.state === 'BIDDING' && data.current_turn === myIndex) {
                 showBidModal(data.min_bid);
@@ -261,15 +259,6 @@
 
         socket.on('error', (data) => alert(data.msg));
 
-        function updateCrossScore(teamScores) {
-            if(!teamScores) return;
-            // الفريق 0 (أنت وزميلك) والفريق 1 (الخصوم)
-            document.getElementById('score-bottom').innerText = teamScores[0];
-            document.getElementById('score-top').innerText = teamScores[0];
-            document.getElementById('score-left').innerText = teamScores[1];
-            document.getElementById('score-right').innerText = teamScores[1];
-        }
-
         function renderPlayers(players, turn) {
             players.forEach((p, idx) => {
                 let UI_idx = (idx - myIndex + 4) % 4;
@@ -282,8 +271,16 @@
                 if(nameEl) nameEl.innerText = p.name;
                 if(bidEl) bidEl.innerText = `${p.tricks_won} / ${p.bid}`;
 
+                // تحديث لوحة النتائج الفردية (الصليب) حسب مواقع واجهة المستخدم
                 if(UI_idx === 0) {
+                    document.getElementById('score-bottom').innerText = p.score;
                     document.getElementById('my-tricks-count').innerText = `${p.tricks_won} / ${p.bid}`;
+                } else if(UI_idx === 1) {
+                    document.getElementById('score-left').innerText = p.score;
+                } else if(UI_idx === 2) {
+                    document.getElementById('score-top').innerText = p.score;
+                } else if(UI_idx === 3) {
+                    document.getElementById('score-right').innerText = p.score;
                 }
 
                 if(pileEl) {
@@ -297,7 +294,7 @@
                 if(avatarEl) {
                     if(idx === turn) {
                         avatarEl.style.borderColor = '#34c759';
-                        avatarEl.style.boxShadow = '0 0 10px #34c759';
+                        avatarEl.style.boxShadow = '0 0 8px #34c759';
                     } else {
                         avatarEl.style.borderColor = '#ffcc00';
                         avatarEl.style.boxShadow = 'none';
@@ -355,7 +352,7 @@
             container.innerHTML = '';
 
             if(!lastTrick || lastTrick.length === 0) {
-                container.innerHTML = `<div style="font-size:8px; color:#777; grid-column: span 2; text-align:center;">لا توجد</div>`;
+                container.innerHTML = `<div style="font-size:7px; color:#777; grid-column: span 2; text-align:center;">لا توجد</div>`;
                 return;
             }
 
@@ -376,19 +373,14 @@
             opts.innerHTML = '';
             modal.style.display = 'block';
 
-            let b0 = document.createElement('button');
-            b0.className = 'bid-btn'; b0.innerText = '0';
-            b0.onclick = () => submitBid(0);
-            opts.appendChild(b0);
-
-            let startBid = (minBid > 2) ? minBid : 2;
-            for(let i = startBid; i <= 13; i++) {
-                if(i === 6 || i === 8 || i === 10 || i === 11 || i === 12) continue;
+            // أزرار الطلبات الفردية حسب القانون الجديد
+            let bids = [2, 3, 4, 5, 7, 9, 13, 0];
+            bids.forEach(bVal => {
                 let b = document.createElement('button');
-                b.className = 'bid-btn'; b.innerText = i;
-                b.onclick = () => submitBid(i);
+                b.className = 'bid-btn'; b.innerText = bVal;
+                b.onclick = () => submitBid(bVal);
                 opts.appendChild(b);
-            }
+            });
         }
 
         function submitBid(val) {
