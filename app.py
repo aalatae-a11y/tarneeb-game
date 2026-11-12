@@ -106,16 +106,22 @@ class TarneebRoom:
             p['won_cards_count'] = 0
             p['king_ace_delta'] = 0
         
-        self.state = 'BIDDING'
         self.total_bids = 0
         self.bids_collected = 0
-        self.current_turn = (self.dealer_idx + 1) % 4
         self.trick_lead_suit = None
         self.current_trick = []
         self.last_completed_trick = []
         self.round_first_card_played = False
         self.round_summary = []
         self.trick_winner_idx = None
+
+        # الدورة الأولى بدون طلبات: الدخول مباشرة للعب أونلاين
+        if self.round_number == 1:
+            self.state = 'PLAYING'
+            self.current_turn = (self.dealer_idx + 1) % 4
+        else:
+            self.state = 'BIDDING'
+            self.current_turn = (self.dealer_idx + 1) % 4
 
     def get_dealer_min_bid(self, player_idx):
         min_b = get_min_bid(self.players[player_idx]['score'])
@@ -166,7 +172,6 @@ class TarneebRoom:
         return True, "ناجح"
 
     def play_card_step1(self, player_idx, card):
-        """ينزل الورقة فقط. إذا كانت الرابعة، يبقيها ظاهرة ويدخل في حالة TRICK_PAUSE"""
         p = self.players[player_idx]
         p['hand'] = [c for c in p['hand'] if not (c['suit'] == card['suit'] and c['rank'] == card['rank'])]
         
@@ -177,7 +182,6 @@ class TarneebRoom:
         self.round_first_card_played = True
 
         if len(self.current_trick) == 4:
-            # حساب الفائز بالأكلة لتمريره للواجهة من أجل الأنيميشن
             winning_play = self.current_trick[0]
             for play in self.current_trick[1:]:
                 curr_c = play['card']
@@ -189,13 +193,12 @@ class TarneebRoom:
             
             self.trick_winner_idx = winning_play['player_idx']
             self.state = 'TRICK_PAUSE'
-            return True # الأكلة اكتملت وتحتاج وقفة ثانيتين
+            return True
         else:
             self.current_turn = (self.current_turn + 1) % 4
             return False
 
     def finalize_trick_step2(self):
-        """يُستدعى بعد مرور الثانيتين لمسح الأكلة واحتساب النقاط"""
         if self.state != 'TRICK_PAUSE' or len(self.current_trick) != 4:
             return
 
@@ -248,43 +251,48 @@ class TarneebRoom:
             round_pts = 0
             reason = ""
 
-            if bid == 0:
-                if won == 0:
-                    round_pts = 5
-                    reason = "نجح في الصفر (+5)"
-                else:
-                    round_pts = -5
-                    reason = f"خسر الصفر بأكل {won} (-5)"
-            elif bid == 7:
-                if won >= 7:
-                    round_pts = 14
-                    reason = "حقق طلب 7 (+14)"
-                else:
-                    round_pts = -14
-                    reason = "كسر طلب 7 (-14)"
-            elif bid == 9:
-                if won >= 9:
-                    round_pts = 27
-                    reason = "حقق طلب 9 (+27)"
-                else:
-                    round_pts = -27
-                    reason = "كسر طلب 9 (-27)"
-            elif bid == 13:
-                if won == 13:
-                    round_pts = 31
-                    reason = "حقق الكبسة 13 (فوز فوري!)"
-                    instant_winner = p['name']
-                else:
-                    round_pts = -31
-                    reason = "خسر الكبسة 13 (خسارة فورية!)"
-                    instant_loser = p['name']
+            # الدورة الأولى ليس فيها طلبات، تحسب النقاط حسب الأكلات مباشرة (كل أكلة بنقطة أو حسب رغبتكم، هنا نحتسب أكلات الدورة الأولى كمجموع نقاط أو أكلات)
+            if self.round_number == 1:
+                round_pts = won
+                reason = f"أكل {won} أكلات (+{won})"
             else:
-                if won >= bid:
-                    round_pts = bid
-                    reason = f"حقق طلبه {bid} (+{bid})"
+                if bid == 0:
+                    if won == 0:
+                        round_pts = 5
+                        reason = "نجح في الصفر (+5)"
+                    else:
+                        round_pts = -5
+                        reason = f"خسر الصفر بأكل {won} (-5)"
+                elif bid == 7:
+                    if won >= 7:
+                        round_pts = 14
+                        reason = "حقق طلب 7 (+14)"
+                    else:
+                        round_pts = -14
+                        reason = "كسر طلب 7 (-14)"
+                elif bid == 9:
+                    if won >= 9:
+                        round_pts = 27
+                        reason = "حقق طلب 9 (+27)"
+                    else:
+                        round_pts = -27
+                        reason = "كسر طلب 9 (-27)"
+                elif bid == 13:
+                    if won == 13:
+                        round_pts = 31
+                        reason = "حقق الكبسة 13 (فوز فوري!)"
+                        instant_winner = p['name']
+                    else:
+                        round_pts = -31
+                        reason = "خسر الكبسة 13 (خسارة فورية!)"
+                        instant_loser = p['name']
                 else:
-                    round_pts = -bid
-                    reason = f"كسر طلبه {bid} (-{bid})"
+                    if won >= bid:
+                        round_pts = bid
+                        reason = f"حقق طلبه {bid} (+{bid})"
+                    else:
+                        round_pts = -bid
+                        reason = f"كسر طلبه {bid} (-{bid})"
 
             p['score'] += round_pts
             total_round_change = round_pts + ka_delta
@@ -295,7 +303,7 @@ class TarneebRoom:
 
             self.round_summary.append({
                 'name': p['name'],
-                'bid': bid,
+                'bid': bid if self.round_number > 1 else '-',
                 'won': won,
                 'change': total_round_change,
                 'total': p['score'],
@@ -339,7 +347,6 @@ def on_join(data):
         emit('error', {'msg': 'الغرفة مكتملة!'})
         return
     
-    # إذا اكتمل 4 لاعبين حقيقيين، ابدأ فوراً بدون انتظار
     if len(room.players) == 4 and not room.game_started:
         room.game_started = True
         room.waiting_timer_running = False
@@ -350,7 +357,6 @@ def on_join(data):
 
     broadcast_state(room)
 
-    # تشغيل مؤقت الانتظار 30 ثانية مرة واحدة للغرفة
     if not room.game_started and not room.waiting_timer_running:
         room.waiting_timer_running = True
         room.wait_seconds_left = 30
@@ -437,7 +443,6 @@ def on_play_card(data):
                 socketio.start_background_task(run_bots_async, room)
 
 def handle_trick_pause_and_continue(room):
-    # السيرفر يبقي الكروت الأربعة ظاهرة للجميع لمدة 2.3 ثانية (ثانيتين للرؤية + 0.3 للانيميشن)
     socketio.sleep(2.3)
     room.finalize_trick_step2()
     broadcast_state(room)
@@ -464,7 +469,6 @@ def run_bots_async(room):
                 trick_done = room.play_card_step1(p_idx, chosen)
                 broadcast_state(room)
                 if trick_done:
-                    # البوت يتوقف فوراً لأن الأكلة اكتملت، وتستلم مهمة التوقيت الدفة
                     handle_trick_pause_and_continue(room)
                     break
         else:
@@ -505,7 +509,7 @@ def broadcast_state(room):
                 'players': [{
                     'name': x['name'], 
                     'score': x['score'], 
-                    'bid': x['bid'], 
+                    'bid': x['bid'] if room.round_number > 1 else '-', 
                     'tricks_won': x['tricks_won'], 
                     'won_cards_count': x['won_cards_count'],
                     'is_bot': x['is_bot'], 
