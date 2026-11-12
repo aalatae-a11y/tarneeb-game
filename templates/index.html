@@ -16,19 +16,24 @@
         input { padding: 12px; font-size: 15px; border-radius: 10px; border: 1px solid #3a3a3c; width: 100%; background: #161618; color: white; outline: none; }
         button.login-btn { padding: 14px; font-size: 16px; border-radius: 10px; border: none; width: 100%; background: #34c759; color: white; cursor: pointer; font-weight: bold; margin-top: 8px; }
 
+        /* الحاوية الرئيسية مقفلة 100% على أبعاد الشاشة بدون أي Scroll */
         #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 6px 8px 10px 8px; overflow: hidden; }
 
+        /* الشريط العلوي */
         .top-hud { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; height: 74px; flex-shrink: 0; z-index: 20; }
 
+        /* لوحة النتائج الفردية لكل لاعب (الصليب) */
         .cross-score { background: rgba(0,0,0,0.85); border-radius: 10px; padding: 4px 6px; display: grid; grid-template-columns: repeat(3, 24px); grid-template-rows: repeat(3, 20px); gap: 1px; text-align: center; font-size: 11px; font-weight: bold; border: 1px solid #38383a; }
         .cross-score div { display: flex; justify-content: center; align-items: center; }
         .sc-me { color: #34c759; }
         .sc-other { color: #ffffff; }
 
+        /* معلومات الغرفة والطلبات في المنتصف العلوي */
         .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; }
         .room-title { font-weight: bold; font-size: 14px; color: #f2f2f7; background: #2c2c2e; padding: 3px 12px; border-radius: 12px; border: 1px solid #3a3a3c; }
         .bids-counter { font-size: 11px; color: #ffcc00; font-weight: bold; background: rgba(0,0,0,0.7); padding: 2px 10px; border-radius: 8px; }
 
+        /* آخر أكلة */
         .last-trick-box { background: rgba(0,0,0,0.85); border: 1px solid #38383a; border-radius: 10px; padding: 4px; width: 68px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .last-trick-title { font-size: 9px; color: #aeaeb2; margin-bottom: 2px; }
         .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
@@ -36,6 +41,7 @@
         .mini-card.red { color: #d03b29; }
         .mini-card.black { color: #1c1c1e; }
 
+        /* طاولة اللعب الخضراء */
         .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 18px 22px; min-height: 0; }
         .table-container { position: relative; width: 100%; height: 100%; max-width: 440px; border: 5px solid #d1d1d6; border-radius: 30px; background: radial-gradient(circle, #28b450 0%, #1d883b 100%); box-shadow: inset 0 0 25px rgba(0,0,0,0.65); }
 
@@ -48,6 +54,7 @@
         .avatar-circle { width: 44px; height: 44px; border-radius: 50%; background: #48484a; border: 3px solid #ffcc00; display: flex; justify-content: center; align-items: center; font-size: 18px; box-shadow: 0 3px 8px rgba(0,0,0,0.6); transition: all 0.2s; }
         .dealer-tag { position: absolute; bottom: -2px; right: -4px; background: #ff3b30; color: white; font-size: 8px; font-weight: bold; padding: 1px 4px; border-radius: 6px; border: 1px solid white; }
         
+        /* أكداس الأكلات على الطاولة */
         .won-pile { position: absolute; width: 22px; height: 30px; background: repeating-linear-gradient(45deg, #c72c2c, #c72c2c 3px, #a31f1f 3px, #a31f1f 6px); border: 1.5px solid #fff; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: none; }
         .node-top .won-pile { right: -26px; top: 6px; }
         .node-left .won-pile { right: -26px; top: 6px; }
@@ -57,6 +64,7 @@
         .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 1px 7px; border-radius: 8px; margin-top: 2px; max-width: 74px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #48484a; }
         .bid-badge { font-size: 10px; background: #000; color: #ffcc00; padding: 1px 7px; border-radius: 5px; font-weight: bold; margin-top: 2px; border: 1px solid #48484a; }
 
+        /* منطقة الكروت الأربعة في وسط الطاولة */
         .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130px; height: 130px; z-index: 10; }
         .played-card { position: absolute; width: 42px; height: 58px; background: white; border-radius: 6px; border: 1px solid #bbb; display: flex; flex-direction: column; justify-content: space-between; padding: 3px 4px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.55); animation: cardDrop 0.2s ease-out; }
         @keyframes cardDrop { from { transform: scale(1.25); opacity: 0.7; } to { opacity: 1; } }
@@ -68,6 +76,7 @@
         .pos-2 { top: 0px; left: 50%; transform: translateX(-50%); }
         .pos-3 { right: 2px; top: 50%; transform: translateY(-50%); }
 
+        /* القسم السفلي: الكروت والبيانات بدون أي تمرير أفقي */
         .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 25; }
         
         .redeal-bar { margin-bottom: 6px; display: none; }
@@ -83,12 +92,14 @@
         .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 0 8px; }
         .tricks-box { background: #000; padding: 5px 12px; border-radius: 8px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
 
+        /* نافذة الطلبات */
         #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #242426; padding: 14px; border-radius: 16px; z-index: 150; border: 1px solid #48484a; width: 250px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
         #bid-modal h3 { font-size: 14px; margin-bottom: 4px; color: white; }
         #bid-hint { font-size: 11px; color: #ffcc00; margin-bottom: 10px; }
         .bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
         .bid-btn { background: #ffcc00; color: #000; border: none; border-radius: 8px; padding: 10px 0; font-weight: bold; font-size: 13px; cursor: pointer; }
 
+        /* نافذة تفاصيل نهاية الدورة */
         #round-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #242426; padding: 16px; border-radius: 16px; z-index: 160; border: 1px solid #48484a; width: 90%; max-width: 340px; box-shadow: 0 12px 40px rgba(0,0,0,0.95); }
         .summary-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11px; text-align: right; }
         .summary-table th { color: #aeaeb2; border-bottom: 1px solid #38383a; padding: 4px; }
@@ -113,18 +124,22 @@
     </div>
 
     <div id="game-board">
+        <!-- الشريط العلوي -->
         <div class="top-hud">
+            <!-- لوحة النقاط الفردية (الصليب) -->
             <div class="cross-score">
                 <div></div><div id="score-2" class="sc-other">0</div><div></div>
                 <div id="score-1" class="sc-other">0</div><div style="color:#ffcc00;">31</div><div id="score-3" class="sc-other">0</div>
                 <div></div><div id="score-0" class="sc-me">0</div><div></div>
             </div>
 
+            <!-- معلومات الدورة ومجموع الطلبات -->
             <div class="room-center-info">
                 <div class="room-title" id="room-display">tripoli</div>
-                <div class="bids-counter" id="bids-status">انتظار اللاعبين...</div>
+                <div class="bids-counter" id="bids-status">الدورة 1 | الطلبات: 0 / 11</div>
             </div>
 
+            <!-- آخر أكلة -->
             <div class="last-trick-box">
                 <div class="last-trick-title">آخر أكلة</div>
                 <div class="mini-cards-grid" id="last-trick-cards">
@@ -133,6 +148,7 @@
             </div>
         </div>
 
+        <!-- طاولة اللعب -->
         <div class="table-wrapper">
             <div class="table-container">
                 <div class="player-node node-top">
@@ -166,6 +182,7 @@
             </div>
         </div>
 
+        <!-- القسم السفلي -->
         <div class="bottom-section">
             <div class="redeal-bar" id="redeal-bar">
                 <button class="redeal-btn" onclick="requestRedeal()">🔄 طلب إعادة التوزيع (ورق ميت)</button>
@@ -186,12 +203,14 @@
             </div>
         </div>
 
+        <!-- نافذة الطلبات -->
         <div id="bid-modal">
             <h3>اختر طلبتك</h3>
             <div id="bid-hint"></div>
             <div class="bid-grid" id="bid-options"></div>
         </div>
 
+        <!-- نافذة تفاصيل نهاية الدورة -->
         <div id="round-modal">
             <h3 id="round-title" style="color:#34c759; font-size:16px; text-align:center;">نتيجة الدورة</h3>
             <div id="winner-banner" style="color:#ffcc00; font-size:12px; text-align:center; margin-top:4px; font-weight:bold;"></div>
@@ -232,6 +251,10 @@
             document.getElementById('login-box').style.display = 'none';
             document.getElementById('game-board').style.display = 'flex';
             document.getElementById('room-display').innerText = currentRoom;
+
+            setTimeout(() => {
+                socket.emit('start_game', {room: currentRoom});
+            }, 400);
         }
 
         socket.on('connect', () => {
@@ -254,12 +277,7 @@
             myIndex = data.my_index;
             currentTurnGlobal = data.current_turn;
 
-            if (data.waiting_for_players) {
-                document.getElementById('bids-status').innerText = `انتظار اكتمال اللاعبين (أو بدء تلقائي بعد 30ث)...`;
-            } else {
-                document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
-            }
-
+            document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
             document.getElementById('redeal-bar').style.display = data.can_redeal ? 'block' : 'none';
 
             renderPlayers(data.players, data.current_turn, data.dealer_idx);
@@ -321,6 +339,7 @@
             handDiv.innerHTML = '';
             if(!hand || hand.length === 0) return;
 
+            // حساب التداخل تلقائياً لاحتواء جميع الكروت الـ 13 في عرض الشاشة بدون Scroll
             const containerWidth = window.innerWidth - 16;
             const cardWidth = 42;
             const count = hand.length;
@@ -337,13 +356,15 @@
                 let isRed = card.suit === 'Hearts' || card.suit === 'Tiles';
                 cardEl.className = `hand-card ${isRed ? 'red' : 'black'}`;
                 if (i > 0 && overlap > 0) {
-                    cardEl.style.marginRight = `-${overlap}px`;
+                    cardEl.style.marginRight = `-${overlap}px`; // RTL layout uses marginRight for overlap
                 }
                 cardEl.innerHTML = `<div>${card.rank}</div><div style="text-align:center; font-size:15px;">${suitIcons[card.suit]}</div>`;
                 
                 cardEl.onclick = (e) => {
                     e.preventDefault();
-                    if (currentTurnGlobal !== myIndex) return;
+                    if (currentTurnGlobal !== myIndex) {
+                        return;
+                    }
                     socket.emit('play_card', {room: currentRoom, card: card});
                 };
 
@@ -404,6 +425,7 @@
                 hint.innerText = `مجموع الطلبات الحالية: ${totalBids}`;
             }
 
+            // زر الصفر يظهر فقط إذا لم يكن الموزع مجبراً على تغطية الفرق
             if (!(isDealer && needed > 0)) {
                 let b0 = document.createElement('button');
                 b0.className = 'bid-btn'; b0.innerText = '0';
@@ -415,6 +437,7 @@
             const validBids = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
             validBids.forEach(i => {
                 if (i >= startBid) {
+                    // إخفاء الطلبات غير المتداولة إلا إذا أجبر الموزع على رقم معين
                     if ((i === 6 || i === 8 || i === 10 || i === 11 || i === 12) && !(isDealer && i === needed)) return;
                     let b = document.createElement('button');
                     b.className = 'bid-btn'; b.innerText = i;
