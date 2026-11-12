@@ -9,7 +9,6 @@ app.config['SECRET_KEY'] = 'tarneeb_libya_secret_key_2026'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', ping_timeout=60, ping_interval=25)
 
 ROOMS = {}
-BANNED_PLAYERS = {}  # حفظ اللاعبين المطرودين لكل غرفة {room_id: set(names)}
 
 SUITS = ['Hearts', 'Tiles', 'Clovers', 'Pikes']
 RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
@@ -33,6 +32,7 @@ class TarneebRoom:
     def __init__(self, room_id):
         self.room_id = room_id
         self.players = []
+        self.banned_sids = set()  # حفظ الـ SIDs المطرودة لمنع عودتهم
         self.game_started = False
         self.waiting_for_players = True
         self.waiting_timer_started = False
@@ -51,6 +51,9 @@ class TarneebRoom:
         self.turn_timestamp = 0
 
     def add_player(self, name, sid=None, is_bot=False):
+        if sid in self.banned_sids:
+            return -99  # مطرود
+
         for p in self.players:
             if p['name'] == name and not p['is_bot']:
                 p['sid'] = sid
@@ -69,7 +72,7 @@ class TarneebRoom:
             'tricks_won': 0,
             'won_cards_count': 0,
             'king_ace_delta': 0,
-            'timeout_streak': 0  # عداد انتهاء الوقت للتتالي
+            'timeout_count': 0  # عداد انتهاء وقت التفكير المتتالي
         })
         return idx
 
@@ -79,13 +82,6 @@ class TarneebRoom:
             self.add_player(f"بوت {bot_count}", is_bot=True)
             bot_count += 1
         self.waiting_for_players = False
-
-    def replace_player_with_bot(self, player_idx):
-        p = self.players[player_idx]
-        p['name'] = f"بوت منسحب {player_idx}"
-        p['is_bot'] = True
-        p['sid'] = None
-        p['timeout_streak'] = 0
 
     def check_redeal_eligibility(self, player_idx):
         if self.round_number <= 1 or self.state != 'BIDDING' or self.bids_collected > 0:
@@ -133,6 +129,7 @@ class TarneebRoom:
 
     def process_bid(self, player_idx, bid_val):
         p = self.players[player_idx]
+        p['timeout_count'] = 0  # تفريغ عداد الوقت عند تفاعل اللاعب
         min_b = get_min_bid(p['score'])
         
         if player_idx == self.dealer_idx:
@@ -170,6 +167,7 @@ class TarneebRoom:
 
     def play_card(self, player_idx, card):
         p = self.players[player_idx]
+        p['timeout_count'] = 0  # تفريغ عداد الوقت عند لعب الورقة
         p['hand'] = [c for c in p['hand'] if not (c['suit'] == card['suit'] and c['rank'] == card['rank'])]
         
         if len(self.current_trick) == 0:
@@ -295,10 +293,9 @@ def index():
 def on_join(data):
     room_id = data.get('room', 'tripoli')
     player_name = data.get('name', 'عبد الله')
-
-    # التحقق مما إذا كان اللاعب مطروداً من هذه الغرفة مسبقاً
-    if room_id in BANNED_PLAYERS and player_name in BANNED_PLAYERS[room_id]:
-        emit('error', {'msg': '🚫 تم طردك من هذه الغرفة بسبب تجاوز وقت التفكير!'})
+    
+    if request.sid in (ROOMS[room_id].banned_sids if room_id in ROOMS else set()):
+        emit('error', {'msg': 'لقد تم طردك من هذه الغرفة بسبب تجاوز وقت التفكير!'})
         return
 
     join_room(room_id)
@@ -308,6 +305,10 @@ def on_join(data):
     
     room = ROOMS[room_id]
     idx = room.add_player(player_name, sid=request.sid)
+    
+    if idx == -99:
+        emit('error', {'msg': 'مطرود من هذه الغرفة!'})
+        return
     if idx is None:
         emit('error', {'msg': 'الغرفة مكتملة!'})
         return
@@ -369,7 +370,6 @@ def on_bid(data):
     if room and room.state == 'BIDDING':
         p_idx = get_player_idx_by_sid(room, request.sid)
         if p_idx == room.current_turn:
-            room.players[p_idx]['timeout_streak'] = 0  # تصفير العداد عند الاستجابة في الوقت
             room.process_bid(p_idx, int(data.get('bid', 2)))
             broadcast_state(room)
 
@@ -385,7 +385,6 @@ def on_play_card(data):
             if not valid:
                 emit('error', {'msg': msg})
                 return
-            room.players[p_idx]['timeout_streak'] = 0  # تصفير العداد عند اللعب في الوقت
             room.play_card(p_idx, card)
             broadcast_state(room)
 
@@ -395,9 +394,8 @@ def run_game_loop(room):
         p_idx = room.current_turn
         p = room.players[p_idx]
 
-        # البوتات لا يتطبق عليها وقت التفكير نهائياً
+        # إذا كان اللاعب "بوت"، نلعب دوره فوراً وبدون أي وقت تفكير إطلاقاً
         if p['is_bot']:
-            socketio.sleep(0.5)
             if room.state == 'BIDDING':
                 min_b = room.get_dealer_min_bid(p_idx)
                 room.process_bid(p_idx, min_b)
@@ -410,35 +408,30 @@ def run_game_loop(room):
                     broadcast_state(room)
             continue
 
-        # اللاعب الحقيقي: مؤقت التفكير 20 ثانية
+        # إذا كان اللاعب بشرياً، نراقب مؤقت التفكير (20 ثانية)
         if time.time() - room.turn_timestamp > 20:
-            p['timeout_streak'] += 1  # زيادة عداد انتهاء الوقت المتتالي
+            p['timeout_count'] += 1  # زيادة عداد انتهاء الوقت التتالي
             
-            # إذا وصل التتالي إلى 3 مرات -> طرد من الغرفة وحظر العودة
-            if p['timeout_streak'] >= 3:
-                p_name = p['name']
-                if room.room_id not in BANNED_PLAYERS:
-                    BANNED_PLAYERS[room.room_id] = set()
-                BANNED_PLAYERS[room.room_id].add(p_name)
-                
+            # التحقق مما إذا تجاوز 3 مرات متتالية
+            if p['timeout_count'] >= 3:
                 if p['sid']:
-                    socketio.emit('error', {'msg': '🚫 تم طردك من الغرفة لتجاوز الوقت 3 مرات متتالية!'}, to=p['sid'])
-                
-                # استبدال اللاعب ببوْت لكي لا تتعطل اللعبة
-                room.replace_player_with_bot(p_idx)
-                broadcast_state(room)
-                continue
-
-            # انتهاء وقت عادي (أقل من 3 مرات): تنفيذ إجراء تلقائي
-            if room.state == 'BIDDING':
-                min_b = room.get_dealer_min_bid(p_idx)
-                room.process_bid(p_idx, min_b)
-                broadcast_state(room)
-            elif room.state == 'PLAYING':
-                valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
-                if valid_cards:
-                    room.play_card(p_idx, valid_cards[0])
-                    broadcast_state(room)
+                    room.banned_sids.add(p['sid'])
+                    socketio.emit('error', {'msg': 'تم طردك من الغرفة لتجاوز وقت التفكير 3 مرات متتالية!'}, to=p['sid'])
+                # تحويله إلى بوت لاستكمال اللعبة بدون تعطيل
+                p['is_bot'] = True
+                p['sid'] = None
+                p['timeout_count'] = 0
+            else:
+                # تنفيذ حركة تلقائية تعزز استمرار اللعب
+                if room.state == 'BIDDING':
+                    min_b = room.get_dealer_min_bid(p_idx)
+                    room.process_bid(p_idx, min_b)
+                elif room.state == 'PLAYING':
+                    valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
+                    if valid_cards:
+                        room.play_card(p_idx, valid_cards[0])
+            
+            broadcast_state(room)
 
 def get_player_idx_by_sid(room, sid):
     for p in room.players:
@@ -481,4 +474,3 @@ def broadcast_state(room):
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
-                
