@@ -22,9 +22,6 @@ def create_deck():
     return deck
 
 def get_min_bid(score):
-    if score >= 25: return 5
-    if score >= 20: return 4
-    if score >= 15: return 3
     return 2
 
 class TarneebRoom:
@@ -41,7 +38,7 @@ class TarneebRoom:
         self.last_completed_trick = []
         self.trick_lead_suit = None
         self.round_first_card_played = False
-        self.is_very_first_trick_of_game = True  # للتحقق من أول أكلة في اللعبة فقط
+        self.is_first_trick_of_round = True  # لكل دورة جديدة
         self.winner_message = ""
         self.last_trick_winner_name = ""
 
@@ -59,7 +56,6 @@ class TarneebRoom:
             'sid': sid,
             'is_bot': is_bot,
             'score': 0,
-            'team': idx % 2,  # الفريق 0 (أنت وفريكك) والفريق 1
             'hand': [],
             'bid': 0,
             'tricks_won': 0,
@@ -89,22 +85,12 @@ class TarneebRoom:
         self.current_trick = []
         self.last_completed_trick = []
         self.round_first_card_played = False
+        self.is_first_trick_of_round = True
         self.last_trick_winner_name = ""
 
     def process_bid(self, player_idx, bid_val):
         p = self.players[player_idx]
-        min_b = get_min_bid(p['score'])
-        
-        if bid_val != 0 and bid_val < min_b and bid_val != 13:
-            bid_val = min_b
-
-        if player_idx == self.dealer_idx:
-            needed = 11 - self.total_bids
-            if needed > 0 and bid_val < needed:
-                bid_val = max(bid_val, needed)
-
         p['bid'] = bid_val
-        self.total_bids += bid_val
         self.bids_collected += 1
 
         if self.bids_collected == 4:
@@ -116,10 +102,10 @@ class TarneebRoom:
     def validate_card_play(self, player_idx, card):
         p = self.players[player_idx]
         
-        # قانون القلب الأحمر: فقط في أول أكلة من أول دورة للعبة
-        if self.is_very_first_trick_of_game and not self.round_first_card_played and card['suit'] == 'Hearts':
+        # قانون القلب الأحمر: ممنوع في أول أكلة من كل دورة جديدة
+        if self.is_first_trick_of_round and not self.round_first_card_played and card['suit'] == 'Hearts':
             if not all(c['suit'] == 'Hearts' for c in p['hand']):
-                return False, "ممنوع تنزل قلب أحمر في أول أكلة باللعبة!"
+                return False, "ممنوع تنزل قلب أحمر في أول أكلة بالدورة!"
 
         if self.trick_lead_suit:
             has_lead_suit = any(c['suit'] == self.trick_lead_suit for c in p['hand'])
@@ -167,7 +153,7 @@ class TarneebRoom:
         self.trick_lead_suit = None
         self.current_turn = winner_idx
         self.round_first_card_played = False
-        self.is_very_first_trick_of_game = False  # انتهت أول أكلة في اللعبة
+        self.is_first_trick_of_round = False  # انتهت أول أكلة في هذه الدورة
 
         if sum(p['tricks_won'] for p in self.players) == 13:
             game_ended = self.calculate_round_scores()
@@ -180,25 +166,27 @@ class TarneebRoom:
         return {'winner': winner_idx, 'trick': completed_trick}
 
     def calculate_round_scores(self):
-        # حساب النقاط بنظام الفرق (الفريق 0 و الفريق 1)
-        team_tricks = [0, 0]
-        team_bids = [0, 0]
+        # احتساب النقاط لكل لاعب بشكل فردي حسب القوانين الجديدة
         for p in self.players:
-            team_tricks[p['team']] += p['tricks_won']
-            team_bids[p['team']] += p['bid']
-
-        for t in range(2):
-            b = team_bids[t]
-            w = team_tricks[t]
-            points = w if w >= b else -b
-            for p in self.players:
-                if p['team'] == t:
-                    p['score'] += points
+            bid = p['bid']
+            won = p['tricks_won']
+            
+            if bid == 0:
+                p['score'] += 5 if won == 0 else -5
+            elif bid == 7:
+                p['score'] += 14 if won >= 7 else -14
+            elif bid == 9:
+                p['score'] += 27 if won >= 9 else -27
+            elif bid == 13:
+                if won == 13: p['score'] += 52  # أو الفوز الكامل
+                else: p['score'] -= 52
+            else:
+                p['score'] += bid if won >= bid else -bid
 
         max_score = max(p['score'] for p in self.players)
         if max_score >= 31 or max_score <= -31:
             winners = [p['name'] for p in self.players if p['score'] == max_score]
-            self.winner_message = f"🏆 مبروك للفريق الفائز: {' و '.join(winners)} لتحقيق 31 نقطة!"
+            self.winner_message = f"🏆 مبروك للفائز: {' و '.join(winners)} لتحقيق 31 نقطة!"
             return True
         return False
 
@@ -283,8 +271,7 @@ def run_bots_async(room):
         
         socketio.sleep(0.6)
         if room.state == 'BIDDING':
-            min_b = get_min_bid(p['score'])
-            room.process_bid(p_idx, min_b)
+            room.process_bid(p_idx, 2)
             broadcast_state(room)
         elif room.state == 'PLAYING':
             valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
@@ -303,11 +290,6 @@ def get_player_idx_by_sid(room, sid):
 def broadcast_state(room):
     for p in room.players:
         if not p['is_bot'] and p['sid']:
-            # حساب نقاط الصليب (الفريقين) لعرضها في لوحة النتائج العلوية اليسرى
-            team_scores = [0, 0]
-            for x in room.players:
-                team_scores[x['team']] = x['score']
-
             p_state = {
                 'room_id': room.room_id,
                 'game_started': room.game_started,
@@ -321,8 +303,7 @@ def broadcast_state(room):
                 'last_winner': room.last_trick_winner_name,
                 'my_index': p['idx'],
                 'my_hand': p['hand'],
-                'min_bid': get_min_bid(p['score']),
-                'team_scores': team_scores,
+                'min_bid': 2,
                 'players': [{
                     'name': x['name'], 
                     'score': x['score'], 
@@ -337,3 +318,4 @@ def broadcast_state(room):
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+                                                        
