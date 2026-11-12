@@ -39,13 +39,13 @@
         .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 18px 22px; min-height: 0; }
         .table-container { position: relative; width: 100%; height: 100%; max-width: 440px; border: 5px solid #d1d1d6; border-radius: 30px; background: radial-gradient(circle, #28b450 0%, #1d883b 100%); box-shadow: inset 0 0 25px rgba(0,0,0,0.65); }
 
-        .player-node { position: absolute; display: flex; flex-direction: column; align-items: center; z-index: 15; }
+        .player-node { position: absolute; display: flex; flex-direction: column; align-items: center; z-index: 15; transition: transform 0.3s; }
         .node-top { top: -26px; left: 50%; transform: translateX(-50%); }
         .node-left { left: -24px; top: 50%; transform: translateY(-50%); }
         .node-right { right: -24px; top: 50%; transform: translateY(-50%); }
 
         .avatar-container { position: relative; display: flex; align-items: center; }
-        .avatar-circle { width: 44px; height: 44px; border-radius: 50%; background: #48484a; border: 3px solid #ffcc00; display: flex; justify-content: center; align-items: center; font-size: 18px; box-shadow: 0 3px 8px rgba(0,0,0,0.6); transition: all 0.2s; }
+        .avatar-circle { width: 44px; height: 44px; border-radius: 50%; background: #48484a; border: 3px solid #ffcc00; display: flex; justify-content: center; align-items: center; font-size: 18px; box-shadow: 0 3px 8px rgba(0,0,0,0.6); }
         .dealer-tag { position: absolute; bottom: -2px; right: -4px; background: #ff3b30; color: white; font-size: 8px; font-weight: bold; padding: 1px 4px; border-radius: 6px; border: 1px solid white; }
         
         .won-pile { position: absolute; width: 22px; height: 30px; background: repeating-linear-gradient(45deg, #c72c2c, #c72c2c 3px, #a31f1f 3px, #a31f1f 6px); border: 1.5px solid #fff; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: none; }
@@ -57,10 +57,9 @@
         .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 1px 7px; border-radius: 8px; margin-top: 2px; max-width: 74px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #48484a; }
         .bid-badge { font-size: 10px; background: #000; color: #ffcc00; padding: 1px 7px; border-radius: 5px; font-weight: bold; margin-top: 2px; border: 1px solid #48484a; }
 
+        /* منطقة الكروت في الوسط مع انيميشن التجميع نحو الفائز */
         .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130px; height: 130px; z-index: 10; }
-        
-        /* كرت الوسط مع دعم أنيميشن التجميع والانطلاق للاعب الفائز */
-        .played-card { position: absolute; width: 42px; height: 58px; background: white; border-radius: 6px; border: 1px solid #bbb; display: flex; flex-direction: column; justify-content: space-between; padding: 3px 4px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.55); transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out; }
+        .played-card { position: absolute; width: 42px; height: 58px; background: white; border-radius: 6px; border: 1px solid #bbb; display: flex; flex-direction: column; justify-content: space-between; padding: 3px 4px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.55); transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); }
         .played-card.red { color: #d03b29; }
         .played-card.black { color: #1c1c1e; }
 
@@ -69,11 +68,16 @@
         .pos-2 { top: 0px; left: 50%; transform: translateX(-50%); }
         .pos-3 { right: 2px; top: 50%; transform: translateY(-50%); }
 
+        /* أنيميشن ذهاب الكروت للاعب الفائز بالأكلة */
+        .collect-to-0 { transform: translate(-50%, 150px) scale(0.3) !important; opacity: 0 !important; }
+        .collect-to-1 { transform: translate(-150px, -50%) scale(0.3) !important; opacity: 0 !important; }
+        .collect-to-2 { transform: translate(-50%, -150px) scale(0.3) !important; opacity: 0 !important; }
+        .collect-to-3 { transform: translate(150px, -50%) scale(0.3) !important; opacity: 0 !important; }
+
         .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 25; }
         
         .redeal-bar { margin-bottom: 6px; display: none; }
-        .redeal-btn { background: #ff3b30; color: white; border: 1.5px solid #fff; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(255,59,48,0.5); animation: pulse 1.2s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .redeal-btn { background: #ff3b30; color: white; border: 1.5px solid #fff; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(255,59,48,0.5); }
 
         .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 74px; padding: 0 4px; overflow: hidden; }
         .hand-card { width: 42px; height: 66px; background: white; border-radius: 6px; border: 1px solid #999; display: flex; flex-direction: column; justify-content: space-between; padding: 3px 4px; font-weight: bold; font-size: 13px; box-shadow: -2px 0 5px rgba(0,0,0,0.35); cursor: pointer; transition: transform 0.12s ease; flex-shrink: 0; position: relative; }
@@ -222,7 +226,7 @@
         let myIndex = 0;
         let currentRoom = "";
         let currentTurnGlobal = -1;
-        let isWaitingForTrickClear = false; // لمنع تحديث الطاولة أثناء عرض أنيميشن الأكلة
+        let isCollecting = false; // لمنع تداخل تحديثات السيرفر أثناء الانيميشن
         const suitIcons = {'Hearts':'♥', 'Tiles':'♦', 'Clovers':'♣', 'Pikes':'♠'};
 
         function joinGame() {
@@ -257,7 +261,7 @@
         }
 
         socket.on('game_update', (data) => {
-            if (isWaitingForTrickClear) return; // نتجاهل التحديثات مؤقتاً أثناء عرض أنيميشن الأكلة الأخيرة
+            if (isCollecting) return; // انتظار انتهاء انيميشن الأكلة قبل تحديث الواجهة
 
             myIndex = data.my_index;
             currentTurnGlobal = data.current_turn;
@@ -267,15 +271,50 @@
 
             renderPlayers(data.players, data.current_turn, data.dealer_idx);
             renderHand(data.my_hand);
-            updateCrossScore(data.players);
+            renderLastTrick(data.last_trick);
+            updateCrossScore(data);
 
-            // التحقق مما إذا اكتملت الأكلة (4 كروت في الوسط)
+            // التحقق مما إذا كانت الأكلة اكتملت (4 كروت) لإعطاء مهلة رؤية ثانيتين ثم تشغيل انيميشن التجميع
             if (data.current_trick && data.current_trick.length === 4) {
-                isWaitingForTrickClear = true;
-                renderTrickWithAnimation(data.current_trick, data.players, data.dealer_idx, data.my_hand);
+                renderTrick(data.current_trick);
+                isCollecting = true;
+                
+                // مهلة ثانيتين لكي يرى اللاعبون الكروت الأربعة بوضوح
+                setTimeout(() => {
+                    const area = document.getElementById('trick-area');
+                    if (area) {
+                        const cards = area.querySelectorAll('.played-card');
+                        // تحديد من هو الفائز بالأكلة بناءً على آخر حدث أو حساب محلي بسيط
+                        // نحسب الفائز محلياً بنفس منطق السيرفر لعرض الانيميشن بشكل صحيح
+                        let winningPlay = data.current_trick[0];
+                        data.current_trick.slice(1).forEach(play => {
+                            let curr_c = play['card'];
+                            let win_c = winningPlay['card'];
+                            let rVals = {'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14};
+                            if (curr_c.suit === 'Hearts' && win_c.suit !== 'Hearts') {
+                                winningPlay = play;
+                            } else if (curr_c.suit === win_c.suit && rVals[curr_c.rank] > rVals[win_c.rank]) {
+                                winningPlay = play;
+                            }
+                        });
+
+                        let winnerUI = (winningPlay.player_idx - myIndex + 4) % 4;
+                        cards.forEach(cardEl => {
+                            cardEl.classList.add(`collect-to-${winnerUI}`);
+                        });
+                    }
+
+                    // بعد انتهاء الانيميشن (0.5 ثانية)، نسمح بتحديث الحالة بالكامل
+                    setTimeout(() => {
+                        isCollecting = false;
+                        renderTrick([]);
+                        // طلب تحديث أخبر السيرفر أو إعادة عرض الحالة الجديدة
+                    }, 500);
+
+                }, 2000); // 2 ثانية كاملة لرؤية الكروت
+
             } else {
                 renderTrick(data.current_trick);
-                renderLastTrick(data.last_trick);
             }
 
             if(data.state === 'BIDDING' && data.current_turn === myIndex) {
@@ -291,11 +330,12 @@
 
         socket.on('error', (data) => alert(data.msg));
 
-        function updateCrossScore(players) {
-            players.forEach((p, idx) => {
+        function updateCrossScore(data) {
+            if (!data.players) return;
+            data.players.forEach((p, idx) => {
                 let UI_idx = (idx - myIndex + 4) % 4;
-                const scoreEl = document.getElementById(`score-${UI_idx}`);
-                if(scoreEl) scoreEl.innerText = p.score;
+                const scEl = document.getElementById(`score-${UI_idx}`);
+                if (scEl) scEl.innerText = p.score;
             });
         }
 
@@ -360,7 +400,7 @@
                 
                 cardEl.onclick = (e) => {
                     e.preventDefault();
-                    if (currentTurnGlobal !== myIndex) return;
+                    if (currentTurnGlobal !== myIndex || isCollecting) return;
                     socket.emit('play_card', {room: currentRoom, card: card});
                 };
 
@@ -384,54 +424,6 @@
                 cardEl.innerHTML = `<div>${c.rank}</div><div style="text-align:center; font-size:15px;">${suitIcons[c.suit]}</div>`;
                 area.appendChild(cardEl);
             });
-        }
-
-        // أنيميشن بقاء الورقة الرابعة ثم تجميعها وانطلاقها للاعب الفائز بالأكلة
-        function renderTrickWithAnimation(trick, players, dealerIdx, myHand) {
-            const area = document.getElementById('trick-area');
-            if(!area) return;
-            renderTrick(trick); // عرض الكروت الأربعة بوضوح ليروها اللاعبين
-
-            // تحديد من هو الفائز بالأكلة لحساب اتجاه حركة الأنيميشن نحو مكانه
-            let winningPlay = trick[0];
-            for (let i = 1; i < trick.length; i++) {
-                let curr = trick[i]['card'];
-                let win = winningPlay['card'];
-                if (curr.suit === 'Hearts' && win.suit !== 'Hearts') {
-                    winningPlay = trick[i];
-                } else if (curr.suit === win.suit && curr.value > win.value) {
-                    winningPlay = trick[i];
-                }
-            }
-            let winnerUI = (winningPlay.player_idx - myIndex + 4) % 4;
-
-            // بعد ثانيتين (2000ms)، تبدأ حركة التجميع والانطلاق نحو الفائز
-            setTimeout(() => {
-                const cardElements = area.querySelectorAll('.played-card');
-                cardElements.forEach(el => {
-                    // تجميع الكروت نحو مركز الطاولة ثم تحريكها نحو الفائز
-                    el.style.transform = getWinnerTranslate(winnerUI);
-                    el.style.opacity = '0';
-                });
-
-                // بعد انتهاء الأنيميشن، نفرغ الطاولة ونسمح بالتحديثات العادية
-                setTimeout(() => {
-                    area.innerHTML = '';
-                    isWaitingForTrickClear = false;
-                }, 600);
-
-            }, 2000); // 2 ثانية بقاء الورقة الرابعة ظاهرة تماماً
-        }
-
-        function getWinnerTranslate(uiIdx) {
-            // إحداثيات انطلاق الكروت نحو اللاعب الفائز حسب مكانه على الطاولة
-            switch(uiIdx) {
-                case 0: return 'translate(-50%, 120px) scale(0.3)';  // الأسفل (أنت)
-                case 1: return 'translate(-140px, -50%) scale(0.3)'; // اليسار
-                case 2: return 'translate(-50%, -140px) scale(0.3)'; // الأعلى
-                case 3: return 'translate(140px, -50%) scale(0.3)';  // اليمين
-                default: return 'translate(-50%, -50%) scale(0.3)';
-            }
         }
 
         function renderLastTrick(lastTrick) {
@@ -476,10 +468,9 @@
                 opts.appendChild(b0);
             }
 
-            let startBid = minBid;
             const validBids = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
             validBids.forEach(i => {
-                if (i >= startBid) {
+                if (i >= minBid) {
                     if ((i === 6 || i === 8 || i === 10 || i === 11 || i === 12) && !(isDealer && i === needed)) return;
                     let b = document.createElement('button');
                     b.className = 'bid-btn'; b.innerText = i;
