@@ -39,7 +39,7 @@
         .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 18px 22px; min-height: 0; }
         .table-container { position: relative; width: 100%; height: 100%; max-width: 440px; border: 5px solid #d1d1d6; border-radius: 30px; background: radial-gradient(circle, #28b450 0%, #1d883b 100%); box-shadow: inset 0 0 25px rgba(0,0,0,0.65); }
 
-        .player-node { position: absolute; display: flex; flex-direction: column; align-items: center; z-index: 15; transition: transform 0.3s; }
+        .player-node { position: absolute; display: flex; flex-direction: column; align-items: center; z-index: 15; }
         .node-top { top: -26px; left: 50%; transform: translateX(-50%); }
         .node-left { left: -24px; top: 50%; transform: translateY(-50%); }
         .node-right { right: -24px; top: 50%; transform: translateY(-50%); }
@@ -57,9 +57,9 @@
         .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 1px 7px; border-radius: 8px; margin-top: 2px; max-width: 74px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #48484a; }
         .bid-badge { font-size: 10px; background: #000; color: #ffcc00; padding: 1px 7px; border-radius: 5px; font-weight: bold; margin-top: 2px; border: 1px solid #48484a; }
 
-        /* منطقة الكروت في الوسط مع انيميشن التجميع نحو الفائز */
+        /* منطقة الكروت الـ 4 في الوسط */
         .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130px; height: 130px; z-index: 10; }
-        .played-card { position: absolute; width: 42px; height: 58px; background: white; border-radius: 6px; border: 1px solid #bbb; display: flex; flex-direction: column; justify-content: space-between; padding: 3px 4px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.55); transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); }
+        .played-card { position: absolute; width: 42px; height: 58px; background: white; border-radius: 6px; border: 1px solid #bbb; display: flex; flex-direction: column; justify-content: space-between; padding: 3px 4px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.55); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
         .played-card.red { color: #d03b29; }
         .played-card.black { color: #1c1c1e; }
 
@@ -68,11 +68,21 @@
         .pos-2 { top: 0px; left: 50%; transform: translateX(-50%); }
         .pos-3 { right: 2px; top: 50%; transform: translateY(-50%); }
 
-        /* أنيميشن ذهاب الكروت للاعب الفائز بالأكلة */
-        .collect-to-0 { transform: translate(-50%, 150px) scale(0.3) !important; opacity: 0 !important; }
-        .collect-to-1 { transform: translate(-150px, -50%) scale(0.3) !important; opacity: 0 !important; }
-        .collect-to-2 { transform: translate(-50%, -150px) scale(0.3) !important; opacity: 0 !important; }
-        .collect-to-3 { transform: translate(150px, -50%) scale(0.3) !important; opacity: 0 !important; }
+        /* المرحلة 1: الكروت الأربعة تتلم على بعضها في منتصف الطاولة */
+        .gather-center {
+            top: 50% !important;
+            left: 50% !important;
+            bottom: auto !important;
+            right: auto !important;
+            transform: translate(-50%, -50%) rotate(8deg) scale(0.95) !important;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.8) !important;
+        }
+
+        /* المرحلة 2: الحزمة المتجمعة تطير نحو اللاعب اللي أكلها */
+        .fly-to-0 { top: 50% !important; left: 50% !important; transform: translate(-50%, 170px) scale(0.25) !important; opacity: 0 !important; }
+        .fly-to-1 { top: 50% !important; left: 50% !important; transform: translate(-170px, -50%) scale(0.25) !important; opacity: 0 !important; }
+        .fly-to-2 { top: 50% !important; left: 50% !important; transform: translate(-50%, -170px) scale(0.25) !important; opacity: 0 !important; }
+        .fly-to-3 { top: 50% !important; left: 50% !important; transform: translate(170px, -50%) scale(0.25) !important; opacity: 0 !important; }
 
         .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 25; }
         
@@ -87,6 +97,11 @@
 
         .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 0 8px; }
         .tricks-box { background: #000; padding: 5px 12px; border-radius: 8px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
+
+        /* نافذة مؤقت انتظار اللاعبين */
+        #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(28,28,30,0.96); padding: 20px; border-radius: 18px; z-index: 180; border: 1px solid #48484a; width: 85%; max-width: 300px; text-align: center; box-shadow: 0 12px 35px rgba(0,0,0,0.9); }
+        .timer-circle { width: 64px; height: 64px; border-radius: 50%; border: 4px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 22px; font-weight: bold; color: #ffcc00; margin: 12px auto; background: #161618; }
+        .start-now-btn { background: #ffcc00; color: #000; border: none; padding: 10px 16px; border-radius: 10px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; margin-top: 10px; }
 
         #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #242426; padding: 14px; border-radius: 16px; z-index: 150; border: 1px solid #48484a; width: 250px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
         #bid-modal h3 { font-size: 14px; margin-bottom: 4px; color: white; }
@@ -145,7 +160,7 @@
                         <div class="avatar-circle" id="avatar-2">👤</div>
                         <div class="won-pile" id="pile-2"></div>
                     </div>
-                    <div class="player-name" id="name-2">لاعب 2</div>
+                    <div class="player-name" id="name-2">في الانتظار..</div>
                     <div class="bid-badge" id="bid-2">0 / 0</div>
                 </div>
 
@@ -154,7 +169,7 @@
                         <div class="avatar-circle" id="avatar-1">👤</div>
                         <div class="won-pile" id="pile-1"></div>
                     </div>
-                    <div class="player-name" id="name-1">لاعب 1</div>
+                    <div class="player-name" id="name-1">في الانتظار..</div>
                     <div class="bid-badge" id="bid-1">0 / 0</div>
                 </div>
 
@@ -163,7 +178,7 @@
                         <div class="avatar-circle" id="avatar-3">👤</div>
                         <div class="won-pile" id="pile-3"></div>
                     </div>
-                    <div class="player-name" id="name-3">لاعب 3</div>
+                    <div class="player-name" id="name-3">في الانتظار..</div>
                     <div class="bid-badge" id="bid-3">0 / 0</div>
                 </div>
 
@@ -189,6 +204,15 @@
                     <div class="avatar-circle" style="width:38px; height:38px; font-size:16px;" id="avatar-0">👤</div>
                 </div>
             </div>
+        </div>
+
+        <!-- نافذة مؤقت انتظار اللاعبين -->
+        <div id="waiting-overlay">
+            <h3 style="font-size:15px; color:#34c759;">في انتظار انضمام اللاعبين...</h3>
+            <p id="joined-count-text" style="font-size:12px; color:#d1d1d6; margin-top:4px;">اللاعبون الحاليون: 1 / 4</p>
+            <div class="timer-circle" id="wait-timer-num">30</div>
+            <p style="font-size:11px; color:#aeaeb2;">سيتم إكمال المقاعد الشاغرة بالبوتات تلقائياً عند انتهاء الوقت</p>
+            <button class="start-now-btn" onclick="forceStartBots()">تأكيد البدء بالبوتات الآن ▶</button>
         </div>
 
         <div id="bid-modal">
@@ -226,7 +250,8 @@
         let myIndex = 0;
         let currentRoom = "";
         let currentTurnGlobal = -1;
-        let isCollecting = false; // لمنع تداخل تحديثات السيرفر أثناء الانيميشن
+        let gameStateGlobal = "WAITING";
+        let animatedThisTrick = false;
         const suitIcons = {'Hearts':'♥', 'Tiles':'♦', 'Clovers':'♣', 'Pikes':'♠'};
 
         function joinGame() {
@@ -238,10 +263,10 @@
             document.getElementById('login-box').style.display = 'none';
             document.getElementById('game-board').style.display = 'flex';
             document.getElementById('room-display').innerText = currentRoom;
+        }
 
-            setTimeout(() => {
-                socket.emit('start_game', {room: currentRoom});
-            }, 400);
+        function forceStartBots() {
+            socket.emit('force_start_bots', {room: currentRoom});
         }
 
         socket.on('connect', () => {
@@ -261,10 +286,19 @@
         }
 
         socket.on('game_update', (data) => {
-            if (isCollecting) return; // انتظار انتهاء انيميشن الأكلة قبل تحديث الواجهة
-
             myIndex = data.my_index;
             currentTurnGlobal = data.current_turn;
+            gameStateGlobal = data.state;
+
+            // إدارة نافذة مؤقت انتظار اللاعبين
+            const waitBox = document.getElementById('waiting-overlay');
+            if (!data.game_started) {
+                waitBox.style.display = 'block';
+                document.getElementById('wait-timer-num').innerText = data.wait_seconds_left;
+                document.getElementById('joined-count-text').innerText = `اللاعبون المنضمون: ${data.players.length} / 4`;
+            } else {
+                waitBox.style.display = 'none';
+            }
 
             document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
             document.getElementById('redeal-bar').style.display = data.can_redeal ? 'block' : 'none';
@@ -274,46 +308,31 @@
             renderLastTrick(data.last_trick);
             updateCrossScore(data);
 
-            // التحقق مما إذا كانت الأكلة اكتملت (4 كروت) لإعطاء مهلة رؤية ثانيتين ثم تشغيل انيميشن التجميع
-            if (data.current_trick && data.current_trick.length === 4) {
-                renderTrick(data.current_trick);
-                isCollecting = true;
-                
-                // مهلة ثانيتين لكي يرى اللاعبون الكروت الأربعة بوضوح
-                setTimeout(() => {
-                    const area = document.getElementById('trick-area');
-                    if (area) {
-                        const cards = area.querySelectorAll('.played-card');
-                        // تحديد من هو الفائز بالأكلة بناءً على آخر حدث أو حساب محلي بسيط
-                        // نحسب الفائز محلياً بنفس منطق السيرفر لعرض الانيميشن بشكل صحيح
-                        let winningPlay = data.current_trick[0];
-                        data.current_trick.slice(1).forEach(play => {
-                            let curr_c = play['card'];
-                            let win_c = winningPlay['card'];
-                            let rVals = {'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14};
-                            if (curr_c.suit === 'Hearts' && win_c.suit !== 'Hearts') {
-                                winningPlay = play;
-                            } else if (curr_c.suit === win_c.suit && rVals[curr_c.rank] > rVals[win_c.rank]) {
-                                winningPlay = play;
-                            }
-                        });
+            // عرض الكروت في الوسط + أنيميشن التجميع عند اكتمال الورقة الرابعة
+            if (data.state === 'TRICK_PAUSE' && data.current_trick && data.current_trick.length === 4) {
+                if (!animatedThisTrick) {
+                    animatedThisTrick = true;
+                    renderTrick(data.current_trick);
 
-                        let winnerUI = (winningPlay.player_idx - myIndex + 4) % 4;
-                        cards.forEach(cardEl => {
-                            cardEl.classList.add(`collect-to-${winnerUI}`);
-                        });
-                    }
+                    let winnerUI = (data.trick_winner_idx - myIndex + 4) % 4;
 
-                    // بعد انتهاء الانيميشن (0.5 ثانية)، نسمح بتحديث الحالة بالكامل
+                    // 1. بعد 1.4 ثانية من رؤية الورقة الرابعة: الأربعة يتلمّون على بعض في الوسط
                     setTimeout(() => {
-                        isCollecting = false;
-                        renderTrick([]);
-                        // طلب تحديث أخبر السيرفر أو إعادة عرض الحالة الجديدة
-                    }, 500);
+                        const cards = document.querySelectorAll('#trick-area .played-card');
+                        cards.forEach(c => c.classList.add('gather-center'));
+                    }, 1400);
 
-                }, 2000); // 2 ثانية كاملة لرؤية الكروت
-
+                    // 2. بعد 1.85 ثانية: الحزمة المجمعة تمشي للاعب الفائز بالأكلة
+                    setTimeout(() => {
+                        const cards = document.querySelectorAll('#trick-area .played-card');
+                        cards.forEach(c => {
+                            c.classList.remove('gather-center');
+                            c.classList.add(`fly-to-${winnerUI}`);
+                        });
+                    }, 1850);
+                }
             } else {
+                animatedThisTrick = false;
                 renderTrick(data.current_trick);
             }
 
@@ -340,18 +359,24 @@
         }
 
         function renderPlayers(players, turn, dealerIdx) {
-            players.forEach((p, idx) => {
-                let UI_idx = (idx - myIndex + 4) % 4;
-                
-                const nameEl = document.getElementById(`name-${UI_idx}`);
-                const bidEl = document.getElementById(`bid-${UI_idx}`);
-                const avatarEl = document.getElementById(`avatar-${UI_idx}`);
-                const pileEl = document.getElementById(`pile-${UI_idx}`);
+            for (let ui = 0; ui < 4; ui++) {
+                let realIdx = (ui + myIndex) % 4;
+                const p = players[realIdx];
+                const nameEl = document.getElementById(`name-${ui}`);
+                const bidEl = document.getElementById(`bid-${ui}`);
+                const avatarEl = document.getElementById(`avatar-${ui}`);
+                const pileEl = document.getElementById(`pile-${ui}`);
+
+                if (!p) {
+                    if(nameEl) nameEl.innerText = "في الانتظار..";
+                    if(bidEl) bidEl.innerText = "- / -";
+                    continue;
+                }
 
                 if(nameEl) nameEl.innerText = p.name;
                 if(bidEl) bidEl.innerText = `${p.tricks_won} / ${p.bid}`;
 
-                if(UI_idx === 0) {
+                if(ui === 0) {
                     document.getElementById('my-tricks-count').innerText = `${p.tricks_won} / ${p.bid}`;
                 }
 
@@ -360,8 +385,8 @@
                 }
 
                 if(avatarEl) {
-                    avatarEl.innerHTML = idx === dealerIdx ? `👤<span class="dealer-tag">موزع</span>` : `👤`;
-                    if(idx === turn) {
+                    avatarEl.innerHTML = realIdx === dealerIdx ? `👤<span class="dealer-tag">موزع</span>` : `👤`;
+                    if(realIdx === turn && gameStateGlobal === 'PLAYING') {
                         avatarEl.style.borderColor = '#34c759';
                         avatarEl.style.boxShadow = '0 0 12px #34c759';
                     } else {
@@ -369,7 +394,7 @@
                         avatarEl.style.boxShadow = 'none';
                     }
                 }
-            });
+            }
         }
 
         function renderHand(hand) {
@@ -400,7 +425,7 @@
                 
                 cardEl.onclick = (e) => {
                     e.preventDefault();
-                    if (currentTurnGlobal !== myIndex || isCollecting) return;
+                    if (gameStateGlobal !== 'PLAYING' || currentTurnGlobal !== myIndex) return;
                     socket.emit('play_card', {room: currentRoom, card: card});
                 };
 
