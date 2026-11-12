@@ -5,7 +5,7 @@ from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tarneeb_libya_secret_key_2026'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', ping_timeout=60, ping_interval=25)
 
 ROOMS = {}
 
@@ -253,7 +253,10 @@ def on_bid(data):
 @socketio.on('play_card')
 def on_play_card(data):
     room = ROOMS.get(data.get('room'))
-    if room and room.state == 'PLAYING':
+    if not room:
+        emit('error', {'msg': 'انتهت جلسة السيرفر، يرجى تحديث الصفحة'})
+        return
+    if room.state == 'PLAYING':
         p_idx = get_player_idx_by_sid(room, request.sid)
         if p_idx == room.current_turn:
             card = data.get('card')
@@ -267,7 +270,6 @@ def on_play_card(data):
             socketio.start_background_task(run_bots_async, room)
 
 def run_bots_async(room):
-    # استخدام نظام غير حظري (Background Task) لمنع تجميد خيوط الاتصال
     socketio.sleep(0.4)
     while room.game_started and room.state in ['BIDDING', 'PLAYING']:
         p_idx = room.current_turn
