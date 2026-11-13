@@ -77,7 +77,6 @@ class TarneebRoom:
             bot_count += 1
 
     def check_redeal_eligibility(self, player_idx):
-        # متاح في أي دورة بشرط عدم اكتمال الطلبات أو في الدورة الأولى قبل اللعب
         if self.round_number == 1:
             if self.round_first_card_played: return False
         else:
@@ -208,7 +207,6 @@ class TarneebRoom:
         if self.state != 'TRICK_PAUSE' or len(self.current_trick) != 4:
             return
 
-        # قانون الكينج والآس (K♥ و A♥): مفعل ابتداءً من الدورة الثانية
         if self.round_number > 1:
             king_owner = None
             ace_owner = None
@@ -257,7 +255,6 @@ class TarneebRoom:
             round_pts = 0
             reason = ""
 
-            # في الدورة الأولى (بدون طلبات): كل أكلة تحسب بنقطة واحدة مباشرة (+1 لكل أكلة)
             if self.round_number == 1:
                 round_pts = won
                 reason = f"أخذ {won} أكلة (+{won})"
@@ -444,26 +441,31 @@ def on_play_card(data):
             broadcast_state(room)
             
             if trick_done:
-                socketio.start_background_task(handle_trick_pause_and_continue, room)
+                socketio.start_background_task(handle_trick_pause_and_complex_continue, room)
             else:
                 socketio.start_background_task(run_bots_async, room)
 
-def handle_trick_pause_and_continue(room):
-    socketio.sleep(2.3)
-    room.finalize_trick_step2()
-    broadcast_state(room)
-    if room.state == 'PLAYING':
-        socketio.start_background_task(run_bots_async, room)
+def handle_trick_pause_and_complex_continue(room):
+    try:
+        socketio.sleep(2.3)
+        room.finalize_trick_step2()
+        broadcast_state(room)
+        if room.state == 'PLAYING':
+            socketio.start_background_task(run_bots_async, room)
+    except Exception as e:
+        print(f"Error in trick pause: {e}")
 
 def run_bots_async(room):
-    socketio.sleep(0.4)
+    socketio.sleep(0.3)
     while room.game_started and room.state in ['BIDDING', 'PLAYING']:
         p_idx = room.current_turn
+        if p_idx >= len(room.players):
+            break
         p = room.players[p_idx]
         if not p['is_bot']:
             break
         
-        socketio.sleep(0.6)
+        socketio.sleep(0.5)
         if room.state == 'BIDDING':
             min_b = room.get_dealer_min_bid(p_idx)
             room.process_bid(p_idx, min_b)
@@ -475,7 +477,7 @@ def run_bots_async(room):
                 trick_done = room.play_card_step1(p_idx, chosen)
                 broadcast_state(room)
                 if trick_done:
-                    handle_trick_pause_and_continue(room)
+                    socketio.start_background_task(handle_trick_pause_and_complex_continue, room)
                     break
         else:
             break
@@ -526,3 +528,4 @@ def broadcast_state(room):
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+            
