@@ -57,11 +57,11 @@
         .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 1px 7px; border-radius: 8px; margin-top: 2px; max-width: 74px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #48484a; }
         .bid-badge { font-size: 10px; background: #000; color: #ffcc00; padding: 1px 7px; border-radius: 5px; font-weight: bold; margin-top: 2px; border: 1px solid #48484a; }
 
-        /* تصميم الكروت الاحترافي الجديد */
+        /* تصميم الكروت الاحترافي الجديد تماماً ليشبه أوراق اللعب الحقيقية */
         .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130px; height: 130px; z-index: 10; }
-        .played-card { position: absolute; width: 44px; height: 62px; background: #fff; border-radius: 6px; border: 1.5px solid #b0b0b0; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+        .played-card { position: absolute; width: 48px; height: 68px; background: #fff; border-radius: 6px; border: 1.5px solid #b0b0b0; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
         .played-card.red { color: #d32f2f; }
-        .played-card.black { color: #212121; }
+        .played-card.black { color: #111; }
 
         .pos-0 { bottom: 0px; left: 50%; transform: translateX(-50%); }
         .pos-1 { left: 2px; top: 50%; transform: translateY(-50%); }
@@ -80,17 +80,18 @@
         .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffcc00; padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.7); animation: pulse-btn 1.5s infinite; }
         @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 76px; padding: 0 4px; overflow: hidden; }
+        .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 82px; padding: 0 4px; overflow: hidden; }
         
-        /* تصميم ورقة اليد ككرت ورق لعب حقيقي مظلل ومرتب */
-        .hand-card { width: 44px; height: 68px; background: #ffffff; border-radius: 6px; border: 1.5px solid #b0b0b0; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; font-size: 13px; box-shadow: -2px 2px 6px rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.15s ease, border-color 0.15s; flex-shrink: 0; position: relative; }
+        /* شكل الكرت الحقيقي في يد اللاعب */
+        .hand-card { width: 48px; height: 74px; background: #ffffff; border-radius: 6px; border: 1.5px solid #b0b0b0; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; box-shadow: -2px 2px 6px rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.15s ease, border-color 0.15s; flex-shrink: 0; position: relative; }
         .hand-card:active { transform: translateY(-12px); border-color: #34c759; }
         .hand-card.red { color: #d32f2f; }
-        .hand-card.black { color: #212121; }
+        .hand-card.black { color: #111; }
 
-        .card-top-val { font-size: 11px; line-height: 1; font-weight: 800; }
-        .card-center-suit { text-align: center; font-size: 18px; line-height: 1; }
-        .card-bottom-val { font-size: 11px; line-height: 1; font-weight: 800; transform: rotate(180deg); text-align: left; }
+        /* محتوى الكرت الاحترافي (رقم ونوع في الزوايا + أيقونة مركزية كلاسيكية) */
+        .card-corner { display: flex; flex-direction: column; align-items: center; font-size: 10px; line-height: 0.9; font-weight: 900; }
+        .card-corner.bottom { transform: rotate(180deg); align-self: flex-end; }
+        .card-center-graphic { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; opacity: 0.9; }
 
         .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 0 8px; }
         .tricks-box { background: #000; padding: 5px 12px; border-radius: 8px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
@@ -395,6 +396,22 @@
             }
         }
 
+        function renderCardHTML(card) {
+            let isRed = card.suit === 'Hearts' || card.suit === 'Tiles';
+            let icon = suitIcons[card.suit];
+            return `
+                <div class="card-corner">
+                    <span>${card.rank}</span>
+                    <span>${icon}</span>
+                </div>
+                <div class="card-center-graphic">${icon}</div>
+                <div class="card-corner bottom">
+                    <span>${card.rank}</span>
+                    <span>${icon}</span>
+                </div>
+            `;
+        }
+
         function renderHand(hand) {
             const handDiv = document.getElementById('my-hand');
             if(!handDiv) return;
@@ -402,7 +419,7 @@
             if(!hand || hand.length === 0) return;
 
             const containerWidth = window.innerWidth - 16;
-            const cardWidth = 44;
+            const cardWidth = 48;
             const count = hand.length;
             let overlap = 0;
             if (count > 1) {
@@ -420,12 +437,7 @@
                     cardEl.style.marginRight = `-${overlap}px`;
                 }
                 
-                // هيكل الكرت الاحترافي يشبه كروت اللعب الحقيقية تماماً
-                cardEl.innerHTML = `
-                    <div class="card-top-val">${card.rank}</div>
-                    <div class="card-center-suit">${suitIcons[card.suit]}</div>
-                    <div class="card-bottom-val">${card.rank}</div>
-                `;
+                cardEl.innerHTML = renderCardHTML(card);
                 
                 cardEl.onclick = (e) => {
                     e.preventDefault();
@@ -450,11 +462,7 @@
 
                 let cardEl = document.createElement('div');
                 cardEl.className = `played-card pos-${UI_idx} ${isRed ? 'red' : 'black'}`;
-                cardEl.innerHTML = `
-                    <div class="card-top-val">${c.rank}</div>
-                    <div class="card-center-suit">${suitIcons[c.suit]}</div>
-                    <div class="card-bottom-val">${c.rank}</div>
-                `;
+                cardEl.innerHTML = renderCardHTML(c);
                 area.appendChild(cardEl);
             });
         }
