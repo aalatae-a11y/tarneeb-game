@@ -32,7 +32,7 @@
         .last-trick-box { background: rgba(0,0,0,0.85); border: 1px solid #38383a; border-radius: 10px; padding: 4px; width: 68px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .last-trick-title { font-size: 9px; color: #aeaeb2; margin-bottom: 2px; }
         .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
-        .mini-card { width: 22px; height: 26px; background: white; border-radius: 3px; font-size: 8px; font-weight: bold; display: flex; justify-content: center; align-items: center; }
+        .mini-card { width: 22px; height: 26px; background: white; border-radius: 3px; font-size: 8px; font-weight: bold; display: flex; justify-content: center; align-items: center; border: 1px solid #ccc; }
         .mini-card.red { color: #d03b29; }
         .mini-card.black { color: #1c1c1e; }
 
@@ -57,10 +57,11 @@
         .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 1px 7px; border-radius: 8px; margin-top: 2px; max-width: 74px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #48484a; }
         .bid-badge { font-size: 10px; background: #000; color: #ffcc00; padding: 1px 7px; border-radius: 5px; font-weight: bold; margin-top: 2px; border: 1px solid #48484a; }
 
+        /* تصميم الكروت الاحترافي الجديد */
         .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130px; height: 130px; z-index: 10; }
-        .played-card { position: absolute; width: 42px; height: 58px; background: white; border-radius: 6px; border: 1px solid #bbb; display: flex; flex-direction: column; justify-content: space-between; padding: 3px 4px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.55); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
-        .played-card.red { color: #d03b29; }
-        .played-card.black { color: #1c1c1e; }
+        .played-card { position: absolute; width: 44px; height: 62px; background: #fff; border-radius: 6px; border: 1.5px solid #b0b0b0; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+        .played-card.red { color: #d32f2f; }
+        .played-card.black { color: #212121; }
 
         .pos-0 { bottom: 0px; left: 50%; transform: translateX(-50%); }
         .pos-1 { left: 2px; top: 50%; transform: translateY(-50%); }
@@ -75,16 +76,21 @@
 
         .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 25; }
         
-        /* إطالة مدة ظهور زر إعادة التوزيع وجعله مميزاً وبارزاً طوال فترة الطرح الأولية */
         .redeal-bar { margin-bottom: 6px; display: none; }
         .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffcc00; padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.7); animation: pulse-btn 1.5s infinite; }
         @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 74px; padding: 0 4px; overflow: hidden; }
-        .hand-card { width: 42px; height: 66px; background: white; border-radius: 6px; border: 1px solid #999; display: flex; flex-direction: column; justify-content: space-between; padding: 3px 4px; font-weight: bold; font-size: 13px; box-shadow: -2px 0 5px rgba(0,0,0,0.35); cursor: pointer; transition: transform 0.12s ease; flex-shrink: 0; position: relative; }
-        .hand-card:active { transform: translateY(-10px); border-color: #34c759; }
-        .hand-card.red { color: #d03b29; }
-        .hand-card.black { color: #1c1c1e; }
+        .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 76px; padding: 0 4px; overflow: hidden; }
+        
+        /* تصميم ورقة اليد ككرت ورق لعب حقيقي مظلل ومرتب */
+        .hand-card { width: 44px; height: 68px; background: #ffffff; border-radius: 6px; border: 1.5px solid #b0b0b0; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; font-size: 13px; box-shadow: -2px 2px 6px rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.15s ease, border-color 0.15s; flex-shrink: 0; position: relative; }
+        .hand-card:active { transform: translateY(-12px); border-color: #34c759; }
+        .hand-card.red { color: #d32f2f; }
+        .hand-card.black { color: #212121; }
+
+        .card-top-val { font-size: 11px; line-height: 1; font-weight: 800; }
+        .card-center-suit { text-align: center; font-size: 18px; line-height: 1; }
+        .card-bottom-val { font-size: 11px; line-height: 1; font-weight: 800; transform: rotate(180deg); text-align: left; }
 
         .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 0 8px; }
         .tricks-box { background: #000; padding: 5px 12px; border-radius: 8px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
@@ -294,7 +300,6 @@
                 document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
             }
             
-            // إطالة مدة ظهور زر إعادة التوزيع (يظهر طالما أن الشروط مطابقة ولم تُرمَ الورقة الأولى في الدورة الأولى، أو خلال مرحلة الطلبات في الدورات التالية)
             document.getElementById('redeal-bar').style.display = data.can_redeal ? 'block' : 'none';
 
             renderPlayers(data.players, data.current_turn, data.dealer_idx, data.round_number);
@@ -397,7 +402,7 @@
             if(!hand || hand.length === 0) return;
 
             const containerWidth = window.innerWidth - 16;
-            const cardWidth = 42;
+            const cardWidth = 44;
             const count = hand.length;
             let overlap = 0;
             if (count > 1) {
@@ -414,7 +419,13 @@
                 if (i > 0 && overlap > 0) {
                     cardEl.style.marginRight = `-${overlap}px`;
                 }
-                cardEl.innerHTML = `<div>${card.rank}</div><div style="text-align:center; font-size:15px;">${suitIcons[card.suit]}</div>`;
+                
+                // هيكل الكرت الاحترافي يشبه كروت اللعب الحقيقية تماماً
+                cardEl.innerHTML = `
+                    <div class="card-top-val">${card.rank}</div>
+                    <div class="card-center-suit">${suitIcons[card.suit]}</div>
+                    <div class="card-bottom-val">${card.rank}</div>
+                `;
                 
                 cardEl.onclick = (e) => {
                     e.preventDefault();
@@ -439,7 +450,11 @@
 
                 let cardEl = document.createElement('div');
                 cardEl.className = `played-card pos-${UI_idx} ${isRed ? 'red' : 'black'}`;
-                cardEl.innerHTML = `<div>${c.rank}</div><div style="text-align:center; font-size:15px;">${suitIcons[c.suit]}</div>`;
+                cardEl.innerHTML = `
+                    <div class="card-top-val">${c.rank}</div>
+                    <div class="card-center-suit">${suitIcons[c.suit]}</div>
+                    <div class="card-bottom-val">${c.rank}</div>
+                `;
                 area.appendChild(cardEl);
             });
         }
