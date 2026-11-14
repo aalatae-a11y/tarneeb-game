@@ -137,6 +137,28 @@ class TarneebRoom:
                 return needed
         return min_b
 
+    def calculate_smart_bid(self, player_idx):
+        p = self.players[player_idx]
+        hand = p['hand']
+        min_b = get_min_bid(p['score'])
+        
+        # حساب قوة اليد بناءً على الكروت العالية (A, K, Q)
+        strength = 0
+        for c in hand:
+            if c['rank'] == 'A': strength += 2.2
+            elif c['rank'] == 'K': strength += 1.5
+            elif c['rank'] == 'Q': strength += 1.0
+            elif c['value'] >= 12: strength += 0.5
+            
+        smart_bid = int(round(strength / 2.2))
+        smart_bid = max(min_b, min(smart_bid, 11))
+        
+        if player_idx == self.dealer_idx:
+            needed = 11 - self.total_bids
+            if needed > 0:
+                if smart_bid < needed: smart_bid = needed
+        return smart_bid
+
     def process_bid(self, player_idx, bid_val):
         p = self.players[player_idx]
         min_b = get_min_bid(p['score'])
@@ -174,6 +196,48 @@ class TarneebRoom:
 
         return True, "ناجح"
 
+    def select_smart_bot_card(self, player_idx, valid_cards):
+        p = self.players[player_idx]
+        hand = p['hand']
+        
+        # 1. إذا كان البوت هو أول من يلعب في الأكلة (Lead)
+        if len(self.current_trick) == 0:
+            # محاولة البدء بـ A إذا وجدت لضمان أكلة، أو ورقة ضعيفة للتخلص منها
+            aces = [c for c in valid_cards if c['rank'] == 'A']
+            if aces and random.random() < 0.7:
+                return random.choice(aces)
+            # تفادي البدء بقلب أحمر إذا كانت هناك خيارات أخرى
+            non_hearts = [c for c in valid_cards if c['suit'] != 'Hearts']
+            if non_hearts:
+                return min(non_hearts, key=lambda x: x['value'])
+            return min(valid_cards, key=lambda x: x['value'])
+
+        # 2. إذا كان هناك كروت ملعوبة في الأكلة (Follow / Response)
+        lead_suit = self.trick_lead_suit
+        current_winner_play = self.current_trick[0]
+        for play in self.current_trick[1:]:
+            curr_c = play['card']
+            win_c = current_winner_play['card']
+            if curr_c['suit'] == 'Hearts' and win_c['suit'] != 'Hearts':
+                current_winner_play = play
+            elif curr_c['suit'] == win_c['suit'] and curr_c['value'] > win_c['value']:
+                current_winner_play = play
+
+        # تكتيك القلب الأحمر الذكي (استدراج K♥ بالـ A♥)
+        # إذا لعب شخص K♥ وكان لدى البوت A♥، يقوم بضربها فوراً لحصد النقاط الخمس!
+        if lead_suit == 'Hearts' or any(c['card']['suit'] == 'Hearts' and c['card']['rank'] == 'K' for c in self.current_trick):
+            bot_aces_hearts = [c for c in valid_cards if c['suit'] == 'Hearts' and c['rank'] == 'A']
+            if bot_aces_hearts:
+                return bot_aces_hearts[0]
+
+        # محاولة الفوز بالأكلة إذا كان البوت بحاجة لأكلات إضافية لتحقيق طلبه
+        winning_cards = [c for c in valid_cards if c['suit'] == current_winner_play['card']['suit'] and c['value'] > current_winner_play['card']['value']]
+        if winning_cards and p['tricks_won'] < p['bid']:
+            return min(winning_cards, key=lambda x: x['value']) # أقل ورقة رابحة لعدم حرق الكروت الكبيرة بلا داعي
+
+        # إذا لم يكن بحاجة لأكل أو لا يستطيع الفوز، يرمي أدنى ورقة لديه (حرق)
+        return min(valid_cards, key=lambda x: x['value'])
+
     def play_card(self, player_idx, card):
         if self.is_processing_trick:
             return False
@@ -193,7 +257,6 @@ class TarneebRoom:
             for play in self.current_trick[1:]:
                 curr_c = play['card']
                 win_c = winning_play['card']
-                # تصحيح دقيق لمنطق الفوز: الـ A دائماً أكبر من K و Q ضمن نفس النوع
                 if curr_c['suit'] == 'Hearts' and win_c['suit'] != 'Hearts':
                     winning_play = play
                 elif curr_c['suit'] == win_c['suit'] and curr_c['value'] > win_c['value']:
@@ -203,8 +266,21 @@ class TarneebRoom:
             self.state = 'TRICK_PAUSE'
             return True
         else:
-            self.current_turn = (self.current_turn - 1) % 4
+            # الانتقال الآمن للاعب التالي مع تخطي من نفذت أوراقه
+            self.advance_to_next_active_player()
             return False
+
+    def advance_to_next_active_player(self):
+        active_players = [i for i, p in enumerate(self.players) if len(p['hand']) > 0]
+        if not active_players:
+            return
+        
+        current = self.current_turn
+        while True:
+            current = (current - 1) % 4
+            if len(self.players[current]['hand']) > 0:
+                self.current_turn = current
+                break
 
     def finalize_trick(self):
         if len(self.current_trick) != 4:
@@ -235,7 +311,7 @@ class TarneebRoom:
         self.current_turn = winner_idx
         self.is_processing_trick = False
 
-        if sum(p['tricks_won'] for p in self.players) == 13:
+        if sum(p['tricks_won'] for p in self.players) == 13 or all(len(p['hand']) == 0 for p in self.players):
             game_ended = self.calculate_round_scores()
             if game_ended:
                 self.state = 'GAME_OVER'
@@ -438,18 +514,18 @@ def run_game_loop(room):
             break
         p = room.players[p_idx]
         
-        if not p['is_bot']:
+        if not p['is_bot'] or len(p['hand']) == 0:
             break
         
         socketio.sleep(0.6)
         if room.state == 'BIDDING':
-            min_b = room.get_dealer_min_bid(p_idx)
-            room.process_bid(p_idx, min_b)
+            smart_b = room.calculate_smart_bid(p_idx)
+            room.process_bid(p_idx, smart_b)
             broadcast_state(room)
         elif room.state == 'PLAYING' and not room.is_processing_trick:
             valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
             if valid_cards:
-                chosen = random.choice(valid_cards)
+                chosen = room.select_smart_bot_card(p_idx, valid_cards)
                 trick_done = room.play_card(p_idx, chosen)
                 broadcast_state(room)
                 if trick_done:
