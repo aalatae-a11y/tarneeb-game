@@ -120,7 +120,6 @@ class TarneebRoom:
             self.total_bids = 0
             self.bids_collected = 0
 
-        # اتجاه عكس عقارب الساعة: الدور ينتقل من اللاعب إلى اللاعب الذي يسبقه في الفهرس (idx - 1) % 4
         self.current_turn = (self.dealer_idx - 1) % 4
         self.trick_lead_suit = None
         self.current_trick = []
@@ -159,7 +158,6 @@ class TarneebRoom:
             self.state = 'PLAYING'
             self.current_turn = (self.dealer_idx - 1) % 4
         else:
-            # عكس عقارب الساعة في الطلبات أيضاً
             self.current_turn = (self.current_turn - 1) % 4
 
     def validate_card_play(self, player_idx, card):
@@ -204,7 +202,6 @@ class TarneebRoom:
             self.state = 'TRICK_PAUSE'
             return True
         else:
-            # عكس عقارب الساعة في اللعب
             self.current_turn = (self.current_turn - 1) % 4
             return False
 
@@ -243,7 +240,7 @@ class TarneebRoom:
                 self.state = 'GAME_OVER'
             else:
                 self.state = 'ROUND_OVER'
-                self.dealer_idx = (self.dealer_idx - 1) % 4 # التوزيع يتحرك عكس عقارب الساعة أيضاً
+                self.dealer_idx = (self.dealer_idx - 1) % 4
         else:
             self.state = 'PLAYING'
 
@@ -402,6 +399,7 @@ def on_bid(data):
         if p_idx == room.current_turn:
             room.process_bid(p_idx, int(data.get('bid', 2)))
             broadcast_state(room)
+            socketio.start_background_task(run_game_loop, room)
 
 @socketio.on('play_card')
 def on_play_card(data):
@@ -422,14 +420,17 @@ def on_play_card(data):
             
             if trick_done:
                 socketio.start_background_task(handle_trick_pause_and_resume, room)
+            else:
+                socketio.start_background_task(run_game_loop, room)
 
 def handle_trick_pause_and_resume(room):
     socketio.sleep(2.4)
     room.finalize_trick()
     broadcast_state(room)
+    socketio.start_background_task(run_game_loop, room)
 
 def run_game_loop(room):
-    socketio.sleep(0.5)
+    socketio.sleep(0.3)
     while room.game_started and room.state in ['BIDDING', 'PLAYING']:
         p_idx = room.current_turn
         if p_idx >= len(room.players):
@@ -439,7 +440,7 @@ def run_game_loop(room):
         if not p['is_bot']:
             break
         
-        socketio.sleep(0.7)
+        socketio.sleep(0.6)
         if room.state == 'BIDDING':
             min_b = room.get_dealer_min_bid(p_idx)
             room.process_bid(p_idx, min_b)
@@ -454,7 +455,7 @@ def run_game_loop(room):
                     socketio.start_background_task(handle_trick_pause_and_resume, room)
                     break
         else:
-            socketio.sleep(0.5)
+            break
 
 def get_player_idx_by_sid(room, sid):
     for p in room.players:
@@ -501,4 +502,4 @@ def broadcast_state(room):
             socketio.emit('game_update', p_state, to=p['sid'])
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.5', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
