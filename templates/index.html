@@ -264,7 +264,7 @@
             const ranksOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
             let suitIndex = suitsOrder.indexOf(card.suit);
             let rankIndex = ranksOrder.indexOf(card.rank);
-            if (suitIndex === -1 || rankIndex === -1) return 'card_1.png';
+            if (suitIndex === -1 || rankIndex === -1) return 'card_01.png';
             let cardNum = (suitIndex * 13) + rankIndex + 1;
             return `card_${cardNum}.png`;
         }
