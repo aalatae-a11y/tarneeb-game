@@ -3,77 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
-    <!-- إعدادات التثبيت كملء شاشة وإخفاء شريط المتصفح -->
     <title>طرنيب ليبي أونلاين</title>
-    <link rel="manifest" href="/manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#121214">
-
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #121214; color: white; position: fixed; inset: 0; }
 
-        /* شاشة الدخول */
         #login-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 26px; background: #1c1c1e; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.9); width: 90%; max-width: 340px; z-index: 200; border: 1px solid #2c2c2e; }
-        #login-box h2 { text-align: center; margin-bottom: 20px; color: #34c759; font-size: 24px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        #login-box h2 { text-align: center; margin-bottom: 20px; color: #34c759; font-size: 24px; font-weight: 800; }
         .input-group { margin-bottom: 16px; }
         .input-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #8e8e93; font-weight: 600; }
-        input { padding: 14px; font-size: 16px; border-radius: 12px; border: 1px solid #3a3a3c; width: 100%; background: #2c2c2e; color: white; outline: none; transition: border-color 0.2s; }
-        input:focus { border-color: #34c759; }
+        input { padding: 14px; font-size: 16px; border-radius: 12px; border: 1px solid #3a3a3c; width: 100%; background: #2c2c2e; color: white; outline: none; }
         button.login-btn { padding: 15px; font-size: 17px; border-radius: 12px; border: none; width: 100%; background: linear-gradient(135deg, #34c759, #28a745); color: white; cursor: pointer; font-weight: bold; margin-top: 10px; box-shadow: 0 4px 15px rgba(52,199,89,0.4); }
 
-        /* لوحة اللعبة الرئيسية */
         #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 6px 8px 10px 8px; overflow: hidden; background: radial-gradient(circle at center, #1e1e24 0%, #121214 100%); }
 
-        /* شريط المعلومات العلوي */
         .top-hud { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; height: 74px; flex-shrink: 0; z-index: 20; }
 
-        .cross-score { background: rgba(28,28,30,0.9); border-radius: 12px; padding: 4px 8px; display: grid; grid-template-columns: repeat(3, 26px); grid-template-rows: repeat(3, 20px); gap: 2px; text-align: center; font-size: 11px; font-weight: bold; border: 1px solid #38383a; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .cross-score { background: rgba(28,28,30,0.9); border-radius: 12px; padding: 4px 8px; display: grid; grid-template-columns: repeat(3, 26px); grid-template-rows: repeat(3, 20px); gap: 2px; text-align: center; font-size: 11px; font-weight: bold; border: 1px solid #38383a; }
         .cross-score div { display: flex; justify-content: center; align-items: center; }
         .sc-me { color: #34c759; font-size: 12px; }
         .sc-other { color: #ffffff; }
 
         .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; }
-        .room-title { font-weight: bold; font-size: 13px; color: #f2f2f7; background: #2c2c2e; padding: 4px 14px; border-radius: 14px; border: 1px solid #3a3a3c; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+        .room-title { font-weight: bold; font-size: 13px; color: #f2f2f7; background: #2c2c2e; padding: 4px 14px; border-radius: 14px; border: 1px solid #3a3a3c; }
         .bids-counter { font-size: 11px; color: #ffd60a; font-weight: bold; background: rgba(0,0,0,0.8); padding: 3px 12px; border-radius: 10px; border: 1px solid #444; }
 
-        .last-trick-box { background: rgba(28,28,30,0.9); border: 1px solid #38383a; border-radius: 12px; padding: 4px; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .last-trick-box { background: rgba(28,28,30,0.9); border: 1px solid #38383a; border-radius: 12px; padding: 4px; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .last-trick-title { font-size: 9px; color: #8e8e93; margin-bottom: 2px; font-weight: bold; }
         .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
-        .mini-card { width: 24px; height: 28px; background: white; border-radius: 4px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #444; }
+        .mini-card { width: 22px; height: 30px; background: white; border-radius: 3px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #444; }
         .mini-card img { width: 100%; height: 100%; object-fit: fill; }
 
-        /* طاولة اللعب الخضراء الفخمة */
         .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 12px 18px; min-height: 0; }
         .table-container { position: relative; width: 100%; height: 100%; max-width: 420px; border: 6px solid #2c2c2e; border-radius: 35px; background: radial-gradient(circle, #229a43 0%, #15662c 100%); box-shadow: inset 0 0 35px rgba(0,0,0,0.7), 0 10px 30px rgba(0,0,0,0.6); }
 
-        /* مواقع اللاعبين حول الطاولة */
         .player-node { position: absolute; display: flex; flex-direction: column; align-items: center; z-index: 15; }
         .node-top { top: -28px; left: 50%; transform: translateX(-50%); }
         .node-left { left: -26px; top: 50%; transform: translateY(-50%); }
         .node-right { right: -26px; top: 50%; transform: translateY(-50%); }
 
         .avatar-container { position: relative; display: flex; align-items: center; }
-        .avatar-circle { width: 46px; height: 46px; border-radius: 50%; background: #2c2c2e; border: 3px solid #ffd60a; display: flex; justify-content: center; align-items: center; font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.6); transition: all 0.3s ease; }
-        .dealer-tag { position: absolute; bottom: -3px; right: -5px; background: #ff3b30; color: white; font-size: 8px; font-weight: bold; padding: 1px 5px; border-radius: 6px; border: 1.5px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .avatar-circle { width: 46px; height: 46px; border-radius: 50%; background: #2c2c2e; border: 3px solid #ffd60a; display: flex; justify-content: center; align-items: center; font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
+        .dealer-tag { position: absolute; bottom: -3px; right: -5px; background: #ff3b30; color: white; font-size: 8px; font-weight: bold; padding: 1px 5px; border-radius: 6px; border: 1.5px solid white; }
         
-        .won-pile { position: absolute; width: 24px; height: 32px; background: repeating-linear-gradient(45deg, #ff3b30, #ff3b30 3px, #c0392b 3px, #c0392b 6px); border: 1.5px solid #fff; border-radius: 4px; box-shadow: 2px 3px 8px rgba(0,0,0,0.7); display: none; }
+        .won-pile { position: absolute; width: 24px; height: 34px; background: repeating-linear-gradient(45deg, #ff3b30, #ff3b30 3px, #c0392b 3px, #c0392b 6px); border: 1.5px solid #fff; border-radius: 4px; box-shadow: 2px 3px 8px rgba(0,0,0,0.7); display: none; }
         .node-top .won-pile { right: -28px; top: 6px; }
         .node-left .won-pile { right: -28px; top: 6px; }
         .node-right .won-pile { left: -28px; top: 6px; }
-        .bottom-won-pile { position: absolute; left: -32px; top: 4px; width: 24px; height: 32px; background: repeating-linear-gradient(45deg, #ff3b30, #ff3b30 3px, #c0392b 3px, #c0392b 6px); border: 1.5px solid #fff; border-radius: 4px; display: none; }
+        .bottom-won-pile { position: absolute; left: -32px; top: 4px; width: 24px; height: 34px; background: repeating-linear-gradient(45deg, #ff3b30, #ff3b30 3px, #c0392b 3px, #c0392b 6px); border: 1.5px solid #fff; border-radius: 4px; display: none; }
 
         .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 2px 8px; border-radius: 8px; margin-top: 3px; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #3a3a3c; font-weight: 600; }
         .bid-badge { font-size: 10px; background: #000; color: #ffd60a; padding: 1px 8px; border-radius: 6px; font-weight: bold; margin-top: 2px; border: 1px solid #3a3a3c; }
 
-        /* الكروت في وسط الطاولة وأثناء اللعب */
-        .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 140px; height: 140px; z-index: 10; }
-        .played-card { position: absolute; width: 56px; height: 80px; background: #fff; border-radius: 7px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.6); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
-        .played-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 6px; }
+        /* تعديل مقاسات الكروت في الطاولة لتكون بالطول تماماً (عرض أقل وارتفاع أكبر) */
+        .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; z-index: 10; }
+        .played-card { position: absolute; width: 52px; height: 74px; background: #fff; border-radius: 6px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.6); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+        .played-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 5px; }
 
         .pos-0 { bottom: 2px; left: 50%; transform: translateX(-50%); }
         .pos-1 { left: 4px; top: 50%; transform: translateY(-50%); }
@@ -86,40 +72,35 @@
         .fly-to-2 { top: 50% !important; left: 50% !important; transform: translate(-50%, -190px) scale(0.2) !important; opacity: 0 !important; }
         .fly-to-3 { top: 50% !important; left: 50% !important; transform: translate(190px, -50%) scale(0.2) !important; opacity: 0 !important; }
 
-        /* القسم السفلي ويد اللاعب */
         .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 25; }
         
         .redeal-bar { margin-bottom: 6px; display: none; }
         .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffd60a; padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.7); animation: pulse-btn 1.5s infinite; }
         @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
 
-        .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 92px; padding: 0 4px; overflow: hidden; }
+        .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 105px; padding: 0 4px; overflow: hidden; }
         
-        /* كروت يد اللاعب الحقيقية */
-        .hand-card { width: 56px; height: 86px; background: #ffffff; border-radius: 7px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: -3px 3px 10px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.18s ease, border-color 0.18s, box-shadow 0.18s; flex-shrink: 0; position: relative; }
-        .hand-card:active { transform: translateY(-14px) scale(1.05); border-color: #34c759; box-shadow: 0 10px 20px rgba(52,199,89,0.4); z-index: 10; }
+        /* تعديل مقاسات كروت يد اللاعب لتكون بالطول وبشكل عمودي احترافي */
+        .hand-card { width: 62px; height: 92px; background: #ffffff; border-radius: 7px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: -3px 3px 10px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.18s ease, border-color 0.18s; flex-shrink: 0; position: relative; }
+        .hand-card:active { transform: translateY(-14px) scale(1.05); border-color: #34c759; z-index: 10; }
         .hand-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 6px; }
 
         .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 0 10px; }
-        .tricks-box { background: #1c1c1e; padding: 6px 14px; border-radius: 10px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+        .tricks-box { background: #1c1c1e; padding: 6px 14px; border-radius: 10px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
 
-        /* نافذة الانتظار */
         #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(24,24,26,0.98); padding: 22px; border-radius: 20px; z-index: 180; border: 1px solid #38383a; width: 88%; max-width: 310px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
-        .timer-circle { width: 68px; height: 68px; border-radius: 50%; border: 4px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: #ffd60a; margin: 12px auto; background: #121214; box-shadow: inset 0 0 10px rgba(52,199,89,0.3); }
-        .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 12px; box-shadow: 0 4px 12px rgba(255,214,10,0.3); }
+        .timer-circle { width: 68px; height: 68px; border-radius: 50%; border: 4px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: #ffd60a; margin: 12px auto; background: #121214; }
+        .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 12px; }
 
-        /* نافذة الطلبات (البيد) */
         #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 260px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
         #bid-modal h3 { font-size: 15px; margin-bottom: 6px; color: white; font-weight: 700; }
         #bid-hint { font-size: 11px; color: #ffd60a; margin-bottom: 12px; font-weight: 600; }
         .bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-        .bid-btn { background: #ffd60a; color: #000; border: none; border-radius: 10px; padding: 12px 0; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: transform 0.1s; }
-        .bid-btn:active { transform: scale(0.95); }
+        .bid-btn { background: #ffd60a; color: #000; border: none; border-radius: 10px; padding: 12px 0; font-weight: bold; font-size: 14px; cursor: pointer; }
 
-        /* نافذة ملخص الدورة ونهاية اللعبة */
         #round-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 160; border: 1px solid #38383a; width: 92%; max-width: 350px; box-shadow: 0 15px 45px rgba(0,0,0,0.95); }
         .summary-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 11px; text-align: right; }
-        .summary-table th { color: #8e8e93; border-bottom: 1px solid #38383a; padding: 6px; font-weight: 600; }
+        .summary-table th { color: #8e8e93; border-bottom: 1px solid #38383a; padding: 6px; }
         .summary-table td { padding: 8px 6px; border-bottom: 1px solid #2c2c2e; vertical-align: middle; }
         .pts-plus { color: #34c759; font-weight: bold; }
         .pts-minus { color: #ff3b30; font-weight: bold; }
@@ -242,7 +223,7 @@
                 </thead>
                 <tbody id="summary-body"></tbody>
             </table>
-            <button onclick="nextRound()" style="width:100%; background:#34c759; border:none; padding:12px; color:white; border-radius:12px; font-weight:bold; font-size:15px; cursor:pointer; box-shadow: 0 4px 12px rgba(52,199,89,0.4);">الدورة التالية</button>
+            <button onclick="nextRound()" style="width:100%; background:#34c759; border:none; padding:12px; color:white; border-radius:12px; font-weight:bold; font-size:15px; cursor:pointer;">الدورة التالية</button>
         </div>
     </div>
 
@@ -259,6 +240,24 @@
         let currentTurnGlobal = -1;
         let gameStateGlobal = "WAITING";
         let animatedThisTrick = false;
+
+        // مسبق التحميل للصور لمنع أي تأخير في الظهور
+        const cardImagesCache = {};
+        function preloadCardImages() {
+            const suits = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
+            const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            let count = 1;
+            suits.forEach(s => {
+                ranks.forEach(r => {
+                    let filename = `card_${count}.png`;
+                    let img = new Image();
+                    img.src = `/static/cards/${filename}`;
+                    cardImagesCache[`${s}_${r}`] = img.src;
+                    count++;
+                });
+            });
+        }
+        preloadCardImages();
 
         function getCardImageFilename(card) {
             const suitsOrder = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
@@ -417,8 +416,9 @@
         }
 
         function renderCardHTML(card) {
-            let filename = getCardImageFilename(card);
-            return `<img src="/static/cards/${filename}" alt="${card.rank} ${card.suit}">`;
+            let key = `${card.suit}_${card.rank}`;
+            let imgSrc = cardImagesCache[key] || `/static/cards/${getCardImageFilename(card)}`;
+            return `<img src="${imgSrc}" alt="${card.rank} ${card.suit}" loading="eager">`;
         }
 
         function renderHand(hand) {
@@ -428,7 +428,7 @@
             if(!hand || hand.length === 0) return;
 
             const containerWidth = window.innerWidth - 16;
-            const cardWidth = 56;
+            const cardWidth = 62;
             const count = hand.length;
             let overlap = 0;
             if (count > 1) {
@@ -486,10 +486,11 @@
 
             lastTrick.forEach(play => {
                 let c = play.card;
-                let filename = getCardImageFilename(c);
+                let key = `${c.suit}_${c.rank}`;
+                let imgSrc = cardImagesCache[key] || `/static/cards/${getCardImageFilename(c)}`;
                 let miniCard = document.createElement('div');
                 miniCard.className = `mini-card`;
-                miniCard.innerHTML = `<img src="/static/cards/${filename}" alt="${c.rank}">`;
+                miniCard.innerHTML = `<img src="${imgSrc}" alt="${c.rank}">`;
                 container.appendChild(miniCard);
             });
         }
