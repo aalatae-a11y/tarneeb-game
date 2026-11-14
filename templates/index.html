@@ -7,101 +7,112 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #161618; color: white; position: fixed; inset: 0; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #121214; color: white; position: fixed; inset: 0; }
 
-        #login-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 24px; background: #242426; border-radius: 18px; box-shadow: 0 12px 35px rgba(0,0,0,0.85); width: 88%; max-width: 340px; z-index: 200; border: 1px solid #38383a; }
-        #login-box h2 { text-align: center; margin-bottom: 18px; color: #34c759; font-size: 22px; }
-        .input-group { margin-bottom: 14px; }
-        .input-group label { display: block; font-size: 13px; margin-bottom: 5px; color: #aeaeb2; }
-        input { padding: 12px; font-size: 15px; border-radius: 10px; border: 1px solid #3a3a3c; width: 100%; background: #161618; color: white; outline: none; }
-        button.login-btn { padding: 14px; font-size: 16px; border-radius: 10px; border: none; width: 100%; background: #34c759; color: white; cursor: pointer; font-weight: bold; margin-top: 8px; }
+        /* شاشة الدخول */
+        #login-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 26px; background: #1c1c1e; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.9); width: 90%; max-width: 340px; z-index: 200; border: 1px solid #2c2c2e; }
+        #login-box h2 { text-align: center; margin-bottom: 20px; color: #34c759; font-size: 24px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #8e8e93; font-weight: 600; }
+        input { padding: 14px; font-size: 16px; border-radius: 12px; border: 1px solid #3a3a3c; width: 100%; background: #2c2c2e; color: white; outline: none; transition: border-color 0.2s; }
+        input:focus { border-color: #34c759; }
+        button.login-btn { padding: 15px; font-size: 17px; border-radius: 12px; border: none; width: 100%; background: linear-gradient(135deg, #34c759, #28a745); color: white; cursor: pointer; font-weight: bold; margin-top: 10px; box-shadow: 0 4px 15px rgba(52,199,89,0.4); }
 
-        #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 6px 8px 10px 8px; overflow: hidden; }
+        /* لوحة اللعبة الرئيسية */
+        #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 6px 8px 10px 8px; overflow: hidden; background: radial-gradient(circle at center, #1e1e24 0%, #121214 100%); }
 
+        /* شريط المعلومات العلوي */
         .top-hud { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; height: 74px; flex-shrink: 0; z-index: 20; }
 
-        .cross-score { background: rgba(0,0,0,0.85); border-radius: 10px; padding: 4px 6px; display: grid; grid-template-columns: repeat(3, 24px); grid-template-rows: repeat(3, 20px); gap: 1px; text-align: center; font-size: 11px; font-weight: bold; border: 1px solid #38383a; }
+        .cross-score { background: rgba(28,28,30,0.9); border-radius: 12px; padding: 4px 8px; display: grid; grid-template-columns: repeat(3, 26px); grid-template-rows: repeat(3, 20px); gap: 2px; text-align: center; font-size: 11px; font-weight: bold; border: 1px solid #38383a; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         .cross-score div { display: flex; justify-content: center; align-items: center; }
-        .sc-me { color: #34c759; }
+        .sc-me { color: #34c759; font-size: 12px; }
         .sc-other { color: #ffffff; }
 
         .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; }
-        .room-title { font-weight: bold; font-size: 14px; color: #f2f2f7; background: #2c2c2e; padding: 3px 12px; border-radius: 12px; border: 1px solid #3a3a3c; }
-        .bids-counter { font-size: 11px; color: #ffcc00; font-weight: bold; background: rgba(0,0,0,0.7); padding: 2px 10px; border-radius: 8px; }
+        .room-title { font-weight: bold; font-size: 13px; color: #f2f2f7; background: #2c2c2e; padding: 4px 14px; border-radius: 14px; border: 1px solid #3a3a3c; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+        .bids-counter { font-size: 11px; color: #ffd60a; font-weight: bold; background: rgba(0,0,0,0.8); padding: 3px 12px; border-radius: 10px; border: 1px solid #444; }
 
-        .last-trick-box { background: rgba(0,0,0,0.85); border: 1px solid #38383a; border-radius: 10px; padding: 4px; width: 68px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .last-trick-title { font-size: 9px; color: #aeaeb2; margin-bottom: 2px; }
+        .last-trick-box { background: rgba(28,28,30,0.9); border: 1px solid #38383a; border-radius: 12px; padding: 4px; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .last-trick-title { font-size: 9px; color: #8e8e93; margin-bottom: 2px; font-weight: bold; }
         .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
-        .mini-card { width: 22px; height: 26px; background: white; border-radius: 3px; font-size: 8px; font-weight: bold; display: flex; justify-content: center; align-items: center; border: 1px solid #ccc; overflow: hidden; }
-        .mini-card img { width: 100%; height: 100%; object-fit: cover; }
+        .mini-card { width: 24px; height: 28px; background: white; border-radius: 4px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #444; }
+        .mini-card img { width: 100%; height: 100%; object-fit: fill; }
 
-        .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 18px 22px; min-height: 0; }
-        .table-container { position: relative; width: 100%; height: 100%; max-width: 440px; border: 5px solid #d1d1d6; border-radius: 30px; background: radial-gradient(circle, #28b450 0%, #1d883b 100%); box-shadow: inset 0 0 25px rgba(0,0,0,0.65); }
+        /* طاولة اللعب الخضراء الفخمة */
+        .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 12px 18px; min-height: 0; }
+        .table-container { position: relative; width: 100%; height: 100%; max-width: 420px; border: 6px solid #2c2c2e; border-radius: 35px; background: radial-gradient(circle, #229a43 0%, #15662c 100%); box-shadow: inset 0 0 35px rgba(0,0,0,0.7), 0 10px 30px rgba(0,0,0,0.6); }
 
+        /* مواقع اللاعبين حول الطاولة */
         .player-node { position: absolute; display: flex; flex-direction: column; align-items: center; z-index: 15; }
-        .node-top { top: -26px; left: 50%; transform: translateX(-50%); }
-        .node-left { left: -24px; top: 50%; transform: translateY(-50%); }
-        .node-right { right: -24px; top: 50%; transform: translateY(-50%); }
+        .node-top { top: -28px; left: 50%; transform: translateX(-50%); }
+        .node-left { left: -26px; top: 50%; transform: translateY(-50%); }
+        .node-right { right: -26px; top: 50%; transform: translateY(-50%); }
 
         .avatar-container { position: relative; display: flex; align-items: center; }
-        .avatar-circle { width: 44px; height: 44px; border-radius: 50%; background: #48484a; border: 3px solid #ffcc00; display: flex; justify-content: center; align-items: center; font-size: 18px; box-shadow: 0 3px 8px rgba(0,0,0,0.6); }
-        .dealer-tag { position: absolute; bottom: -2px; right: -4px; background: #ff3b30; color: white; font-size: 8px; font-weight: bold; padding: 1px 4px; border-radius: 6px; border: 1px solid white; }
+        .avatar-circle { width: 46px; height: 46px; border-radius: 50%; background: #2c2c2e; border: 3px solid #ffd60a; display: flex; justify-content: center; align-items: center; font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.6); transition: all 0.3s ease; }
+        .dealer-tag { position: absolute; bottom: -3px; right: -5px; background: #ff3b30; color: white; font-size: 8px; font-weight: bold; padding: 1px 5px; border-radius: 6px; border: 1.5px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         
-        .won-pile { position: absolute; width: 22px; height: 30px; background: repeating-linear-gradient(45deg, #c72c2c, #c72c2c 3px, #a31f1f 3px, #a31f1f 6px); border: 1.5px solid #fff; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.6); display: none; }
-        .node-top .won-pile { right: -26px; top: 6px; }
-        .node-left .won-pile { right: -26px; top: 6px; }
-        .node-right .won-pile { left: -26px; top: 6px; }
-        .bottom-won-pile { position: absolute; left: -30px; top: 4px; width: 22px; height: 30px; background: repeating-linear-gradient(45deg, #c72c2c, #c72c2c 3px, #a31f1f 3px, #a31f1f 6px); border: 1.5px solid #fff; border-radius: 4px; display: none; }
+        .won-pile { position: absolute; width: 24px; height: 32px; background: repeating-linear-gradient(45deg, #ff3b30, #ff3b30 3px, #c0392b 3px, #c0392b 6px); border: 1.5px solid #fff; border-radius: 4px; box-shadow: 2px 3px 8px rgba(0,0,0,0.7); display: none; }
+        .node-top .won-pile { right: -28px; top: 6px; }
+        .node-left .won-pile { right: -28px; top: 6px; }
+        .node-right .won-pile { left: -28px; top: 6px; }
+        .bottom-won-pile { position: absolute; left: -32px; top: 4px; width: 24px; height: 32px; background: repeating-linear-gradient(45deg, #ff3b30, #ff3b30 3px, #c0392b 3px, #c0392b 6px); border: 1.5px solid #fff; border-radius: 4px; display: none; }
 
-        .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 1px 7px; border-radius: 8px; margin-top: 2px; max-width: 74px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #48484a; }
-        .bid-badge { font-size: 10px; background: #000; color: #ffcc00; padding: 1px 7px; border-radius: 5px; font-weight: bold; margin-top: 2px; border: 1px solid #48484a; }
+        .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 2px 8px; border-radius: 8px; margin-top: 3px; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #3a3a3c; font-weight: 600; }
+        .bid-badge { font-size: 10px; background: #000; color: #ffd60a; padding: 1px 8px; border-radius: 6px; font-weight: bold; margin-top: 2px; border: 1px solid #3a3a3c; }
 
-        /* عرض صور الكروت الحقيقية في المنتصف والطاولة */
-        .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130px; height: 130px; z-index: 10; }
-        .played-card { position: absolute; width: 52px; height: 74px; background: #fff; border-radius: 6px; border: 1px solid #b0b0b0; display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
-        .played-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 5px; }
+        /* الكروت في وسط الطاولة وأثناء اللعب */
+        .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 140px; height: 140px; z-index: 10; }
+        .played-card { position: absolute; width: 56px; height: 80px; background: #fff; border-radius: 7px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.6); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+        .played-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 6px; }
 
-        .pos-0 { bottom: 0px; left: 50%; transform: translateX(-50%); }
-        .pos-1 { left: 2px; top: 50%; transform: translateY(-50%); }
-        .pos-2 { top: 0px; left: 50%; transform: translateX(-50%); }
-        .pos-3 { right: 2px; top: 50%; transform: translateY(-50%); }
+        .pos-0 { bottom: 2px; left: 50%; transform: translateX(-50%); }
+        .pos-1 { left: 4px; top: 50%; transform: translateY(-50%); }
+        .pos-2 { top: 2px; left: 50%; transform: translateX(-50%); }
+        .pos-3 { right: 4px; top: 50%; transform: translateY(-50%); }
 
-        .gather-center { top: 50% !important; left: 50% !important; bottom: auto !important; right: auto !important; transform: translate(-50%, -50%) rotate(8deg) scale(0.95) !important; box-shadow: 0 6px 16px rgba(0,0,0,0.8) !important; }
-        .fly-to-0 { top: 50% !important; left: 50% !important; transform: translate(-50%, 170px) scale(0.25) !important; opacity: 0 !important; }
-        .fly-to-1 { top: 50% !important; left: 50% !important; transform: translate(-170px, -50%) scale(0.25) !important; opacity: 0 !important; }
-        .fly-to-2 { top: 50% !important; left: 50% !important; transform: translate(-50%, -170px) scale(0.25) !important; opacity: 0 !important; }
-        .fly-to-3 { top: 50% !important; left: 50% !important; transform: translate(170px, -50%) scale(0.25) !important; opacity: 0 !important; }
+        .gather-center { top: 50% !important; left: 50% !important; bottom: auto !important; right: auto !important; transform: translate(-50%, -50%) rotate(10deg) scale(0.9) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.8) !important; }
+        .fly-to-0 { top: 50% !important; left: 50% !important; transform: translate(-50%, 190px) scale(0.2) !important; opacity: 0 !important; }
+        .fly-to-1 { top: 50% !important; left: 50% !important; transform: translate(-190px, -50%) scale(0.2) !important; opacity: 0 !important; }
+        .fly-to-2 { top: 50% !important; left: 50% !important; transform: translate(-50%, -190px) scale(0.2) !important; opacity: 0 !important; }
+        .fly-to-3 { top: 50% !important; left: 50% !important; transform: translate(190px, -50%) scale(0.2) !important; opacity: 0 !important; }
 
+        /* القسم السفلي ويد اللاعب */
         .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 25; }
         
         .redeal-bar { margin-bottom: 6px; display: none; }
-        .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffcc00; padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.7); animation: pulse-btn 1.5s infinite; }
-        @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffd60a; padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.7); animation: pulse-btn 1.5s infinite; }
+        @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
 
-        .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 86px; padding: 0 4px; overflow: hidden; }
+        .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 92px; padding: 0 4px; overflow: hidden; }
         
-        /* كروت يد اللاعب الحقيقية بالصورة */
-        .hand-card { width: 52px; height: 80px; background: #ffffff; border-radius: 6px; border: 1px solid #b0b0b0; display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: -2px 2px 6px rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.15s ease, border-color 0.15s; flex-shrink: 0; position: relative; }
-        .hand-card:active { transform: translateY(-12px); border-color: #34c759; }
-        .hand-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 5px; }
+        /* كروت يد اللاعب الحقيقية */
+        .hand-card { width: 56px; height: 86px; background: #ffffff; border-radius: 7px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: -3px 3px 10px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.18s ease, border-color 0.18s, box-shadow 0.18s; flex-shrink: 0; position: relative; }
+        .hand-card:active { transform: translateY(-14px) scale(1.05); border-color: #34c759; box-shadow: 0 10px 20px rgba(52,199,89,0.4); z-index: 10; }
+        .hand-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 6px; }
 
-        .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 0 8px; }
-        .tricks-box { background: #000; padding: 5px 12px; border-radius: 8px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
+        .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 0 10px; }
+        .tricks-box { background: #1c1c1e; padding: 6px 14px; border-radius: 10px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
 
-        #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(28,28,30,0.96); padding: 20px; border-radius: 18px; z-index: 180; border: 1px solid #48484a; width: 85%; max-width: 300px; text-align: center; box-shadow: 0 12px 35px rgba(0,0,0,0.9); }
-        .timer-circle { width: 64px; height: 64px; border-radius: 50%; border: 4px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 22px; font-weight: bold; color: #ffcc00; margin: 12px auto; background: #161618; }
-        .start-now-btn { background: #ffcc00; color: #000; border: none; padding: 10px 16px; border-radius: 10px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; margin-top: 10px; }
+        /* نافذة الانتظار */
+        #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(24,24,26,0.98); padding: 22px; border-radius: 20px; z-index: 180; border: 1px solid #38383a; width: 88%; max-width: 310px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
+        .timer-circle { width: 68px; height: 68px; border-radius: 50%; border: 4px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: #ffd60a; margin: 12px auto; background: #121214; box-shadow: inset 0 0 10px rgba(52,199,89,0.3); }
+        .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 12px; box-shadow: 0 4px 12px rgba(255,214,10,0.3); }
 
-        #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #242426; padding: 14px; border-radius: 16px; z-index: 150; border: 1px solid #48484a; width: 250px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
-        #bid-modal h3 { font-size: 14px; margin-bottom: 4px; color: white; }
-        #bid-hint { font-size: 11px; color: #ffcc00; margin-bottom: 10px; }
-        .bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-        .bid-btn { background: #ffcc00; color: #000; border: none; border-radius: 8px; padding: 10px 0; font-weight: bold; font-size: 13px; cursor: pointer; }
+        /* نافذة الطلبات (البيد) */
+        #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 260px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
+        #bid-modal h3 { font-size: 15px; margin-bottom: 6px; color: white; font-weight: 700; }
+        #bid-hint { font-size: 11px; color: #ffd60a; margin-bottom: 12px; font-weight: 600; }
+        .bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .bid-btn { background: #ffd60a; color: #000; border: none; border-radius: 10px; padding: 12px 0; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: transform 0.1s; }
+        .bid-btn:active { transform: scale(0.95); }
 
-        #round-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #242426; padding: 16px; border-radius: 16px; z-index: 160; border: 1px solid #48484a; width: 90%; max-width: 340px; box-shadow: 0 12px 40px rgba(0,0,0,0.95); }
-        .summary-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11px; text-align: right; }
-        .summary-table th { color: #aeaeb2; border-bottom: 1px solid #38383a; padding: 4px; }
-        .summary-table td { padding: 6px 4px; border-bottom: 1px solid #2c2c2e; vertical-align: top; }
+        /* نافذة ملخص الدورة ونهاية اللعبة */
+        #round-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 160; border: 1px solid #38383a; width: 92%; max-width: 350px; box-shadow: 0 15px 45px rgba(0,0,0,0.95); }
+        .summary-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 11px; text-align: right; }
+        .summary-table th { color: #8e8e93; border-bottom: 1px solid #38383a; padding: 6px; font-weight: 600; }
+        .summary-table td { padding: 8px 6px; border-bottom: 1px solid #2c2c2e; vertical-align: middle; }
         .pts-plus { color: #34c759; font-weight: bold; }
         .pts-minus { color: #ff3b30; font-weight: bold; }
     </style>
@@ -125,7 +136,7 @@
         <div class="top-hud">
             <div class="cross-score">
                 <div></div><div id="score-2" class="sc-other">0</div><div></div>
-                <div id="score-1" class="sc-other">0</div><div style="color:#ffcc00;">31</div><div id="score-3" class="sc-other">0</div>
+                <div id="score-1" class="sc-other">0</div><div style="color:#ffd60a; font-size:12px;">31</div><div id="score-3" class="sc-other">0</div>
                 <div></div><div id="score-0" class="sc-me">0</div><div></div>
             </div>
 
@@ -185,21 +196,21 @@
             <div class="bottom-info">
                 <div class="tricks-box">
                     <span>أكلاتك:</span>
-                    <span id="my-tricks-count" style="color:#ffcc00; font-weight:bold;">0 / -</span>
+                    <span id="my-tricks-count" style="color:#ffd60a; font-weight:bold;">0 / -</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; position:relative;">
                     <div class="won-pile bottom-won-pile" id="pile-0"></div>
                     <div class="player-name" id="name-0" style="background:none; border:none; font-size:12px; font-weight:bold;">أنت</div>
-                    <div class="avatar-circle" style="width:38px; height:38px; font-size:16px;" id="avatar-0">👤</div>
+                    <div class="avatar-circle" style="width:40px; height:40px; font-size:16px;" id="avatar-0">👤</div>
                 </div>
             </div>
         </div>
 
         <div id="waiting-overlay">
-            <h3 style="font-size:15px; color:#34c759;">في انتظار انضمام اللاعبين...</h3>
-            <p id="joined-count-text" style="font-size:12px; color:#d1d1d6; margin-top:4px;">اللاعبون الحاليون: 1 / 4</p>
+            <h3 style="font-size:16px; color:#34c759;">في انتظار انضمام اللاعبين...</h3>
+            <p id="joined-count-text" style="font-size:12px; color:#d1d1d6; margin-top:6px;">اللاعبون الحاليون: 1 / 4</p>
             <div class="timer-circle" id="wait-timer-num">30</div>
-            <p style="font-size:11px; color:#aeaeb2;">سيتم إكمال المقاعد الشاغرة بالبوتات تلقائياً عند انتهاء الوقت</p>
+            <p style="font-size:11px; color:#8e8e93;">سيتم إكمال المقاعد الشاغرة بالبوتات تلقائياً عند انتهاء الوقت</p>
             <button class="start-now-btn" onclick="forceStartBots()">تأكيد البدء بالبوتات الآن ▶</button>
         </div>
 
@@ -210,8 +221,8 @@
         </div>
 
         <div id="round-modal">
-            <h3 id="round-title" style="color:#34c759; font-size:16px; text-align:center;">نتيجة الدورة</h3>
-            <div id="winner-banner" style="color:#ffcc00; font-size:12px; text-align:center; margin-top:4px; font-weight:bold;"></div>
+            <h3 id="round-title" style="color:#34c759; font-size:17px; text-align:center;">نتيجة الدورة</h3>
+            <div id="winner-banner" style="color:#ffd60a; font-size:12px; text-align:center; margin-top:4px; font-weight:bold;"></div>
             <table class="summary-table">
                 <thead>
                     <tr>
@@ -223,7 +234,7 @@
                 </thead>
                 <tbody id="summary-body"></tbody>
             </table>
-            <button onclick="nextRound()" style="width:100%; background:#34c759; border:none; padding:10px; color:white; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">الدورة التالية</button>
+            <button onclick="nextRound()" style="width:100%; background:#34c759; border:none; padding:12px; color:white; border-radius:12px; font-weight:bold; font-size:15px; cursor:pointer; box-shadow: 0 4px 12px rgba(52,199,89,0.4);">الدورة التالية</button>
         </div>
     </div>
 
@@ -241,10 +252,10 @@
         let gameStateGlobal = "WAITING";
         let animatedThisTrick = false;
 
-        // دالة تحديد اسم صورة الكرت الحقيقي من 1 إلى 52
+        // دالة تحديد اسم صورة الكرت الحقيقي متطابقة تماماً مع ترتيب (A أولاً ثم الأرقام حتى K)
         function getCardImageFilename(card) {
             const suitsOrder = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
-            const ranksOrder = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+            const ranksOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
             let suitIndex = suitsOrder.indexOf(card.suit);
             let rankIndex = ranksOrder.indexOf(card.rank);
             if (suitIndex === -1 || rankIndex === -1) return 'card_1.png';
@@ -389,16 +400,15 @@
                     avatarEl.innerHTML = realIdx === dealerIdx ? `👤<span class="dealer-tag">موزع</span>` : `👤`;
                     if(realIdx === turn && gameStateGlobal === 'PLAYING') {
                         avatarEl.style.borderColor = '#34c759';
-                        avatarEl.style.boxShadow = '0 0 12px #34c759';
+                        avatarEl.style.boxShadow = '0 0 14px #34c759';
                     } else {
-                        avatarEl.style.borderColor = '#ffcc00';
-                        avatarEl.style.boxShadow = 'none';
+                        avatarEl.style.borderColor = '#ffd60a';
+                        avatarEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.6)';
                     }
                 }
             }
         }
 
-        // عرض صورة الكرت الحقيقية
         function renderCardHTML(card) {
             let filename = getCardImageFilename(card);
             return `<img src="/static/cards/${filename}" alt="${card.rank} ${card.suit}">`;
@@ -411,7 +421,7 @@
             if(!hand || hand.length === 0) return;
 
             const containerWidth = window.innerWidth - 16;
-            const cardWidth = 52;
+            const cardWidth = 56;
             const count = hand.length;
             let overlap = 0;
             if (count > 1) {
@@ -535,7 +545,7 @@
                         <td style="font-weight:bold;">${row.name}</td>
                         <td style="color:#d1d1d6; font-size:10px;">${row.detail}</td>
                         <td class="${cls}" dir="ltr">${sign}</td>
-                        <td style="font-weight:bold; color:#ffcc00;">${row.total}</td>
+                        <td style="font-weight:bold; color:#ffd60a;">${row.total}</td>
                     `;
                     tbody.appendChild(tr);
                 });
