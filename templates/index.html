@@ -90,10 +90,10 @@
         .timer-circle { width: 68px; height: 68px; border-radius: 50%; border: 4px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: #ffd60a; margin: 12px auto; background: #121214; }
         .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 12px; }
 
-        #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 260px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
+        #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 280px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
         #bid-modal h3 { font-size: 15px; margin-bottom: 6px; color: white; font-weight: 700; }
         #bid-hint { font-size: 11px; color: #ffd60a; margin-bottom: 12px; font-weight: 600; }
-        .bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 180px; overflow-y: auto; }
         .bid-btn { background: #ffd60a; color: #000; border: none; border-radius: 10px; padding: 12px 0; font-weight: bold; font-size: 14px; cursor: pointer; }
 
         #round-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 160; border: 1px solid #38383a; width: 92%; max-width: 350px; box-shadow: 0 15px 45px rgba(0,0,0,0.95); }
@@ -110,11 +110,11 @@
         <h2>طرنيب ليبي 🇱🇾</h2>
         <div class="input-group">
             <label>اسم اللاعب:</label>
-            <input type="text" id="username" placeholder="مثال: رويدة">
+            <input type="text" id="username" placeholder="اكتب اسمك هنا...">
         </div>
         <div class="input-group">
             <label>رمز الغرفة:</label>
-            <input type="text" id="room" placeholder="مثال: tripoli">
+            <input type="text" id="room" placeholder="اكتب رمز الغرفة...">
         </div>
         <button class="login-btn" onclick="joinGame()">دخول اللعبة</button>
     </div>
@@ -239,7 +239,6 @@
         let gameStateGlobal = "WAITING";
         let animatedThisTrick = false;
 
-        // ممر التحميل المسبق الفائق (Aggressive Preload Cache لجميع الـ 52 كرت فور فتح الصفحة)
         const cardImagesCache = {};
         function preloadAllCardImages() {
             for (let i = 1; i <= 52; i++) {
@@ -513,6 +512,7 @@
                 hint.innerText = `مجموع الطلبات الحالية: ${totalBids}`;
             }
 
+            // السماح بطلب الصفر دائماً ما لم يكن الموزع مجبراً على رقم أعلى
             if (!(isDealer && needed > 0)) {
                 let b0 = document.createElement('button');
                 b0.className = 'bid-btn'; b0.innerText = '0';
@@ -520,10 +520,11 @@
                 opts.appendChild(b0);
             }
 
+            // عرض كافة خيارات الطلبات المتاحة (من 2 إلى 13)
             const validBids = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
             validBids.forEach(i => {
-                if (i >= min_bid) {
-                    if ((i === 6 || i === 8 || i === 10 || i === 11 || i === 12) && !(isDealer && i === needed)) return;
+                if (i >= minBid) {
+                    // إذا كان موزعاً، يظهر له الرقم الإجباري المطلوب ليكمل المجموع إلى 11 أو يختار الأعلى
                     let b = document.createElement('button');
                     b.className = 'bid-btn'; b.innerText = i;
                     b.onclick = () => submitBid(i);
@@ -534,7 +535,6 @@
 
         function submitBid(val) {
             socket.emit('submit_bid', {room: currentRoom, bid: val});
-            document.getElementById('bid-memory-modal') // safe
             document.getElementById('bid-modal').style.display = 'none';
         }
 
