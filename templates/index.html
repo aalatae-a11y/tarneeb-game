@@ -33,7 +33,7 @@
         .last-trick-title { font-size: 9px; color: #8e8e93; margin-bottom: 2px; font-weight: bold; }
         .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
         .mini-card { width: 22px; height: 30px; background: white; border-radius: 3px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #444; }
-        .mini-card img { width: 100%; height: 100%; object-fit: contain; background: white; }
+        .mini-card img { width: 100%; height: 100%; object-fit: fill; background: white; }
 
         .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 12px 18px; min-height: 0; }
         .table-container { position: relative; width: 100%; height: 100%; max-width: 420px; border: 6px solid #2c2c2e; border-radius: 35px; background: radial-gradient(circle, #229a43 0%, #15662c 100%); box-shadow: inset 0 0 35px rgba(0,0,0,0.7), 0 10px 30px rgba(0,0,0,0.6); }
@@ -56,10 +56,9 @@
         .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 2px 8px; border-radius: 8px; margin-top: 3px; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #3a3a3c; font-weight: 600; }
         .bid-badge { font-size: 10px; background: #000; color: #ffd60a; padding: 1px 8px; border-radius: 6px; font-weight: bold; margin-top: 2px; border: 1px solid #3a3a3c; }
 
-        /* الكروت على الطاولة (بالطول) */
         .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; z-index: 10; }
         .played-card { position: absolute; width: 54px; height: 78px; background: #fff; border-radius: 6px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.6); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
-        .played-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 5px; }
+        .played-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 5px; background: white; }
 
         .pos-0 { bottom: 2px; left: 50%; transform: translateX(-50%); }
         .pos-1 { left: 4px; top: 50%; transform: translateY(-50%); }
@@ -80,10 +79,9 @@
 
         .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 105px; padding: 0 4px; overflow: hidden; }
         
-        /* كروت يد اللاعب (بالطول وبدون ضغط أو فراغات) */
         .hand-card { width: 64px; height: 94px; background: #ffffff; border-radius: 7px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: -3px 3px 10px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.18s ease, border-color 0.18s; flex-shrink: 0; position: relative; }
         .hand-card:active { transform: translateY(-14px) scale(1.05); border-color: #34c759; z-index: 10; }
-        .hand-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 6px; }
+        .hand-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 6px; background: white; }
 
         .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 0 10px; }
         .tricks-box { background: #1c1c1e; padding: 6px 14px; border-radius: 10px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
@@ -112,7 +110,7 @@
         <h2>طرنيب ليبي 🇱🇾</h2>
         <div class="input-group">
             <label>اسم اللاعب:</label>
-            <input type="text" id="username" placeholder="مثال: عبد الله">
+            <input type="text" id="username" placeholder="مثال: رويدة">
         </div>
         <div class="input-group">
             <label>رمز الغرفة:</label>
@@ -241,7 +239,18 @@
         let gameStateGlobal = "WAITING";
         let animatedThisTrick = false;
 
-        // دالة ربط الصور بناءً على ترتيب صورك الفعلي: A أولاً ثم 2 إلى K لكل نوع
+        // ممر التحميل المسبق الفائق (Aggressive Preload Cache لجميع الـ 52 كرت فور فتح الصفحة)
+        const cardImagesCache = {};
+        function preloadAllCardImages() {
+            for (let i = 1; i <= 52; i++) {
+                let formattedNum = i < 10 ? `0${i}` : `${i}`;
+                let img = new Image();
+                img.src = `/static/cards/card_${formattedNum}.png`;
+                cardImagesCache[i] = img.src;
+            }
+        }
+        preloadAllCardImages();
+
         function getCardImageFilename(card) {
             const suitsOrder = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
             const ranksOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -251,30 +260,19 @@
             if (suitIndex === -1 || rankIndex === -1) return 'card_01.png';
             
             let cardNum = (suitIndex * 13) + rankIndex + 1;
-            // تنسيق الرقم بصيغتين ليتوافق مع card_1 أو card_01
             let formattedNum = cardNum < 10 ? `0${cardNum}` : `${cardNum}`;
-            
             return `card_${formattedNum}.png`;
         }
 
-        // تحميل مسبق للصور لمنع أي تأخير أو اختفاء
-        const cardImagesCache = {};
-        function preloadCardImages() {
-            const suits = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
-            const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-            let count = 1;
-            suits.forEach(s => {
-                ranks.forEach(r => {
-                    let formattedNum = count < 10 ? `0${count}` : `${count}`;
-                    let filename = `card_${formattedNum}.png`;
-                    let img = new Image();
-                    img.src = `/static/cards/${filename}`;
-                    cardImagesCache[`${s}_${r}`] = img.src;
-                    count++;
-                });
-            });
+        function getCachedCardSrc(card) {
+            const suitsOrder = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
+            const ranksOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            let suitIndex = suitsOrder.indexOf(card.suit);
+            let rankIndex = ranksOrder.indexOf(card.rank);
+            if (suitIndex === -1 || rankIndex === -1) return cardImagesCache[1];
+            let cardNum = (suitIndex * 13) + rankIndex + 1;
+            return cardImagesCache[cardNum] || `/static/cards/${getCardImageFilename(card)}`;
         }
-        preloadCardImages();
 
         function joinGame() {
             const name = document.getElementById('username').value.trim();
@@ -423,9 +421,8 @@
         }
 
         function renderCardHTML(card) {
-            let key = `${card.suit}_${card.rank}`;
-            let imgSrc = cardImagesCache[key] || `/static/cards/${getCardImageFilename(card)}`;
-            return `<img src="${imgSrc}" alt="${card.rank} ${card.suit}" loading="eager">`;
+            let imgSrc = getCachedCardSrc(card);
+            return `<img src="${imgSrc}" alt="${card.rank} ${card.suit}" loading="eager" decoding="async">`;
         }
 
         function renderHand(hand) {
@@ -493,11 +490,10 @@
 
             lastTrick.forEach(play => {
                 let c = play.card;
-                let key = `${c.suit}_${c.rank}`;
-                let imgSrc = cardImagesCache[key] || `/static/cards/${getCardImageFilename(c)}`;
+                let imgSrc = getCachedCardSrc(c);
                 let miniCard = document.createElement('div');
                 miniCard.className = `mini-card`;
-                miniCard.innerHTML = `<img src="${imgSrc}" alt="${c.rank}">`;
+                miniCard.innerHTML = `<img src="${imgSrc}" alt="${c.rank}" loading="eager" decoding="async">`;
                 container.appendChild(miniCard);
             });
         }
@@ -526,7 +522,7 @@
 
             const validBids = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
             validBids.forEach(i => {
-                if (i >= minBid) {
+                if (i >= min_bid) {
                     if ((i === 6 || i === 8 || i === 10 || i === 11 || i === 12) && !(isDealer && i === needed)) return;
                     let b = document.createElement('button');
                     b.className = 'bid-btn'; b.innerText = i;
@@ -538,6 +534,7 @@
 
         function submitBid(val) {
             socket.emit('submit_bid', {room: currentRoom, bid: val});
+            document.getElementById('bid-memory-modal') // safe
             document.getElementById('bid-modal').style.display = 'none';
         }
 
@@ -556,7 +553,6 @@
                     let tr = document.createElement('tr');
                     let sign = row.change >= 0 ? `+${row.change}` : `${row.change}`;
                     let cls = row.change >= 0 ? 'pts-plus' : 'pts-minus';
-                    tr.username = row.name;
                     tr.innerHTML = `
                         <td style="font-weight:bold;">${row.name}</td>
                         <td style="color:#d1d1d6; font-size:10px;">${row.detail}</td>
