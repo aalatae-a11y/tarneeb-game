@@ -120,6 +120,7 @@ class TarneebRoom:
             self.total_bids = 0
             self.bids_collected = 0
 
+        # اتجاه عكس عقارب الساعة
         self.current_turn = (self.dealer_idx - 1) % 4
         self.trick_lead_suit = None
         self.current_trick = []
@@ -158,6 +159,7 @@ class TarneebRoom:
             self.state = 'PLAYING'
             self.current_turn = (self.dealer_idx - 1) % 4
         else:
+            # عكس عقارب الساعة في الطلبات
             self.current_turn = (self.current_turn - 1) % 4
 
     def validate_card_play(self, player_idx, card):
@@ -202,6 +204,7 @@ class TarneebRoom:
             self.state = 'TRICK_PAUSE'
             return True
         else:
+            # عكس عقارب الساعة في اللعب
             self.current_turn = (self.current_turn - 1) % 4
             return False
 
