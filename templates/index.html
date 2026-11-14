@@ -34,6 +34,8 @@
         .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
         .mini-card { width: 22px; height: 30px; background: white; border-radius: 3px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #444; }
         .mini-card img { width: 100%; height: 100%; object-fit: fill; }
+        /* إصلاح صورة الـ 7 المصممة أفقياً في الميني كارد */
+        .mini-card img.card-landscape { transform: rotate(90deg); width: 130%; height: 130%; }
 
         .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 12px 18px; min-height: 0; }
         .table-container { position: relative; width: 100%; height: 100%; max-width: 420px; border: 6px solid #2c2c2e; border-radius: 35px; background: radial-gradient(circle, #229a43 0%, #15662c 100%); box-shadow: inset 0 0 35px rgba(0,0,0,0.7), 0 10px 30px rgba(0,0,0,0.6); }
@@ -56,10 +58,11 @@
         .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 2px 8px; border-radius: 8px; margin-top: 3px; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #3a3a3c; font-weight: 600; }
         .bid-badge { font-size: 10px; background: #000; color: #ffd60a; padding: 1px 8px; border-radius: 6px; font-weight: bold; margin-top: 2px; border: 1px solid #3a3a3c; }
 
-        /* تعديل مقاسات الكروت في الطاولة لتكون بالطول تماماً (عرض أقل وارتفاع أكبر) */
         .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; z-index: 10; }
         .played-card { position: absolute; width: 52px; height: 74px; background: #fff; border-radius: 6px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.6); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
         .played-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 5px; }
+        /* إصلاح عرض كرت الـ 7 على الطاولة ليكون عمودياً */
+        .played-card img.card-landscape { transform: rotate(90deg); width: 135%; height: 135%; }
 
         .pos-0 { bottom: 2px; left: 50%; transform: translateX(-50%); }
         .pos-1 { left: 4px; top: 50%; transform: translateY(-50%); }
@@ -80,10 +83,11 @@
 
         .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 105px; padding: 0 4px; overflow: hidden; }
         
-        /* تعديل مقاسات كروت يد اللاعب لتكون بالطول وبشكل عمودي احترافي */
         .hand-card { width: 62px; height: 92px; background: #ffffff; border-radius: 7px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: -3px 3px 10px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.18s ease, border-color 0.18s; flex-shrink: 0; position: relative; }
         .hand-card:active { transform: translateY(-14px) scale(1.05); border-color: #34c759; z-index: 10; }
         .hand-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 6px; }
+        /* إصلاح عرض كرت الـ 7 في اليد ليكون عمودياً تماماً مثل البقية */
+        .hand-card img.card-landscape { transform: rotate(90deg); width: 135%; height: 135%; }
 
         .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 0 10px; }
         .tricks-box { background: #1c1c1e; padding: 6px 14px; border-radius: 10px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
@@ -241,7 +245,6 @@
         let gameStateGlobal = "WAITING";
         let animatedThisTrick = false;
 
-        // مسبق التحميل للصور لمنع أي تأخير في الظهور
         const cardImagesCache = {};
         function preloadCardImages() {
             const suits = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
@@ -249,7 +252,8 @@
             let count = 1;
             suits.forEach(s => {
                 ranks.forEach(r => {
-                    let filename = `card_${count}.png`;
+                    let numStr = count < 10 ? `0${count}` : `${count}`;
+                    let filename = `card_${numStr}.png`;
                     let img = new Image();
                     img.src = `/static/cards/${filename}`;
                     cardImagesCache[`${s}_${r}`] = img.src;
@@ -259,6 +263,7 @@
         }
         preloadCardImages();
 
+        // دالة تحديد اسم الصورة مع الأصفار المزدوجة (card_01 إلى card_52) وترتيب A إلى K
         function getCardImageFilename(card) {
             const suitsOrder = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
             const ranksOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -266,7 +271,8 @@
             let rankIndex = ranksOrder.indexOf(card.rank);
             if (suitIndex === -1 || rankIndex === -1) return 'card_01.png';
             let cardNum = (suitIndex * 13) + rankIndex + 1;
-            return `card_${cardNum}.png`;
+            let numStr = cardNum < 10 ? `0${cardNum}` : `${cardNum}`;
+            return `card_${numStr}.png`;
         }
 
         function joinGame() {
@@ -415,10 +421,13 @@
             }
         }
 
+        // دالة توليد كود الـ HTML للكرت مع التحقق تلقائياً إذا كان كرت 7 لإعادة تعديل دورانه أفقياً/عمودياً
         function renderCardHTML(card) {
             let key = `${card.suit}_${card.rank}`;
             let imgSrc = cardImagesCache[key] || `/static/cards/${getCardImageFilename(card)}`;
-            return `<img src="${imgSrc}" alt="${card.rank} ${card.suit}" loading="eager">`;
+            let isLandscape = (card.rank === '7');
+            let imgClass = isLandscape ? "card-landscape" : "";
+            return `<img src="${imgSrc}" alt="${card.rank} ${card.suit}" class="${imgClass}" loading="eager">`;
         }
 
         function renderHand(hand) {
@@ -488,9 +497,11 @@
                 let c = play.card;
                 let key = `${c.suit}_${c.rank}`;
                 let imgSrc = cardImagesCache[key] || `/static/cards/${getCardImageFilename(c)}`;
+                let isLandscape = (c.rank === '7');
+                let imgClass = isLandscape ? "card-landscape" : "";
                 let miniCard = document.createElement('div');
                 miniCard.className = `mini-card`;
-                miniCard.innerHTML = `<img src="${imgSrc}" alt="${c.rank}">`;
+                miniCard.innerHTML = `<img src="${imgSrc}" alt="${c.rank}" class="${imgClass}">`;
                 container.appendChild(miniCard);
             });
         }
