@@ -3,7 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- إعدادات التثبيت كملء شاشة وإخفاء شريط المتصفح -->
     <title>طرنيب ليبي أونلاين</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#121214">
+
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -252,7 +260,6 @@
         let gameStateGlobal = "WAITING";
         let animatedThisTrick = false;
 
-        // دالة تحديد اسم صورة الكرت الحقيقي متطابقة تماماً مع ترتيب (A أولاً ثم الأرقام حتى K)
         function getCardImageFilename(card) {
             const suitsOrder = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
             const ranksOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
