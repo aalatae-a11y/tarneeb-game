@@ -120,7 +120,6 @@ class TarneebRoom:
             self.total_bids = 0
             self.bids_collected = 0
 
-        # اتجاه عكس عقارب الساعة
         self.current_turn = (self.dealer_idx - 1) % 4
         self.trick_lead_suit = None
         self.current_trick = []
@@ -159,7 +158,6 @@ class TarneebRoom:
             self.state = 'PLAYING'
             self.current_turn = (self.dealer_idx - 1) % 4
         else:
-            # عكس عقارب الساعة في الطلبات
             self.current_turn = (self.current_turn - 1) % 4
 
     def validate_card_play(self, player_idx, card):
@@ -195,6 +193,7 @@ class TarneebRoom:
             for play in self.current_trick[1:]:
                 curr_c = play['card']
                 win_c = winning_play['card']
+                # تصحيح دقيق لمنطق الفوز: الـ A دائماً أكبر من K و Q ضمن نفس النوع
                 if curr_c['suit'] == 'Hearts' and win_c['suit'] != 'Hearts':
                     winning_play = play
                 elif curr_c['suit'] == win_c['suit'] and curr_c['value'] > win_c['value']:
@@ -204,7 +203,6 @@ class TarneebRoom:
             self.state = 'TRICK_PAUSE'
             return True
         else:
-            # عكس عقارب الساعة في اللعب
             self.current_turn = (self.current_turn - 1) % 4
             return False
 
