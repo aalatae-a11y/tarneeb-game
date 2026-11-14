@@ -32,9 +32,8 @@
         .last-trick-box { background: rgba(0,0,0,0.85); border: 1px solid #38383a; border-radius: 10px; padding: 4px; width: 68px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .last-trick-title { font-size: 9px; color: #aeaeb2; margin-bottom: 2px; }
         .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
-        .mini-card { width: 22px; height: 26px; background: white; border-radius: 3px; font-size: 8px; font-weight: bold; display: flex; justify-content: center; align-items: center; border: 1px solid #ccc; }
-        .mini-card.red { color: #d03b29; }
-        .mini-card.black { color: #1c1c1e; }
+        .mini-card { width: 22px; height: 26px; background: white; border-radius: 3px; font-size: 8px; font-weight: bold; display: flex; justify-content: center; align-items: center; border: 1px solid #ccc; overflow: hidden; }
+        .mini-card img { width: 100%; height: 100%; object-fit: cover; }
 
         .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 18px 22px; min-height: 0; }
         .table-container { position: relative; width: 100%; height: 100%; max-width: 440px; border: 5px solid #d1d1d6; border-radius: 30px; background: radial-gradient(circle, #28b450 0%, #1d883b 100%); box-shadow: inset 0 0 25px rgba(0,0,0,0.65); }
@@ -57,11 +56,10 @@
         .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 1px 7px; border-radius: 8px; margin-top: 2px; max-width: 74px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #48484a; }
         .bid-badge { font-size: 10px; background: #000; color: #ffcc00; padding: 1px 7px; border-radius: 5px; font-weight: bold; margin-top: 2px; border: 1px solid #48484a; }
 
-        /* تصميم الكروت الاحترافي الجديد تماماً ليشبه أوراق اللعب الحقيقية */
+        /* عرض صور الكروت الحقيقية في المنتصف والطاولة */
         .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130px; height: 130px; z-index: 10; }
-        .played-card { position: absolute; width: 48px; height: 68px; background: #fff; border-radius: 6px; border: 1.5px solid #b0b0b0; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
-        .played-card.red { color: #d32f2f; }
-        .played-card.black { color: #111; }
+        .played-card { position: absolute; width: 52px; height: 74px; background: #fff; border-radius: 6px; border: 1px solid #b0b0b0; display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+        .played-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 5px; }
 
         .pos-0 { bottom: 0px; left: 50%; transform: translateX(-50%); }
         .pos-1 { left: 2px; top: 50%; transform: translateY(-50%); }
@@ -80,18 +78,12 @@
         .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffcc00; padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.7); animation: pulse-btn 1.5s infinite; }
         @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 82px; padding: 0 4px; overflow: hidden; }
+        .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 86px; padding: 0 4px; overflow: hidden; }
         
-        /* شكل الكرت الحقيقي في يد اللاعب */
-        .hand-card { width: 48px; height: 74px; background: #ffffff; border-radius: 6px; border: 1.5px solid #b0b0b0; display: flex; flex-direction: column; justify-content: space-between; padding: 3px; font-weight: bold; box-shadow: -2px 2px 6px rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.15s ease, border-color 0.15s; flex-shrink: 0; position: relative; }
+        /* كروت يد اللاعب الحقيقية بالصورة */
+        .hand-card { width: 52px; height: 80px; background: #ffffff; border-radius: 6px; border: 1px solid #b0b0b0; display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: -2px 2px 6px rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.15s ease, border-color 0.15s; flex-shrink: 0; position: relative; }
         .hand-card:active { transform: translateY(-12px); border-color: #34c759; }
-        .hand-card.red { color: #d32f2f; }
-        .hand-card.black { color: #111; }
-
-        /* محتوى الكرت الاحترافي (رقم ونوع في الزوايا + أيقونة مركزية كلاسيكية) */
-        .card-corner { display: flex; flex-direction: column; align-items: center; font-size: 10px; line-height: 0.9; font-weight: 900; }
-        .card-corner.bottom { transform: rotate(180deg); align-self: flex-end; }
-        .card-center-graphic { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; opacity: 0.9; }
+        .hand-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 5px; }
 
         .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 0 8px; }
         .tricks-box { background: #000; padding: 5px 12px; border-radius: 8px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
@@ -248,7 +240,17 @@
         let currentTurnGlobal = -1;
         let gameStateGlobal = "WAITING";
         let animatedThisTrick = false;
-        const suitIcons = {'Hearts':'♥', 'Tiles':'♦', 'Clovers':'♣', 'Pikes':'♠'};
+
+        // دالة تحديد اسم صورة الكرت الحقيقي من 1 إلى 52
+        function getCardImageFilename(card) {
+            const suitsOrder = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
+            const ranksOrder = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+            let suitIndex = suitsOrder.indexOf(card.suit);
+            let rankIndex = ranksOrder.indexOf(card.rank);
+            if (suitIndex === -1 || rankIndex === -1) return 'card_1.png';
+            let cardNum = (suitIndex * 13) + rankIndex + 1;
+            return `card_${cardNum}.png`;
+        }
 
         function joinGame() {
             const name = document.getElementById('username').value.trim();
@@ -396,20 +398,10 @@
             }
         }
 
+        // عرض صورة الكرت الحقيقية
         function renderCardHTML(card) {
-            let isRed = card.suit === 'Hearts' || card.suit === 'Tiles';
-            let icon = suitIcons[card.suit];
-            return `
-                <div class="card-corner">
-                    <span>${card.rank}</span>
-                    <span>${icon}</span>
-                </div>
-                <div class="card-center-graphic">${icon}</div>
-                <div class="card-corner bottom">
-                    <span>${card.rank}</span>
-                    <span>${icon}</span>
-                </div>
-            `;
+            let filename = getCardImageFilename(card);
+            return `<img src="/static/cards/${filename}" alt="${card.rank} ${card.suit}">`;
         }
 
         function renderHand(hand) {
@@ -419,7 +411,7 @@
             if(!hand || hand.length === 0) return;
 
             const containerWidth = window.innerWidth - 16;
-            const cardWidth = 48;
+            const cardWidth = 52;
             const count = hand.length;
             let overlap = 0;
             if (count > 1) {
@@ -431,8 +423,7 @@
 
             hand.forEach((card, i) => {
                 let cardEl = document.createElement('div');
-                let isRed = card.suit === 'Hearts' || card.suit === 'Tiles';
-                cardEl.className = `hand-card ${isRed ? 'red' : 'black'}`;
+                cardEl.className = `hand-card`;
                 if (i > 0 && overlap > 0) {
                     cardEl.style.marginRight = `-${overlap}px`;
                 }
@@ -458,10 +449,9 @@
             trick.forEach(play => {
                 let UI_idx = (play.player_idx - myIndex + 4) % 4;
                 let c = play.card;
-                let isRed = c.suit === 'Hearts' || c.suit === 'Tiles';
 
                 let cardEl = document.createElement('div');
-                cardEl.className = `played-card pos-${UI_idx} ${isRed ? 'red' : 'black'}`;
+                cardEl.className = `played-card pos-${UI_idx}`;
                 cardEl.innerHTML = renderCardHTML(c);
                 area.appendChild(cardEl);
             });
@@ -479,10 +469,10 @@
 
             lastTrick.forEach(play => {
                 let c = play.card;
-                let isRed = c.suit === 'Hearts' || c.suit === 'Tiles';
+                let filename = getCardImageFilename(c);
                 let miniCard = document.createElement('div');
-                miniCard.className = `mini-card ${isRed ? 'red' : 'black'}`;
-                miniCard.innerText = `${c.rank}${suitIcons[c.suit]}`;
+                miniCard.className = `mini-card`;
+                miniCard.innerHTML = `<img src="/static/cards/${filename}" alt="${c.rank}">`;
                 container.appendChild(miniCard);
             });
         }
