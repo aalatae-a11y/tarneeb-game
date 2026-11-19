@@ -6,7 +6,7 @@
     <title>طرنيب ليبي أونلاين</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-- { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #121214; color: white; position: fixed; inset: 0; }
 
         #login-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 26px; background: #1c1c1e; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.9); width: 90%; max-width: 340px; z-index: 200; border: 1px solid #2c2c2e; }
@@ -18,18 +18,22 @@
 
         #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 6px 8px 10px 8px; overflow: hidden; background: radial-gradient(circle at center, #1e1e24 0%, #121214 100%); }
 
-        .top-hud { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; height: 74px; flex-shrink: 0; z-index: 20; }
+        .top-hud { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; height: 74px; flex-shrink: 0; z-index: 20; gap: 6px; }
 
         .cross-score { background: rgba(28,28,30,0.9); border-radius: 12px; padding: 4px 8px; display: grid; grid-template-columns: repeat(3, 26px); grid-template-rows: repeat(3, 20px); gap: 2px; text-align: center; font-size: 11px; font-weight: bold; border: 1px solid #38383a; }
         .cross-score div { display: flex; justify-content: center; align-items: center; }
         .sc-me { color: #34c759; font-size: 12px; }
         .sc-other { color: #ffffff; }
 
-        .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; }
-        .room-title { font-weight: bold; font-size: 13px; color: #f2f2f7; background: #2c2c2e; padding: 4px 14px; border-radius: 14px; border: 1px solid #3a3a3c; }
-        .bids-counter { font-size: 11px; color: #ffd60a; font-weight: bold; background: rgba(0,0,0,0.8); padding: 3px 12px; border-radius: 10px; border: 1px solid #444; }
+        .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 3px; padding-top: 2px; flex: 1; min-width: 0; }
+        .top-controls-row { display: flex; align-items: center; gap: 6px; }
+        .room-title { font-weight: bold; font-size: 12px; color: #f2f2f7; background: #2c2c2e; padding: 3px 11px; border-radius: 14px; border: 1px solid #3a3a3c; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sound-btn { background: #2c2c2e; color: #ffd60a; border: 1px solid #3a3a3c; border-radius: 12px; padding: 3px 8px; font-size: 12px; cursor: pointer; font-weight: bold; }
+        .turn-timer-pill { background: rgba(28,28,30,0.95); color: #34c759; border: 1px solid #3a3a3c; border-radius: 12px; padding: 3px 8px; font-size: 11px; font-weight: bold; min-width: 44px; text-align: center; }
+        .turn-timer-pill.urgent { color: #ff3b30; border-color: #ff3b30; }
+        .bids-counter { font-size: 10px; color: #ffd60a; font-weight: bold; background: rgba(0,0,0,0.8); padding: 2px 10px; border-radius: 10px; border: 1px solid #444; white-space: nowrap; }
 
-        .last-trick-box { background: rgba(28,28,30,0.9); border: 1px solid #38383a; border-radius: 12px; padding: 4px; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .last-trick-box { background: rgba(28,28,30,0.9); border: 1px solid #38383a; border-radius: 12px; padding: 4px; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
         .last-trick-title { font-size: 9px; color: #8e8e93; margin-bottom: 2px; font-weight: bold; }
         .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
         .mini-card { width: 22px; height: 30px; background: white; border-radius: 3px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #444; }
@@ -91,7 +95,8 @@
         .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 12px; }
 
         #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 280px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
-        #bid-modal h3 { font-size: 15px; margin-bottom: 6px; color: white; font-weight: 700; }
+        #bid-modal h3 { font-size: 15px; margin-bottom: 4px; color: white; font-weight: 700; }
+        #bid-timer { font-size: 12px; color: #34c759; font-weight: bold; margin-bottom: 4px; }
         #bid-hint { font-size: 11px; color: #ffd60a; margin-bottom: 12px; font-weight: 600; }
         .bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 180px; overflow-y: auto; }
         .bid-btn { background: #ffd60a; color: #000; border: none; border-radius: 10px; padding: 12px 0; font-weight: bold; font-size: 14px; cursor: pointer; }
@@ -122,13 +127,17 @@
     <div id="game-board">
         <div class="top-hud">
             <div class="cross-score">
-                <div></div><div id="score-2" class="sc-other">0</div><div></div>
-                <div id="score-1" class="sc-other">0</div><div style="color:#ffd60a; font-size:12px;">31</div><div id="score-3" class="sc-other">0</div>
-                <div></div><div id="score-0" class="sc-me">0</div><div></div>
+                <div></div><div id="score-top" class="sc-other">0</div><div></div>
+                <div id="score-left" class="sc-other">0</div><div style="color:#ffd60a; font-size:12px;">31</div><div id="score-right" class="sc-other">0</div>
+                <div></div><div id="score-bottom" class="sc-me">0</div><div></div>
             </div>
 
             <div class="room-center-info">
-                <div class="room-title" id="room-display">tripoli</div>
+                <div class="top-controls-row">
+                    <div class="room-title" id="room-display">tripoli</div>
+                    <div class="turn-timer-pill" id="top-turn-timer">30s</div>
+                    <button class="sound-btn" id="sound-toggle-btn" onclick="toggleSound()" title="تشغيل/كتم الصوت">🔊</button>
+                </div>
                 <div class="bids-counter" id="bids-status">الدورة 1 | بدون طلبات</div>
             </div>
 
@@ -203,6 +212,7 @@
 
         <div id="bid-modal">
             <h3>اختر طلبتك</h3>
+            <div id="bid-timer">الوقت المتبقي: 20 ثانية</div>
             <div id="bid-hint"></div>
             <div class="bid-grid" id="bid-options"></div>
         </div>
@@ -238,6 +248,97 @@
         let currentTurnGlobal = -1;
         let gameStateGlobal = "WAITING";
         let animatedThisTrick = false;
+        let prevTrickLength = 0;
+        let prevCompletedTrickRef = null;
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function ensureAudioCtx() {
+            if (!soundEnabled) return null;
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+            return audioCtx;
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('sound-toggle-btn');
+            if (btn) btn.innerText = soundEnabled ? '🔊' : '🔇';
+            if (soundEnabled) ensureAudioCtx();
+        }
+
+        function playCardSound() {
+            const ctx = ensureAudioCtx();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.exponentialRampToValueAtTime(110, now + 0.08);
+            gain.gain.setValueAtTime(0.18, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.09);
+        }
+
+        function playCollectSound() {
+            const ctx = ensureAudioCtx();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            const notes = [440, 554.37, 659.25];
+            notes.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                gain.gain.setValueAtTime(0.14, now + idx * 0.06);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.14);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now + idx * 0.06);
+                osc.stop(now + idx * 0.06 + 0.15);
+            });
+        }
+
+        function playLaughSound() {
+            const ctx = ensureAudioCtx();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            const laughs = [
+                { t: 0.0, f: 520, d: 0.09 },
+                { t: 0.11, f: 620, d: 0.09 },
+                { t: 0.22, f: 540, d: 0.09 },
+                { t: 0.33, f: 660, d: 0.12 },
+                { t: 0.48, f: 580, d: 0.14 }
+            ];
+            laughs.forEach(item => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(item.f, now + item.t);
+                osc.frequency.exponentialRampToValueAtTime(item.f * 0.82, now + item.t + item.d);
+                gain.gain.setValueAtTime(0.12, now + item.t);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + item.t + item.d);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now + item.t);
+                osc.stop(now + item.t + item.d + 0.02);
+            });
+        }
+
+        socket.on('play_laugh_sound', () => {
+            playLaughSound();
+        });
 
         const cardImagesCache = {};
         function preloadAllCardImages() {
@@ -274,6 +375,7 @@
         }
 
         function joinGame() {
+            ensureAudioCtx();
             const name = document.getElementById('username').value.trim();
             currentRoom = document.getElementById('room').value.trim();
             if(!name || !currentRoom) return alert("يرجى كتابة الاسم ورمز الغرفة");
@@ -309,6 +411,18 @@
             currentTurnGlobal = data.current_turn;
             gameStateGlobal = data.state;
 
+            const currentTrickLen = (data.current_trick && data.current_trick.length) || 0;
+            if (currentTrickLen > prevTrickLength) {
+                playCardSound();
+            }
+            prevTrickLength = currentTrickLen;
+
+            const lastTrickStr = JSON.stringify(data.last_trick || []);
+            if (data.last_trick && data.last_trick.length === 4 && prevCompletedTrickRef !== null && prevCompletedTrickRef !== lastTrickStr) {
+                playCollectSound();
+            }
+            prevCompletedTrickRef = lastTrickStr;
+
             const waitBox = document.getElementById('waiting-overlay');
             if (!data.game_started) {
                 waitBox.style.display = 'block';
@@ -316,6 +430,18 @@
                 document.getElementById('joined-count-text').innerText = `اللاعبون المنضمون: ${data.players.length} / 4`;
             } else {
                 waitBox.style.display = 'none';
+            }
+
+            const timerPill = document.getElementById('top-turn-timer');
+            if (timerPill) {
+                if (data.state === 'BIDDING' || data.state === 'PLAYING') {
+                    const sec = data.action_timer_left || 0;
+                    timerPill.innerText = `${sec}s`;
+                    timerPill.classList.toggle('urgent', sec <= 5);
+                } else {
+                    timerPill.innerText = '--';
+                    timerPill.classList.remove('urgent');
+                }
             }
 
             if (data.round_number === 1) {
@@ -357,7 +483,7 @@
             }
 
             if(data.state === 'BIDDING' && data.current_turn === myIndex) {
-                showBidModal(data.min_bid, data.is_dealer, data.total_bids);
+                showBidModal(data.min_bid, data.is_dealer, data.total_bids, data.action_timer_left);
             } else {
                 document.getElementById('bid-modal').style.display = 'none';
             }
@@ -371,9 +497,15 @@
 
         function updateCrossScore(data) {
             if (!data.players) return;
+            const directionMap = {
+                0: 'score-bottom',
+                1: 'score-left',
+                2: 'score-top',
+                3: 'score-right'
+            };
             data.players.forEach((p, idx) => {
-                let UI_idx = (idx - myIndex + 4) % 4;
-                const scEl = document.getElementById(`score-${UI_idx}`);
+                let uiIdx = (idx - myIndex + 4) % 4;
+                const scEl = document.getElementById(directionMap[uiIdx]);
                 if (scEl) scEl.innerText = p.score;
             });
         }
@@ -452,6 +584,7 @@
                 
                 cardEl.onclick = (e) => {
                     e.preventDefault();
+                    ensureAudioCtx();
                     if (gameStateGlobal !== 'PLAYING' || currentTurnGlobal !== myIndex) return;
                     socket.emit('play_card', {room: currentRoom, card: card});
                 };
@@ -497,13 +630,20 @@
             });
         }
 
-        function showBidModal(minBid, isDealer, totalBids) {
+        function showBidModal(minBid, isDealer, totalBids, timerLeft) {
             const modal = document.getElementById('bid-modal');
             const opts = document.getElementById('bid-options');
             const hint = document.getElementById('bid-hint');
+            const bidTimerEl = document.getElementById('bid-timer');
             if(!modal || !opts) return;
             opts.innerHTML = '';
             modal.style.display = 'block';
+
+            if (bidTimerEl) {
+                const sec = typeof timerLeft === 'number' ? timerLeft : 20;
+                bidTimerEl.innerText = `الوقت المتبقي: ${sec} ثانية`;
+                bidTimerEl.style.color = sec <= 5 ? '#ff3b30' : '#34c759';
+            }
 
             let needed = 11 - totalBids;
             if (isDealer && needed > 0) {
@@ -512,7 +652,6 @@
                 hint.innerText = `مجموع الطلبات الحالية: ${totalBids}`;
             }
 
-            // السماح بطلب الصفر دائماً ما لم يكن الموزع مجبراً على رقم أعلى
             if (!(isDealer && needed > 0)) {
                 let b0 = document.createElement('button');
                 b0.className = 'bid-btn'; b0.innerText = '0';
@@ -520,11 +659,9 @@
                 opts.appendChild(b0);
             }
 
-            // عرض كافة خيارات الطلبات المتاحة (من 2 إلى 13)
             const validBids = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
             validBids.forEach(i => {
                 if (i >= minBid) {
-                    // إذا كان موزعاً، يظهر له الرقم الإجباري المطلوب ليكمل المجموع إلى 11 أو يختار الأعلى
                     let b = document.createElement('button');
                     b.className = 'bid-btn'; b.innerText = i;
                     b.onclick = () => submitBid(i);
@@ -534,6 +671,7 @@
         }
 
         function submitBid(val) {
+            ensureAudioCtx();
             socket.emit('submit_bid', {room: currentRoom, bid: val});
             document.getElementById('bid-modal').style.display = 'none';
         }
