@@ -1,988 +1,570 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>طرنيب ليبي أونلاين</title>
-<link rel="manifest" href="/static/manifest.json">
-<meta name="theme-color" content="#121214">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="طرنيب">
-<link rel="apple-touch-icon" href="/static/cards/card_52.png">
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
-html, body { width: 100%; height: 100%; overflow: hidden; background: #121214; color: white; position: fixed; inset: 0; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>طرنيب ليبي أونلاين</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #121214; color: white; position: fixed; inset: 0; }
 
-/* Welcome Landing Screen */
-#welcome-screen {
-    position: absolute; inset: 0; z-index: 250;
-    display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 24px;
-    background:
-        radial-gradient(circle at 20% 20%, rgba(255, 59, 48, 0.14), transparent 45%),
-        radial-gradient(circle at 80% 80%, rgba(52, 199, 89, 0.16), transparent 45%),
-        repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 18px),
-        #101214;
-}
-.welcome-card-decor {
-    position: absolute; width: 76px; height: 110px; border-radius: 10px;
-    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
-    display: flex; justify-content: center; align-items: center; font-size: 28px; pointer-events: none;
-}
-.decor-1 { top: 8%; right: 8%; transform: rotate(-14deg); color: #ff453a; }
-.decor-2 { top: 12%; left: 10%; transform: rotate(16deg); color: #f2f2f7; }
-.decor-3 { bottom: 10%; right: 11%; transform: rotate(12deg); color: #f2f2f7; }
-.decor-4 { bottom: 9%; left: 9%; transform: rotate(-15deg); color: #ff453a; }
+        #login-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 26px; background: #1c1c1e; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.9); width: 90%; max-width: 340px; z-index: 200; border: 1px solid #2c2c2e; }
+        #login-box h2 { text-align: center; margin-bottom: 20px; color: #34c759; font-size: 24px; font-weight: 800; }
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #8e8e93; font-weight: 600; }
+        input { padding: 14px; font-size: 16px; border-radius: 12px; border: 1px solid #3a3a3c; width: 100%; background: #2c2c2e; color: white; outline: none; }
+        button.login-btn { padding: 15px; font-size: 17px; border-radius: 12px; border: none; width: 100%; background: linear-gradient(135deg, #34c759, #28a745); color: white; cursor: pointer; font-weight: bold; margin-top: 10px; box-shadow: 0 4px 15px rgba(52,199,89,0.4); }
 
-.welcome-box {
-    position: relative; z-index: 2; width: 100%; max-width: 350px;
-    background: rgba(28, 28, 32, 0.92); backdrop-filter: blur(10px);
-    border: 1px solid #34343a; border-radius: 24px; padding: 28px 22px;
-    text-align: center; box-shadow: 0 20px 45px rgba(0,0,0,0.75);
-}
-.welcome-badge {
-    display: inline-block; font-size: 12px; font-weight: 700; color: #ffd60a;
-    background: rgba(255, 214, 10, 0.12); border: 1px solid rgba(255, 214, 10, 0.35);
-    padding: 4px 12px; border-radius: 999px; margin-bottom: 12px;
-}
-.welcome-title { font-size: 26px; font-weight: 900; color: #ffffff; margin-bottom: 8px; }
-.welcome-sub { font-size: 13px; color: #b0b0b8; line-height: 1.6; margin-bottom: 16px; }
-.creator-tag {
-    font-size: 14px; font-weight: 800; color: #34c759;
-    background: rgba(52, 199, 89, 0.12); border: 1px solid rgba(52, 199, 89, 0.3);
-    padding: 7px 16px; border-radius: 12px; margin-bottom: 20px; display: inline-block;
-}
-.start-entry-btn {
-    width: 100%; padding: 15px; border: none; border-radius: 14px; cursor: pointer;
-    font-size: 18px; font-weight: 800; color: #fff;
-    background: linear-gradient(135deg, #34c759, #248a3d);
-    box-shadow: 0 8px 24px rgba(52, 199, 89, 0.35);
-}
+        #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 6px 8px 10px 8px; overflow: hidden; background: radial-gradient(circle at center, #1e1e24 0%, #121214 100%); }
 
-/* Name Entry Box */
-#login-box {
-    display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    padding: 26px; background: #1c1c1e; border-radius: 20px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.9); width: 90%; max-width: 340px;
-    z-index: 200; border: 1px solid #2c2c2e;
-}
-#login-box h2 { text-align: center; margin-bottom: 10px; color: #34c759; font-size: 22px; font-weight: 800; }
-.room-mode-note {
-    text-align: center; font-size: 12px; color: #ffd60a;
-    background: rgba(255, 214, 10, 0.1); border: 1px solid rgba(255, 214, 10, 0.25);
-    padding: 8px 10px; border-radius: 10px; margin-bottom: 16px;
-}
-.input-group { margin-bottom: 16px; }
-.input-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #8e8e93; font-weight: 600; }
-input { padding: 14px; font-size: 16px; border-radius: 12px; border: 1px solid #3a3a3c; width: 100%; background: #2c2c2e; color: white; outline: none; }
-button.login-btn { padding: 15px; font-size: 17px; border-radius: 12px; border: none; width: 100%; background: linear-gradient(135deg, #34c759, #28a745); color: white; cursor: pointer; font-weight: bold; margin-top: 6px; box-shadow: 0 4px 15px rgba(52,199,89,0.4); }
+        .top-hud { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; height: 74px; flex-shrink: 0; z-index: 20; }
 
-#game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 6px 8px 10px 8px; overflow: hidden; background: radial-gradient(circle at center, #1e1e24 0%, #121214 100%); }
+        .cross-score { background: rgba(28,28,30,0.9); border-radius: 12px; padding: 4px 8px; display: grid; grid-template-columns: repeat(3, 26px); grid-template-rows: repeat(3, 20px); gap: 2px; text-align: center; font-size: 11px; font-weight: bold; border: 1px solid #38383a; }
+        .cross-score div { display: flex; justify-content: center; align-items: center; }
+        .sc-me { color: #34c759; font-size: 12px; }
+        .sc-other { color: #ffffff; }
 
-.top-hud { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; height: 78px; flex-shrink: 0; z-index: 20; }
+        .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; }
+        .room-title { font-weight: bold; font-size: 13px; color: #f2f2f7; background: #2c2c2e; padding: 4px 14px; border-radius: 14px; border: 1px solid #3a3a3c; }
+        .bids-counter { font-size: 11px; color: #ffd60a; font-weight: bold; background: rgba(0,0,0,0.8); padding: 3px 12px; border-radius: 10px; border: 1px solid #444; }
 
-.cross-score { background: rgba(28,28,30,0.92); border-radius: 12px; padding: 4px 8px; display: grid; grid-template-columns: repeat(3, 26px); grid-template-rows: repeat(3, 20px); gap: 2px; text-align: center; font-size: 11px; font-weight: bold; border: 1px solid #38383a; }
-.cross-score div { display: flex; justify-content: center; align-items: center; }
-.sc-me { color: #34c759; font-size: 12px; }
-.sc-other { color: #ffffff; }
+        .last-trick-box { background: rgba(28,28,30,0.9); border: 1px solid #38383a; border-radius: 12px; padding: 4px; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .last-trick-title { font-size: 9px; color: #8e8e93; margin-bottom: 2px; font-weight: bold; }
+        .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
+        .mini-card { width: 22px; height: 30px; background: white; border-radius: 3px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #444; }
+        .mini-card img { width: 100%; height: 100%; object-fit: fill; background: white; }
 
-.room-center-info { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; }
-.room-title { font-weight: bold; font-size: 12px; color: #f2f2f7; background: #2c2c2e; padding: 4px 12px; border-radius: 14px; border: 1px solid #3a3a3c; }
-.bids-counter { font-size: 11px; color: #ffd60a; font-weight: bold; background: rgba(0,0,0,0.82); padding: 3px 10px; border-radius: 10px; border: 1px solid #444; }
-.invite-mini-actions { display: flex; gap: 5px; margin-top: 2px; }
-.mini-inv-btn { border: none; border-radius: 8px; padding: 3px 8px; font-size: 10px; font-weight: 700; cursor: pointer; }
-.btn-wa { background: #25d366; color: #081c10; }
-.btn-cp { background: #3a3a3c; color: #fff; }
-.btn-snd { background: #2c2c2e; color: #ffd60a; border: 1px solid #48484a; }
+        .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 12px 18px; min-height: 0; }
+        .table-container { position: relative; width: 100%; height: 100%; max-width: 420px; border: 6px solid #2c2c2e; border-radius: 35px; background: radial-gradient(circle, #229a43 0%, #15662c 100%); box-shadow: inset 0 0 35px rgba(0,0,0,0.7), 0 10px 30px rgba(0,0,0,0.6); }
 
-.last-trick-box { background: rgba(28,28,30,0.92); border: 1px solid #38383a; border-radius: 12px; padding: 4px; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.last-trick-title { font-size: 9px; color: #8e8e93; margin-bottom: 2px; font-weight: bold; }
-.mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
-.mini-card { width: 22px; height: 30px; background: white; border-radius: 3px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #444; }
-.mini-card img { width: 100%; height: 100%; object-fit: fill; background: white; }
+        .player-node { position: absolute; display: flex; flex-direction: column; align-items: center; z-index: 15; }
+        .node-top { top: -28px; left: 50%; transform: translateX(-50%); }
+        .node-left { left: -26px; top: 50%; transform: translateY(-50%); }
+        .node-right { right: -26px; top: 50%; transform: translateY(-50%); }
 
-.table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 12px 18px; min-height: 0; }
-.table-container { position: relative; width: 100%; height: 100%; max-width: 420px; border: 6px solid #2c2c2e; border-radius: 35px; background: radial-gradient(circle, #239e45 0%, #14632a 100%); box-shadow: inset 0 0 35px rgba(0,0,0,0.7), 0 10px 30px rgba(0,0,0,0.6); }
+        .avatar-container { position: relative; display: flex; align-items: center; }
+        .avatar-circle { width: 46px; height: 46px; border-radius: 50%; background: #2c2c2e; border: 3px solid #ffd60a; display: flex; justify-content: center; align-items: center; font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
+        .dealer-tag { position: absolute; bottom: -3px; right: -5px; background: #ff3b30; color: white; font-size: 8px; font-weight: bold; padding: 1px 5px; border-radius: 6px; border: 1.5px solid white; }
+        
+        .won-pile { position: absolute; width: 24px; height: 34px; background: repeating-linear-gradient(45deg, #ff3b30, #ff3b30 3px, #c0392b 3px, #c0392b 6px); border: 1.5px solid #fff; border-radius: 4px; box-shadow: 2px 3px 8px rgba(0,0,0,0.7); display: none; }
+        .node-top .won-pile { right: -28px; top: 6px; }
+        .node-left .won-pile { right: -28px; top: 6px; }
+        .node-right .won-pile { left: -28px; top: 6px; }
+        .bottom-won-pile { position: absolute; left: -32px; top: 4px; width: 24px; height: 34px; background: repeating-linear-gradient(45deg, #ff3b30, #ff3b30 3px, #c0392b 3px, #c0392b 6px); border: 1.5px solid #fff; border-radius: 4px; display: none; }
 
-.player-node { position: absolute; display: flex; flex-direction: column; align-items: center; z-index: 15; transition: transform 0.2s ease; }
-.node-top { top: -28px; left: 50%; transform: translateX(-50%); }
-.node-left { left: -26px; top: 50%; transform: translateY(-50%); }
-.node-right { right: -26px; top: 50%; transform: translateY(-50%); }
+        .player-name { font-size: 10px; background: rgba(0,0,0,0.85); padding: 2px 8px; border-radius: 8px; margin-top: 3px; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #3a3a3c; font-weight: 600; }
+        .bid-badge { font-size: 10px; background: #000; color: #ffd60a; padding: 1px 8px; border-radius: 6px; font-weight: bold; margin-top: 2px; border: 1px solid #3a3a3c; }
 
-.player-node.active-turn .player-name {
-    border-color: #34c759;
-    box-shadow: 0 0 10px rgba(52, 199, 89, 0.55);
-}
+        .center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; z-index: 10; }
+        .played-card { position: absolute; width: 54px; height: 78px; background: #fff; border-radius: 6px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.6); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+        .played-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 5px; background: white; }
 
-.avatar-container { position: relative; display: flex; align-items: center; }
-.avatar-circle {
-    width: 46px; height: 46px; border-radius: 50%; background: #2c2c2e;
-    border: 3px solid #ffd60a; display: flex; justify-content: center; align-items: center;
-    font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.6); transition: all 0.25s ease;
-}
-.avatar-circle.turn-ring {
-    border-color: #34c759 !important;
-    box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.28), 0 0 16px #34c759 !important;
-    transform: scale(1.06);
-}
-.dealer-tag { position: absolute; bottom: -3px; right: -5px; background: #ff3b30; color: white; font-size: 8px; font-weight: bold; padding: 1px 5px; border-radius: 6px; border: 1.5px solid white; }
+        .pos-0 { bottom: 2px; left: 50%; transform: translateX(-50%); }
+        .pos-1 { left: 4px; top: 50%; transform: translateY(-50%); }
+        .pos-2 { top: 2px; left: 50%; transform: translateX(-50%); }
+        .pos-3 { right: 4px; top: 50%; transform: translateY(-50%); }
 
-.won-pile { position: absolute; width: 24px; height: 34px; background: repeating-linear-gradient(45deg, #ff3b30, #ff3b30 3px, #c0392b 3px, #c0392b 6px); border: 1.5px solid #fff; border-radius: 4px; box-shadow: 2px 3px 8px rgba(0,0,0,0.7); display: none; }
-.node-top .won-pile { right: -28px; top: 6px; }
-.node-left .won-pile { right: -28px; top: 6px; }
-.node-right .won-pile { left: -28px; top: 6px; }
-.bottom-won-pile { position: absolute; left: -32px; top: 4px; width: 24px; height: 34px; background: repeating-linear-gradient(45deg, #ff3b30, #ff3b30 3px, #c0392b 3px, #c0392b 6px); border: 1.5px solid #fff; border-radius: 4px; display: none; }
+        .gather-center { top: 50% !important; left: 50% !important; bottom: auto !important; right: auto !important; transform: translate(-50%, -50%) rotate(10deg) scale(0.9) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.8) !important; }
+        .fly-to-0 { top: 50% !important; left: 50% !important; transform: translate(-50%, 190px) scale(0.2) !important; opacity: 0 !important; }
+        .fly-to-1 { top: 50% !important; left: 50% !important; transform: translate(-190px, -50%) scale(0.2) !important; opacity: 0 !important; }
+        .fly-to-2 { top: 50% !important; left: 50% !important; transform: translate(-50%, -190px) scale(0.2) !important; opacity: 0 !important; }
+        .fly-to-3 { top: 50% !important; left: 50% !important; transform: translate(190px, -50%) scale(0.2) !important; opacity: 0 !important; }
 
-.player-name { font-size: 10px; background: rgba(0,0,0,0.86); padding: 2px 8px; border-radius: 8px; margin-top: 3px; max-width: 82px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid #3a3a3c; font-weight: 700; }
-.bid-badge { font-size: 10px; background: #000; color: #ffd60a; padding: 1px 8px; border-radius: 6px; font-weight: bold; margin-top: 2px; border: 1px solid #3a3a3c; }
+        .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 25; }
+        
+        .redeal-bar { margin-bottom: 6px; display: none; }
+        .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffd60a; padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.7); animation: pulse-btn 1.5s infinite; }
+        @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
 
-.center-trick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; z-index: 10; }
-.played-card { position: absolute; width: 54px; height: 78px; background: #fff; border-radius: 6px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.6); transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
-.played-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 5px; background: white; }
+        .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 105px; padding: 0 4px; overflow: hidden; }
+        
+        .hand-card { width: 64px; height: 94px; background: #ffffff; border-radius: 7px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: -3px 3px 10px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.18s ease, border-color 0.18s; flex-shrink: 0; position: relative; }
+        .hand-card:active { transform: translateY(-14px) scale(1.05); border-color: #34c759; z-index: 10; }
+        .hand-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 6px; background: white; }
 
-.pos-0 { bottom: 2px; left: 50%; transform: translateX(-50%); }
-.pos-1 { left: 4px; top: 50%; transform: translateY(-50%); }
-.pos-2 { top: 2px; left: 50%; transform: translateX(-50%); }
-.pos-3 { right: 4px; top: 50%; transform: translateY(-50%); }
+        .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 0 10px; }
+        .tricks-box { background: #1c1c1e; padding: 6px 14px; border-radius: 10px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
 
-.gather-center { top: 50% !important; left: 50% !important; bottom: auto !important; right: auto !important; transform: translate(-50%, -50%) rotate(10deg) scale(0.9) !important; box-shadow: 0 8px 20px rgba(0,0,0,0.8) !important; }
-.fly-to-0 { top: 50% !important; left: 50% !important; transform: translate(-50%, 190px) scale(0.2) !important; opacity: 0 !important; }
-.fly-to-1 { top: 50% !important; left: 50% !important; transform: translate(-190px, -50%) scale(0.2) !important; opacity: 0 !important; }
-.fly-to-2 { top: 50% !important; left: 50% !important; transform: translate(-50%, -190px) scale(0.2) !important; opacity: 0 !important; }
-.fly-to-3 { top: 50% !important; left: 50% !important; transform: translate(190px, -50%) scale(0.2) !important; opacity: 0 !important; }
+        #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(24,24,26,0.98); padding: 22px; border-radius: 20px; z-index: 180; border: 1px solid #38383a; width: 88%; max-width: 310px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
+        .timer-circle { width: 68px; height: 68px; border-radius: 50%; border: 4px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: #ffd60a; margin: 12px auto; background: #121214; }
+        .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 12px; }
 
-.bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 25; }
+        #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 280px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
+        #bid-modal h3 { font-size: 15px; margin-bottom: 6px; color: white; font-weight: 700; }
+        #bid-hint { font-size: 11px; color: #ffd60a; margin-bottom: 12px; font-weight: 600; }
+        .bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 180px; overflow-y: auto; }
+        .bid-btn { background: #ffd60a; color: #000; border: none; border-radius: 10px; padding: 12px 0; font-weight: bold; font-size: 14px; cursor: pointer; }
 
-.redeal-bar { margin-bottom: 6px; display: none; }
-.redeal-btn {
-    background: linear-gradient(135deg, #ff3b30, #c82333);
-    color: white; border: 2px solid #ffd60a; padding: 9px 22px; border-radius: 22px;
-    font-size: 13px; font-weight: 800; cursor: pointer;
-    box-shadow: 0 6px 20px rgba(255,59,48,0.75); animation: pulse-btn 1.3s infinite;
-}
-.redeal-timer-pill {
-    background: #ffd60a; color: #121214; border-radius: 999px;
-    padding: 1px 7px; font-size: 12px; font-weight: 900; margin-right: 4px;
-}
-@keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
-
-.hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 105px; padding: 0 4px; overflow: hidden; }
-
-.hand-card { width: 64px; height: 94px; background: #ffffff; border-radius: 7px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: -3px 3px 10px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.18s ease, border-color 0.18s; flex-shrink: 0; position: relative; }
-.hand-card:active { transform: translateY(-14px) scale(1.05); border-color: #34c759; z-index: 10; }
-.hand-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 6px; background: white; }
-
-.bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 0 10px; gap: 6px; }
-.tricks-box { background: #1c1c1e; padding: 6px 12px; border-radius: 10px; font-size: 11px; display: flex; gap: 6px; border: 1px solid #38383a; }
-.turn-timer-box { background: #1c1c1e; padding: 6px 10px; border-radius: 10px; font-size: 11px; font-weight: bold; color: #34c759; border: 1px solid #38383a; display: none; }
-.turn-timer-box.urgent { color: #ff3b30; border-color: #ff3b30; }
-
-#waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(24,24,26,0.98); padding: 22px; border-radius: 20px; z-index: 180; border: 1px solid #38383a; width: 88%; max-width: 320px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
-.timer-circle { width: 68px; height: 68px; border-radius: 50%; border: 4px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: #ffd60a; margin: 12px auto; background: #121214; }
-.invite-box-actions { display: flex; gap: 8px; margin-top: 10px; }
-.wa-big-btn { flex: 1; background: #25d366; color: #07190e; border: none; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer; }
-.cp-big-btn { flex: 1; background: #2c2c2e; color: #fff; border: 1px solid #48484a; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
-.start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 10px; }
-
-#bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 280px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
-#bid-modal h3 { font-size: 15px; margin-bottom: 6px; color: white; font-weight: 700; }
-#bid-hint { font-size: 11px; color: #ffd60a; margin-bottom: 12px; font-weight: 600; }
-.bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 180px; overflow-y: auto; }
-.bid-btn { background: #ffd60a; color: #000; border: none; border-radius: 10px; padding: 12px 0; font-weight: bold; font-size: 14px; cursor: pointer; }
-
-#round-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 160; border: 1px solid #38383a; width: 92%; max-width: 350px; box-shadow: 0 15px 45px rgba(0,0,0,0.95); }
-.summary-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 11px; text-align: right; }
-.summary-table th { color: #8e8e93; border-bottom: 1px solid #38383a; padding: 6px; }
-.summary-table td { padding: 8px 6px; border-bottom: 1px solid #2c2c2e; vertical-align: middle; }
-.pts-plus { color: #34c759; font-weight: bold; }
-.pts-minus { color: #ff3b30; font-weight: bold; }
-</style>
+        #round-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 160; border: 1px solid #38383a; width: 92%; max-width: 350px; box-shadow: 0 15px 45px rgba(0,0,0,0.95); }
+        .summary-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 11px; text-align: right; }
+        .summary-table th { color: #8e8e93; border-bottom: 1px solid #38383a; padding: 6px; }
+        .summary-table td { padding: 8px 6px; border-bottom: 1px solid #2c2c2e; vertical-align: middle; }
+        .pts-plus { color: #34c759; font-weight: bold; }
+        .pts-minus { color: #ff3b30; font-weight: bold; }
+    </style>
 </head>
 <body>
 
-<div id="welcome-screen">
-    <div class="welcome-card-decor decor-1">♥</div>
-    <div class="welcome-card-decor decor-2">♠</div>
-    <div class="welcome-card-decor decor-3">♣</div>
-    <div class="welcome-card-decor decor-4">♦</div>
-
-    <div class="welcome-box">
-        <div class="welcome-badge">أهلاً وسهلاً بك • مرحبتين</div>
-        <div class="welcome-title">طرنيب ليبي 🇱🇾</div>
-        <div class="welcome-sub">جمعة الطاولة والشدة صارت أسهل؛ ادخل باسمك وابعث رابط الدعوة لصاحبك على الواتساب في أي مكان.</div>
-        <div class="creator-tag">العطائي</div>
-        <button class="start-entry-btn" onclick="openNameScreen()">ابدأ اللعب</button>
+    <div id="login-box">
+        <h2>طرنيب ليبي 🇱🇾</h2>
+        <div class="input-group">
+            <label>اسم اللاعب:</label>
+            <input type="text" id="username" placeholder="اكتب اسمك هنا...">
+        </div>
+        <div class="input-group">
+            <label>رمز الغرفة:</label>
+            <input type="text" id="room" placeholder="اكتب رمز الغرفة...">
+        </div>
+        <button class="login-btn" onclick="joinGame()">دخول اللعبة</button>
     </div>
-</div>
 
-<div id="login-box">
-    <h2>أهلاً بك في الطاولة</h2>
-    <div class="room-mode-note" id="room-mode-banner">سيتم إنشاء رابط غرفة خاص بك تلقائياً بدون تداخل</div>
-    <div class="input-group">
-        <label>اكتب اسمك:</label>
-        <input type="text" id="username" placeholder="مثال: عبد الله" maxlength="20">
+    <div id="game-board">
+        <div class="top-hud">
+            <div class="cross-score">
+                <div></div><div id="score-2" class="sc-other">0</div><div></div>
+                <div id="score-1" class="sc-other">0</div><div style="color:#ffd60a; font-size:12px;">31</div><div id="score-3" class="sc-other">0</div>
+                <div></div><div id="score-0" class="sc-me">0</div><div></div>
+            </div>
+
+            <div class="room-center-info">
+                <div class="room-title" id="room-display">tripoli</div>
+                <div class="bids-counter" id="bids-status">الدورة 1 | بدون طلبات</div>
+            </div>
+
+            <div class="last-trick-box">
+                <div class="last-trick-title">آخر أكلة</div>
+                <div class="mini-cards-grid" id="last-trick-cards">
+                    <div style="font-size:8px; color:#777; grid-column: span 2; text-align:center;">لا توجد</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <div class="table-container">
+                <div class="player-node node-top">
+                    <div class="avatar-container">
+                        <div class="avatar-circle" id="avatar-2">👤</div>
+                        <div class="won-pile" id="pile-2"></div>
+                    </div>
+                    <div class="player-name" id="name-2">في الانتظار..</div>
+                    <div class="bid-badge" id="bid-2">-</div>
+                </div>
+
+                <div class="player-node node-left">
+                    <div class="avatar-container">
+                        <div class="avatar-circle" id="avatar-1">👤</div>
+                        <div class="won-pile" id="pile-1"></div>
+                    </div>
+                    <div class="player-name" id="name-1">في الانتظار..</div>
+                    <div class="bid-badge" id="bid-1">-</div>
+                </div>
+
+                <div class="player-node node-right">
+                    <div class="avatar-container">
+                        <div class="avatar-circle" id="avatar-3">👤</div>
+                        <div class="won-pile" id="pile-3"></div>
+                    </div>
+                    <div class="player-name" id="name-3">في الانتظار..</div>
+                    <div class="bid-badge" id="bid-3">-</div>
+                </div>
+
+                <div class="center-trick" id="trick-area"></div>
+            </div>
+        </div>
+
+        <div class="bottom-section">
+            <div class="redeal-bar" id="redeal-bar">
+                <button class="redeal-btn" onclick="requestRedeal()">🔄 ورق ميت (إعادة توزيع)</button>
+            </div>
+
+            <div class="hand-cards-container" id="my-hand"></div>
+
+            <div class="bottom-info">
+                <div class="tricks-box">
+                    <span>أكلاتك:</span>
+                    <span id="my-tricks-count" style="color:#ffd60a; font-weight:bold;">0 / -</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; position:relative;">
+                    <div class="won-pile bottom-won-pile" id="pile-0"></div>
+                    <div class="player-name" id="name-0" style="background:none; border:none; font-size:12px; font-weight:bold;">أنت</div>
+                    <div class="avatar-circle" style="width:40px; height:40px; font-size:16px;" id="avatar-0">👤</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="waiting-overlay">
+            <h3 style="font-size:16px; color:#34c759;">في انتظار انضمام اللاعبين...</h3>
+            <p id="joined-count-text" style="font-size:12px; color:#d1d1d6; margin-top:6px;">اللاعبون الحاليون: 1 / 4</p>
+            <div class="timer-circle" id="wait-timer-num">30</div>
+            <p style="font-size:11px; color:#8e8e93;">سيتم إكمال المقاعد الشاغرة بالبوتات تلقائياً عند انتهاء الوقت</p>
+            <button class="start-now-btn" onclick="forceStartBots()">تأكيد البدء بالبوتات الآن ▶</button>
+        </div>
+
+        <div id="bid-modal">
+            <h3>اختر طلبتك</h3>
+            <div id="bid-hint"></div>
+            <div class="bid-grid" id="bid-options"></div>
+        </div>
+
+        <div id="round-modal">
+            <h3 id="round-title" style="color:#34c759; font-size:17px; text-align:center;">نتيجة الدورة</h3>
+            <div id="winner-banner" style="color:#ffd60a; font-size:12px; text-align:center; margin-top:4px; font-weight:bold;"></div>
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>اللاعب</th>
+                        <th>التفاصيل</th>
+                        <th>الدورة</th>
+                        <th>المجموع</th>
+                    </tr>
+                </thead>
+                <tbody id="summary-body"></tbody>
+            </table>
+            <button onclick="nextRound()" style="width:100%; background:#34c759; border:none; padding:12px; color:white; border-radius:12px; font-weight:bold; font-size:15px; cursor:pointer;">الدورة التالية</button>
+        </div>
     </div>
-    <button class="login-btn" onclick="joinGame()">دخول الطاولة</button>
-</div>
 
-<div id="game-board">
-<div class="top-hud">
-<div class="cross-score">
-<div></div><div id="score-2" class="sc-other">0</div><div></div>
-<div id="score-1" class="sc-other">0</div><div style="color:#ffd60a; font-size:12px;">31</div><div id="score-3" class="sc-other">0</div>
-<div></div><div id="score-0" class="sc-me">0</div><div></div>
-</div>
-
-<div class="room-center-info">
-<div class="room-title" id="room-display">غرفة</div>
-<div class="bids-counter" id="bids-status">الدورة 1 | بدون طلبات</div>
-<div class="invite-mini-actions">
-<button class="mini-inv-btn btn-wa" onclick="shareWhatsApp()">واتساب</button>
-<button class="mini-inv-btn btn-cp" onclick="copyInviteLink()">نسخ الرابط</button>
-<button class="mini-inv-btn btn-snd" id="sound-toggle-btn" onclick="toggleSound()">🔊</button>
-</div>
-</div>
-
-<div class="last-trick-box">
-<div class="last-trick-title">آخر أكلة</div>
-<div class="mini-cards-grid" id="last-trick-cards">
-<div style="font-size:8px; color:#777; grid-column: span 2; text-align:center;">لا توجد</div>
-</div>
-</div>
-</div>
-
-<div class="table-wrapper">
-<div class="table-container">
-<div class="player-node node-top" id="node-2">
-<div class="avatar-container">
-<div class="avatar-circle" id="avatar-2">👤</div>
-<div class="won-pile" id="pile-2"></div>
-</div>
-<div class="player-name" id="name-2">في الانتظار..</div>
-<div class="bid-badge" id="bid-2">-</div>
-</div>
-
-<div class="player-node node-left" id="node-1">
-<div class="avatar-container">
-<div class="avatar-circle" id="avatar-1">👤</div>
-<div class="won-pile" id="pile-1"></div>
-</div>
-<div class="player-name" id="name-1">في الانتظار..</div>
-<div class="bid-badge" id="bid-1">-</div>
-</div>
-
-<div class="player-node node-right" id="node-3">
-<div class="avatar-container">
-<div class="avatar-circle" id="avatar-3">👤</div>
-<div class="won-pile" id="pile-3"></div>
-</div>
-<div class="player-name" id="name-3">في الانتظار..</div>
-<div class="bid-badge" id="bid-3">-</div>
-</div>
-
-<div class="center-trick" id="trick-area"></div>
-</div>
-</div>
-
-<div class="bottom-section">
-<div class="redeal-bar" id="redeal-bar">
-<button class="redeal-btn" id="redeal-btn" onclick="requestRedeal()">
-🔄 ورق ميت (إعادة توزيع) <span class="redeal-timer-pill" id="redeal-sec-val">7ث</span>
-</button>
-</div>
-
-<div class="hand-cards-container" id="my-hand"></div>
-
-<div class="bottom-info">
-<div class="tricks-box">
-<span>أكلاتك:</span>
-<span id="my-tricks-count" style="color:#ffd60a; font-weight:bold;">0 / -</span>
-</div>
-<div class="turn-timer-box" id="my-turn-timer">وقتك: <span id="turn-sec-val">25</span>ث</div>
-<div style="display:flex; align-items:center; gap:8px; position:relative;">
-<div class="won-pile bottom-won-pile" id="pile-0"></div>
-<div class="player-name" id="name-0" style="background:none; border:none; font-size:12px; font-weight:bold;">أنت</div>
-<div class="avatar-circle" style="width:40px; height:40px; font-size:16px;" id="avatar-0">👤</div>
-</div>
-</div>
-</div>
-
-<div id="waiting-overlay">
-<h3 style="font-size:16px; color:#34c759;">في انتظار انضمام اللاعبين...</h3>
-<p id="joined-count-text" style="font-size:12px; color:#d1d1d6; margin-top:6px;">اللاعبون المنضمون: 1 / 4</p>
-<div class="timer-circle" id="wait-timer-num">30</div>
-<div class="invite-box-actions">
-<button class="wa-big-btn" onclick="shareWhatsApp()">دعوة على واتساب</button>
-<button class="cp-big-btn" onclick="copyInviteLink()">نسخ الرابط</button>
-</div>
-<p style="font-size:11px; color:#8e8e93; margin-top:10px;">سيتم إكمال المقاعد الشاغرة بالبوتات تلقائياً عند انتهاء الوقت</p>
-<button class="start-now-btn" onclick="forceStartBots()">تأكيد البدء بالبوتات الآن ▶</button>
-</div>
-
-<div id="bid-modal">
-<h3>اختر طلبتك</h3>
-<div id="bid-hint"></div>
-<div class="bid-grid" id="bid-options"></div>
-</div>
-
-<div id="round-modal">
-<h3 id="round-title" style="color:#34c759; font-size:17px; text-align:center;">نتيجة الدورة</h3>
-<div id="winner-banner" style="color:#ffd60a; font-size:12px; text-align:center; margin-top:4px; font-weight:bold;"></div>
-<table class="summary-table">
-<thead>
-<tr>
-<th>اللاعب</th>
-<th>التفاصيل</th>
-<th>الدورة</th>
-<th>المجموع</th>
-</tr>
-</thead>
-<tbody id="summary-body"></tbody>
-</table>
-<button onclick="nextRound()" style="width:100%; background:#34c759; border:none; padding:12px; color:white; border-radius:12px; font-weight:bold; font-size:15px; cursor:pointer;">الدورة التالية</button>
-</div>
-</div>
-
-<script>
-const socket = io({ 
-transports: ['websocket', 'polling'],
-reconnection: true,
-reconnectionAttempts: Infinity,
-reconnectionDelay: 1000
-});
-
-const RANK_ORDER_MAP = {
-    'A': 14, 'K': 13, 'Q': 12, 'J': 11,
-    '10': 10, '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2
-};
-
-function getCardRankValue(card) {
-    if (typeof card.value === 'number') return card.value;
-    return RANK_ORDER_MAP[card.rank] || 0;
-}
-
-function sortHandAlternatingColorsClient(cards) {
-    if (!Array.isArray(cards) || cards.length === 0) return [];
-
-    const grouped = {};
-    for (const c of cards) {
-        if (!c || !c.suit) continue;
-        if (!grouped[c.suit]) grouped[c.suit] = [];
-        grouped[c.suit].push(c);
-    }
-
-    for (const suitName of Object.keys(grouped)) {
-        grouped[suitName].sort((a, b) => getCardRankValue(b) - getCardRankValue(a));
-    }
-
-    const reds = ['Hearts', 'Tiles'].filter(s => grouped[s] && grouped[s].length > 0);
-    const blacks = ['Clovers', 'Pikes'].filter(s => grouped[s] && grouped[s].length > 0);
-
-    let turnRed = reds.length >= blacks.length;
-    let rIdx = 0;
-    let bIdx = 0;
-    const suitSequence = [];
-
-    while (rIdx < reds.length || bIdx < blacks.length) {
-        if (turnRed) {
-            if (rIdx < reds.length) {
-                suitSequence.push(reds[rIdx++]);
-            } else if (bIdx < blacks.length) {
-                suitSequence.push(blacks[bIdx++]);
-            }
-            turnRed = false;
-        } else {
-            if (bIdx < blacks.length) {
-                suitSequence.push(blacks[bIdx++]);
-            } else if (rIdx < reds.length) {
-                suitSequence.push(reds[rIdx++]);
-            }
-            turnRed = true;
-        }
-    }
-
-    const ordered = [];
-    for (const s of suitSequence) {
-        ordered.push(...grouped[s]);
-    }
-    return ordered;
-}
-
-let myIndex = 0;
-let currentRoom = "";
-let invitedRoomFromUrl = "";
-let currentTurnGlobal = -1;
-let gameStateGlobal = "WAITING";
-let animatedThisTrick = false;
-let prevTrickLength = 0;
-let playedHeartCutThisTrick = false;
-let soundEnabled = true;
-let audioCtx = null;
-let latestHandCache = [];
-
-function ensureAudioContext() {
-    if (!soundEnabled) return null;
-    if (!audioCtx) {
-        const Ctx = window.AudioContext || window.webkitAudioContext;
-        if (Ctx) audioCtx = new Ctx();
-    }
-    if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume().catch(() => {});
-    }
-    return audioCtx;
-}
-
-document.addEventListener('pointerdown', () => {
-    ensureAudioContext();
-}, { passive: true });
-
-window.addEventListener('resize', () => {
-    if (latestHandCache.length > 0) {
-        renderHand(latestHandCache);
-    }
-});
-
-function toggleSound() {
-    soundEnabled = !soundEnabled;
-    const btn = document.getElementById('sound-toggle-btn');
-    if (btn) btn.innerText = soundEnabled ? '🔊' : '🔇';
-    if (soundEnabled) {
-        ensureAudioContext();
-        playCardSound();
-    }
-}
-
-function playCardSound() {
-    const ctx = ensureAudioContext();
-    if (!ctx) return;
-    const now = ctx.currentTime;
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(520, now);
-    osc.frequency.exponentialRampToValueAtTime(190, now + 0.065);
-
-    gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.22, now + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.075);
-}
-
-function playTrickWinSound() {
-    const ctx = ensureAudioContext();
-    if (!ctx) return;
-    const now = ctx.currentTime;
-    const notes = [330, 440, 587.33];
-
-    notes.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        const start = now + idx * 0.075;
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, start);
-
-        gain.gain.setValueAtTime(0.001, start);
-        gain.gain.linearRampToValueAtTime(0.18, start + 0.015);
-        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.14);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(start);
-        osc.stop(start + 0.15);
-    });
-}
-
-function playHeartCutSound() {
-    const ctx = ensureAudioContext();
-    if (!ctx) return;
-    const now = ctx.currentTime;
-    const freqs = [660, 880, 523.25];
-
-    freqs.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        const start = now + idx * 0.06;
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(freq, start);
-
-        gain.gain.setValueAtTime(0.001, start);
-        gain.gain.linearRampToValueAtTime(0.14, start + 0.012);
-        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.12);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(start);
-        osc.stop(start + 0.13);
-    });
-}
-
-(function detectRoomFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    const r = (params.get('room') || '').trim();
-    if (r) {
-        invitedRoomFromUrl = r;
-        currentRoom = r;
-    }
-})();
-
-function getInviteUrl() {
-    const base = `${window.location.origin}${window.location.pathname}`;
-    return currentRoom ? `${base}?room=${encodeURIComponent(currentRoom)}` : base;
-}
-
-function syncUrlRoomParam() {
-    if (!currentRoom) return;
-    const url = new URL(window.location.href);
-    url.searchParams.set('room', currentRoom);
-    window.history.replaceState({}, '', url.toString());
-}
-
-function openNameScreen() {
-    ensureAudioContext();
-    document.getElementById('welcome-screen').style.display = 'none';
-    document.getElementById('login-box').style.display = 'block';
-    const banner = document.getElementById('room-mode-banner');
-    if (invitedRoomFromUrl) {
-        banner.innerText = `أنت داخل عبر رابط دعوة مباشر (${invitedRoomFromUrl})`;
-    } else {
-        banner.innerText = 'سيتم إنشاء رابط غرفة خاص بك تلقائياً بدون تداخل';
-        socket.emit('create_room_id');
-    }
-}
-
-socket.on('room_created', (data) => {
-    if (!invitedRoomFromUrl && data && data.room) {
-        currentRoom = data.room;
-        syncUrlRoomParam();
-    }
-});
-
-function copyInviteLink() {
-    const link = getInviteUrl();
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(link).then(() => {
-            alert("تم نسخ رابط الدعوة! ابعثه لصاحبك على الواتساب.");
-        }).catch(() => {
-            prompt("انسخ رابط الدعوة:", link);
+    <script>
+        const socket = io({ 
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000
         });
-    } else {
-        prompt("انسخ رابط الدعوة:", link);
-    }
-}
 
-function shareWhatsApp() {
-    const link = getInviteUrl();
-    const msg = encodeURIComponent(`مرحبتين! تفضل ادخل معانا على طاولة الطرنيب من الرابط المباشر:\n${link}`);
-    window.open(`https://wa.me/?text=${msg}`, '_blank');
-}
+        let myIndex = 0;
+        let currentRoom = "";
+        let currentTurnGlobal = -1;
+        let gameStateGlobal = "WAITING";
+        let animatedThisTrick = false;
 
-const cardPreloadedObjs = {};
-function preloadAllCardImages() {
-for (let i = 1; i <= 52; i++) {
-let formattedNum = i < 10 ? `0${i}` : `${i}`;
-let img = new Image();
-img.decoding = 'async';
-img.src = `/static/cards/card_${formattedNum}.png`;
-if (img.decode) {
-img.decode().catch(() => {});
-}
-cardPreloadedObjs[i] = img;
-}
-}
-preloadAllCardImages();
+        const cardImagesCache = {};
+        function preloadAllCardImages() {
+            for (let i = 1; i <= 52; i++) {
+                let formattedNum = i < 10 ? `0${i}` : `${i}`;
+                let img = new Image();
+                img.src = `/static/cards/card_${formattedNum}.png`;
+                cardImagesCache[i] = img.src;
+            }
+        }
+        preloadAllCardImages();
 
-function getCardImageFilename(card) {
-const suitsOrder = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
-const ranksOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        function getCardImageFilename(card) {
+            const suitsOrder = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
+            const ranksOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            
+            let suitIndex = suitsOrder.indexOf(card.suit);
+            let rankIndex = ranksOrder.indexOf(card.rank);
+            if (suitIndex === -1 || rankIndex === -1) return 'card_01.png';
+            
+            let cardNum = (suitIndex * 13) + rankIndex + 1;
+            let formattedNum = cardNum < 10 ? `0${cardNum}` : `${cardNum}`;
+            return `card_${formattedNum}.png`;
+        }
 
-let suitIndex = suitsOrder.indexOf(card.suit);
-let rankIndex = ranksOrder.indexOf(card.rank);
-if (suitIndex === -1 || rankIndex === -1) return 'card_01.png';
+        function getCachedCardSrc(card) {
+            const suitsOrder = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
+            const ranksOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            let suitIndex = suitsOrder.indexOf(card.suit);
+            let rankIndex = ranksOrder.indexOf(card.rank);
+            if (suitIndex === -1 || rankIndex === -1) return cardImagesCache[1];
+            let cardNum = (suitIndex * 13) + rankIndex + 1;
+            return cardImagesCache[cardNum] || `/static/cards/${getCardImageFilename(card)}`;
+        }
 
-let cardNum = (suitIndex * 13) + rankIndex + 1;
-let formattedNum = cardNum < 10 ? `0${cardNum}` : `${cardNum}`;
-return `card_${formattedNum}.png`;
-}
+        function joinGame() {
+            const name = document.getElementById('username').value.trim();
+            currentRoom = document.getElementById('room').value.trim();
+            if(!name || !currentRoom) return alert("يرجى كتابة الاسم ورمز الغرفة");
 
-function getCachedCardSrc(card) {
-const suitsOrder = ['Clovers', 'Pikes', 'Hearts', 'Tiles'];
-const ranksOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-let suitIndex = suitsOrder.indexOf(card.suit);
-let rankIndex = ranksOrder.indexOf(card.rank);
-if (suitIndex === -1 || rankIndex === -1) return `/static/cards/card_01.png`;
-let cardNum = (suitIndex * 13) + rankIndex + 1;
-return cardPreloadedObjs[cardNum] ? cardPreloadedObjs[cardNum].src : `/static/cards/${getCardImageFilename(card)}`;
-}
+            socket.emit('join_game', {name: name, room: currentRoom});
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('game-board').style.display = 'flex';
+            document.getElementById('room-display').innerText = currentRoom;
+        }
 
-function joinGame() {
-ensureAudioContext();
-const name = document.getElementById('username').value.trim();
-if (!name) return alert("يرجى كتابة اسمك أولاً");
+        function forceStartBots() {
+            socket.emit('force_start_bots', {room: currentRoom});
+        }
 
-socket.emit('join_game', { name: name, room: currentRoom });
-document.getElementById('login-box').style.display = 'none';
-document.getElementById('game-board').style.display = 'flex';
-document.getElementById('room-display').innerText = currentRoom || 'غرفة';
-}
+        socket.on('connect', () => {
+            if (currentRoom) {
+                const name = document.getElementById('username').value.trim();
+                if(name) socket.emit('join_game', {name: name, room: currentRoom});
+            }
+        });
 
-function forceStartBots() {
-socket.emit('force_start_bots', { room: currentRoom });
-}
+        function requestRedeal() {
+            socket.emit('request_redeal', {room: currentRoom});
+        }
 
-socket.on('connect', () => {
-if (currentRoom && document.getElementById('game-board').style.display === 'flex') {
-const name = document.getElementById('username').value.trim();
-if (name) socket.emit('join_game', { name: name, room: currentRoom });
-}
-});
+        function nextRound() {
+            document.getElementById('round-modal').style.display = 'none';
+            socket.emit('next_round', {room: currentRoom});
+        }
 
-function requestRedeal() {
-document.getElementById('redeal-bar').style.display = 'none';
-socket.emit('request_redeal', { room: currentRoom });
-}
+        socket.on('game_update', (data) => {
+            myIndex = data.my_index;
+            currentTurnGlobal = data.current_turn;
+            gameStateGlobal = data.state;
 
-function nextRound() {
-document.getElementById('round-modal').style.display = 'none';
-socket.emit('next_round', { room: currentRoom });
-}
+            const waitBox = document.getElementById('waiting-overlay');
+            if (!data.game_started) {
+                waitBox.style.display = 'block';
+                document.getElementById('wait-timer-num').innerText = data.wait_seconds_left;
+                document.getElementById('joined-count-text').innerText = `اللاعبون المنضمون: ${data.players.length} / 4`;
+            } else {
+                waitBox.style.display = 'none';
+            }
 
-socket.on('game_update', (data) => {
-if (data.room_id) {
-currentRoom = data.room_id;
-document.getElementById('room-display').innerText = currentRoom;
-syncUrlRoomParam();
-}
-myIndex = data.my_index;
-currentTurnGlobal = data.current_turn;
-gameStateGlobal = data.state;
+            if (data.round_number === 1) {
+                document.getElementById('bids-status').innerText = `الدورة 1 | بدون طلبات (لعب حر)`;
+            } else {
+                document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
+            }
+            
+            document.getElementById('redeal-bar').style.display = data.can_redeal ? 'block' : 'none';
 
-const trickArr = data.current_trick || [];
-if (trickArr.length === 0) {
-prevTrickLength = 0;
-playedHeartCutThisTrick = false;
-animatedThisTrick = false;
-} else if (trickArr.length > prevTrickLength) {
-const latestPlay = trickArr[trickArr.length - 1];
-const leadPlay = trickArr[0];
-playCardSound();
+            renderPlayers(data.players, data.current_turn, data.dealer_idx, data.round_number);
+            renderHand(data.my_hand);
+            renderLastTrick(data.last_trick);
+            updateCrossScore(data);
 
-if (
-    latestPlay &&
-    leadPlay &&
-    latestPlay.card &&
-    leadPlay.card &&
-    trickArr.length > 1 &&
-    latestPlay.card.suit === 'Hearts' &&
-    leadPlay.card.suit !== 'Hearts' &&
-    !playedHeartCutThisTrick
-) {
-    playedHeartCutThisTrick = true;
-    setTimeout(() => playHeartCutSound(), 90);
-}
-prevTrickLength = trickArr.length;
-}
+            if (data.state === 'TRICK_PAUSE' && data.current_trick && data.current_trick.length === 4) {
+                if (!animatedThisTrick) {
+                    animatedThisTrick = true;
+                    renderTrick(data.current_trick);
 
-const waitBox = document.getElementById('waiting-overlay');
-if (!data.game_started) {
-waitBox.style.display = 'block';
-document.getElementById('wait-timer-num').innerText = data.wait_seconds_left;
-document.getElementById('joined-count-text').innerText = `اللاعبون المنضمون: ${data.players.length} / 4`;
-} else {
-waitBox.style.display = 'none';
-}
+                    let winnerUI = (data.trick_winner_idx - myIndex + 4) % 4;
 
-if (data.round_number === 1) {
-document.getElementById('bids-status').innerText = `الدورة 1 | بدون طلبات (لعب حر)`;
-} else {
-document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
-}
+                    setTimeout(() => {
+                        const cards = document.querySelectorAll('#trick-area .played-card');
+                        cards.forEach(c => c.classList.add('gather-center'));
+                    }, 1400);
 
-const redealBar = document.getElementById('redeal-bar');
-const redealSecEl = document.getElementById('redeal-sec-val');
-if (data.can_redeal) {
-    redealBar.style.display = 'block';
-    const secs = data.redeal_seconds_left ?? 7;
-    if (redealSecEl) redealSecEl.innerText = `${Math.max(1, secs)}ث`;
-} else {
-    redealBar.style.display = 'none';
-}
+                    setTimeout(() => {
+                        const cards = document.querySelectorAll('#trick-area .played-card');
+                        cards.forEach(c => {
+                            c.classList.remove('gather-center');
+                            c.classList.add(`fly-to-${winnerUI}`);
+                        });
+                    }, 1850);
+                }
+            } else {
+                animatedThisTrick = false;
+                renderTrick(data.current_trick);
+            }
 
-const timerBox = document.getElementById('my-turn-timer');
-const secVal = document.getElementById('turn-sec-val');
-if (timerBox && secVal) {
-if (data.state === 'PLAYING' && data.current_turn === myIndex && !data.can_redeal) {
-timerBox.style.display = 'block';
-secVal.innerText = data.turn_seconds_left ?? 25;
-if ((data.turn_seconds_left ?? 25) <= 7) {
-timerBox.classList.add('urgent');
-} else {
-timerBox.classList.remove('urgent');
-}
-} else {
-timerBox.style.display = 'none';
-timerBox.classList.remove('urgent');
-}
-}
+            if(data.state === 'BIDDING' && data.current_turn === myIndex) {
+                showBidModal(data.min_bid, data.is_dealer, data.total_bids);
+            } else {
+                document.getElementById('bid-modal').style.display = 'none';
+            }
 
-renderPlayers(data.players, data.current_turn, data.dealer_idx, data.round_number);
-renderHand(data.my_hand);
-renderLastTrick(data.last_trick);
-updateCrossScore(data);
+            if(data.state === 'ROUND_OVER' || data.state === 'GAME_OVER') {
+                showRoundSummary(data);
+            }
+        });
 
-if (data.state === 'TRICK_PAUSE' && data.current_trick && data.current_trick.length === 4) {
-if (!animatedThisTrick) {
-animatedThisTrick = true;
-renderTrick(data.current_trick);
+        socket.on('error', (data) => alert(data.msg));
 
-let winnerUI = (data.trick_winner_idx - myIndex + 4) % 4;
+        function updateCrossScore(data) {
+            if (!data.players) return;
+            data.players.forEach((p, idx) => {
+                let UI_idx = (idx - myIndex + 4) % 4;
+                const scEl = document.getElementById(`score-${UI_idx}`);
+                if (scEl) scEl.innerText = p.score;
+            });
+        }
 
-setTimeout(() => {
-playTrickWinSound();
-const cards = document.querySelectorAll('#trick-area .played-card');
-cards.forEach(c => c.classList.add('gather-center'));
-}, 1400);
+        function renderPlayers(players, turn, dealerIdx, roundNum) {
+            for (let ui = 0; ui < 4; ui++) {
+                let realIdx = (ui + myIndex) % 4;
+                const p = players[realIdx];
+                const nameEl = document.getElementById(`name-${ui}`);
+                const bidEl = document.getElementById(`bid-${ui}`);
+                const avatarEl = document.getElementById(`avatar-${ui}`);
+                const pileEl = document.getElementById(`pile-${ui}`);
 
-setTimeout(() => {
-const cards = document.querySelectorAll('#trick-area .played-card');
-cards.forEach(c => {
-c.classList.remove('gather-center');
-c.classList.add(`fly-to-${winnerUI}`);
-});
-}, 1850);
-}
-} else {
-animatedThisTrick = false;
-renderTrick(data.current_trick);
-}
+                if (!p) {
+                    if(nameEl) nameEl.innerText = "في الانتظار..";
+                    if(bidEl) bidEl.innerText = "-";
+                    continue;
+                }
 
-if(data.state === 'BIDDING' && data.current_turn === myIndex && !data.can_redeal) {
-showBidModal(data.min_bid, data.is_dealer, data.total_bids);
-} else {
-document.getElementById('bid-modal').style.display = 'none';
-}
+                if(nameEl) nameEl.innerText = p.name;
+                if(bidEl) {
+                    bidEl.innerText = roundNum === 1 ? `${p.tricks_won}` : `${p.tricks_won} / ${p.bid}`;
+                }
 
-if(data.state === 'ROUND_OVER' || data.state === 'GAME_OVER') {
-showRoundSummary(data);
-}
-});
+                if(ui === 0) {
+                    document.getElementById('my-tricks-count').innerText = roundNum === 1 ? `${p.tricks_won}` : `${p.tricks_won} / ${p.bid}`;
+                }
 
-socket.on('error', (data) => alert(data.msg));
+                if(pileEl) {
+                    pileEl.style.display = p.won_cards_count > 0 ? 'block' : 'none';
+                }
 
-function updateCrossScore(data) {
-if (!data.players) return;
-data.players.forEach((p, idx) => {
-let UI_idx = (idx - myIndex + 4) % 4;
-const scEl = document.getElementById(`score-${UI_idx}`);
-if (scEl) scEl.innerText = p.score;
-});
-}
+                if(avatarEl) {
+                    avatarEl.innerHTML = realIdx === dealerIdx ? `👤<span class="dealer-tag">موزع</span>` : `👤`;
+                    if(realIdx === turn && gameStateGlobal === 'PLAYING') {
+                        avatarEl.style.borderColor = '#34c759';
+                        avatarEl.style.boxShadow = '0 0 14px #34c759';
+                    } else {
+                        avatarEl.style.borderColor = '#ffd60a';
+                        avatarEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.6)';
+                    }
+                }
+            }
+        }
 
-function renderPlayers(players, turn, dealerIdx, roundNum) {
-for (let ui = 0; ui < 4; ui++) {
-let realIdx = (ui + myIndex) % 4;
-const p = players[realIdx];
-const nameEl = document.getElementById(`name-${ui}`);
-const bidEl = document.getElementById(`bid-${ui}`);
-const avatarEl = document.getElementById(`avatar-${ui}`);
-const pileEl = document.getElementById(`pile-${ui}`);
-const nodeEl = document.getElementById(`node-${ui}`);
+        function renderCardHTML(card) {
+            let imgSrc = getCachedCardSrc(card);
+            return `<img src="${imgSrc}" alt="${card.rank} ${card.suit}" loading="eager" decoding="async">`;
+        }
 
-if (!p) {
-if(nameEl) nameEl.innerText = "في الانتظار..";
-if(bidEl) bidEl.innerText = "-";
-if(nodeEl) nodeEl.classList.remove('active-turn');
-if(avatarEl) avatarEl.classList.remove('turn-ring');
-continue;
-}
+        function renderHand(hand) {
+            const handDiv = document.getElementById('my-hand');
+            if(!handDiv) return;
+            handDiv.innerHTML = '';
+            if(!hand || hand.length === 0) return;
 
-if(nameEl) nameEl.innerText = p.name;
-if(bidEl) {
-bidEl.innerText = roundNum === 1 ? `${p.tricks_won}` : `${p.tricks_won} / ${p.bid}`;
-}
+            const containerWidth = window.innerWidth - 16;
+            const cardWidth = 64;
+            const count = hand.length;
+            let overlap = 0;
+            if (count > 1) {
+                const neededWidth = count * cardWidth;
+                if (neededWidth > containerWidth) {
+                    overlap = Math.ceil((neededWidth - containerWidth) / (count - 1));
+                }
+            }
 
-if(ui === 0) {
-document.getElementById('my-tricks-count').innerText = roundNum === 1 ? `${p.tricks_won}` : `${p.tricks_won} / ${p.bid}`;
-}
+            hand.forEach((card, i) => {
+                let cardEl = document.createElement('div');
+                cardEl.className = `hand-card`;
+                if (i > 0 && overlap > 0) {
+                    cardEl.style.marginRight = `-${overlap}px`;
+                }
+                
+                cardEl.innerHTML = renderCardHTML(card);
+                
+                cardEl.onclick = (e) => {
+                    e.preventDefault();
+                    if (gameStateGlobal !== 'PLAYING' || currentTurnGlobal !== myIndex) return;
+                    socket.emit('play_card', {room: currentRoom, card: card});
+                };
 
-if(pileEl) {
-pileEl.style.display = p.won_cards_count > 0 ? 'block' : 'none';
-}
+                handDiv.appendChild(cardEl);
+            });
+        }
 
-const isCurrentTurn = (realIdx === turn && (gameStateGlobal === 'PLAYING' || gameStateGlobal === 'BIDDING'));
-if(nodeEl) {
-if (isCurrentTurn) nodeEl.classList.add('active-turn');
-else nodeEl.classList.remove('active-turn');
-}
+        function renderTrick(trick) {
+            const area = document.getElementById('trick-area');
+            if(!area) return;
+            area.innerHTML = '';
 
-if(avatarEl) {
-avatarEl.innerHTML = realIdx === dealerIdx ? `👤<span class="dealer-tag">موزع</span>` : `👤`;
-if(isCurrentTurn) {
-avatarEl.classList.add('turn-ring');
-} else {
-avatarEl.classList.remove('turn-ring');
-avatarEl.style.borderColor = '#ffd60a';
-avatarEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.6)';
-}
-}
-}
-}
+            if(!trick) return;
+            trick.forEach(play => {
+                let UI_idx = (play.player_idx - myIndex + 4) % 4;
+                let c = play.card;
 
-function renderCardHTML(card) {
-let imgSrc = getCachedCardSrc(card);
-return `<img src="${imgSrc}" alt="${card.rank} ${card.suit}" loading="eager" decoding="async">`;
-}
+                let cardEl = document.createElement('div');
+                cardEl.className = `played-card pos-${UI_idx}`;
+                cardEl.innerHTML = renderCardHTML(c);
+                area.appendChild(cardEl);
+            });
+        }
 
-function renderHand(hand) {
-const handDiv = document.getElementById('my-hand');
-if(!handDiv) return;
-handDiv.innerHTML = '';
-if(!hand || hand.length === 0) {
-latestHandCache = [];
-return;
-}
+        function renderLastTrick(lastTrick) {
+            const container = document.getElementById('last-trick-cards');
+            if(!container) return;
+            container.innerHTML = '';
 
-const sortedHand = sortHandAlternatingColorsClient(hand);
-latestHandCache = sortedHand;
+            if(!lastTrick || lastTrick.length === 0) {
+                container.innerHTML = `<div style="font-size:8px; color:#777; grid-column: span 2; text-align:center;">لا توجد</div>`;
+                return;
+            }
 
-const containerWidth = window.innerWidth - 16;
-const cardWidth = 64;
-const count = sortedHand.length;
-let overlap = 0;
-if (count > 1) {
-const neededWidth = count * cardWidth;
-if (neededWidth > containerWidth) {
-overlap = Math.ceil((neededWidth - containerWidth) / (count - 1));
-}
-}
+            lastTrick.forEach(play => {
+                let c = play.card;
+                let imgSrc = getCachedCardSrc(c);
+                let miniCard = document.createElement('div');
+                miniCard.className = `mini-card`;
+                miniCard.innerHTML = `<img src="${imgSrc}" alt="${c.rank}" loading="eager" decoding="async">`;
+                container.appendChild(miniCard);
+            });
+        }
 
-sortedHand.forEach((card, i) => {
-let cardEl = document.createElement('div');
-cardEl.className = `hand-card`;
-if (i > 0 && overlap > 0) {
-cardEl.style.marginRight = `-${overlap}px`;
-}
+        function showBidModal(minBid, isDealer, totalBids) {
+            const modal = document.getElementById('bid-modal');
+            const opts = document.getElementById('bid-options');
+            const hint = document.getElementById('bid-hint');
+            if(!modal || !opts) return;
+            opts.innerHTML = '';
+            modal.style.display = 'block';
 
-cardEl.innerHTML = renderCardHTML(card);
+            let needed = 11 - totalBids;
+            if (isDealer && needed > 0) {
+                hint.innerText = `أنت الموزع! إجباري تطلب ${needed} على الأقل`;
+            } else {
+                hint.innerText = `مجموع الطلبات الحالية: ${totalBids}`;
+            }
 
-cardEl.onclick = (e) => {
-e.preventDefault();
-ensureAudioContext();
-if (gameStateGlobal !== 'PLAYING' || currentTurnGlobal !== myIndex) return;
-socket.emit('play_card', {room: currentRoom, card: card});
-};
+            // السماح بطلب الصفر دائماً ما لم يكن الموزع مجبراً على رقم أعلى
+            if (!(isDealer && needed > 0)) {
+                let b0 = document.createElement('button');
+                b0.className = 'bid-btn'; b0.innerText = '0';
+                b0.onclick = () => submitBid(0);
+                opts.appendChild(b0);
+            }
 
-handDiv.appendChild(cardEl);
-});
-}
+            // عرض كافة خيارات الطلبات المتاحة (من 2 إلى 13)
+            const validBids = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+            validBids.forEach(i => {
+                if (i >= minBid) {
+                    // إذا كان موزعاً، يظهر له الرقم الإجباري المطلوب ليكمل المجموع إلى 11 أو يختار الأعلى
+                    let b = document.createElement('button');
+                    b.className = 'bid-btn'; b.innerText = i;
+                    b.onclick = () => submitBid(i);
+                    opts.appendChild(b);
+                }
+            });
+        }
 
-function renderTrick(trick) {
-const area = document.getElementById('trick-area');
-if(!area) return;
-area.innerHTML = '';
+        function submitBid(val) {
+            socket.emit('submit_bid', {room: currentRoom, bid: val});
+            document.getElementById('bid-modal').style.display = 'none';
+        }
 
-if(!trick) return;
-trick.forEach(play => {
-let UI_idx = (play.player_idx - myIndex + 4) % 4;
-let c = play.card;
+        function showRoundSummary(data) {
+            const rModal = document.getElementById('round-modal');
+            const tbody = document.getElementById('summary-body');
+            const banner = document.getElementById('winner-banner');
+            const title = document.getElementById('round-title');
 
-let cardEl = document.createElement('div');
-cardEl.className = `played-card pos-${UI_idx}`;
-cardEl.innerHTML = renderCardHTML(c);
-area.appendChild(cardEl);
-});
-}
+            title.innerText = data.state === 'GAME_OVER' ? "نهاية اللعبة" : `ملخص الدورة ${data.round_number}`;
+            banner.innerText = data.winner_message || "";
+            tbody.innerHTML = '';
 
-function renderLastTrick(lastTrick) {
-const container = document.getElementById('last-trick-cards');
-if(!container) return;
-container.innerHTML = '';
+            if (data.round_summary) {
+                data.round_summary.forEach(row => {
+                    let tr = document.createElement('tr');
+                    let sign = row.change >= 0 ? `+${row.change}` : `${row.change}`;
+                    let cls = row.change >= 0 ? 'pts-plus' : 'pts-minus';
+                    tr.innerHTML = `
+                        <td style="font-weight:bold;">${row.name}</td>
+                        <td style="color:#d1d1d6; font-size:10px;">${row.detail}</td>
+                        <td class="${cls}" dir="ltr">${sign}</td>
+                        <td style="font-weight:bold; color:#ffd60a;">${row.total}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
 
-if(!lastTrick || lastTrick.length === 0) {
-container.innerHTML = `<div style="font-size:8px; color:#777; grid-column: span 2; text-align:center;">لا توجد</div>`;
-return;
-}
-
-lastTrick.forEach(play => {
-let c = play.card;
-let imgSrc = getCachedCardSrc(c);
-let miniCard = document.createElement('div');
-miniCard.className = `mini-card`;
-miniCard.innerHTML = `<img src="${imgSrc}" alt="${c.rank}" loading="eager" decoding="async">`;
-container.appendChild(miniCard);
-});
-}
-
-function showBidModal(minBid, isDealer, totalBids) {
-const modal = document.getElementById('bid-modal');
-const opts = document.getElementById('bid-options');
-const hint = document.getElementById('bid-hint');
-if(!modal || !opts) return;
-opts.innerHTML = '';
-modal.style.display = 'block';
-
-let needed = 11 - totalBids;
-if (isDealer && needed > 0) {
-hint.innerText = `أنت الموزع! إجباري تطلب ${needed} على الأقل`;
-} else {
-hint.innerText = `مجموع الطلبات الحالية: ${totalBids}`;
-}
-
-if (!(isDealer && needed > 0)) {
-let b0 = document.createElement('button');
-b0.className = 'bid-btn'; b0.innerText = '0';
-b0.onclick = () => submitBid(0);
-opts.appendChild(b0);
-}
-
-const validBids = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-validBids.forEach(i => {
-if (i >= minBid) {
-let b = document.createElement('button');
-b.className = 'bid-btn'; b.innerText = i;
-b.onclick = () => submitBid(i);
-opts.appendChild(b);
-}
-});
-}
-
-function submitBid(val) {
-socket.emit('submit_bid', {room: currentRoom, bid: val});
-document.getElementById('bid-modal').style.display = 'none';
-}
-
-function showRoundSummary(data) {
-const rModal = document.getElementById('round-modal');
-const tbody = document.getElementById('summary-body');
-const banner = document.getElementById('winner-banner');
-const title = document.getElementById('round-title');
-
-title.innerText = data.state === 'GAME_OVER' ? "نهاية اللعبة" : `ملخص الدورة ${data.round_number}`;
-banner.innerText = data.winner_message || "";
-tbody.innerHTML = '';
-
-if (data.round_summary) {
-data.round_summary.forEach(row => {
-let tr = document.createElement('tr');
-let sign = row.change >= 0 ? `+${row.change}` : `${row.change}`;
-let cls = row.change >= 0 ? 'pts-plus' : 'pts-minus';
-tr.innerHTML = `
-<td style="font-weight:bold;">${row.name}</td>
-<td style="color:#d1d1d6; font-size:10px;">${row.detail}</td>
-<td class="${cls}" dir="ltr">${sign}</td>
-<td style="font-weight:bold; color:#ffd60a;">${row.total}</td>
-`;
-tbody.appendChild(tr);
-});
-}
-
-rModal.style.display = 'block';
-}
-</script>
+            rModal.style.display = 'block';
+        }
+    </script>
 </body>
 </html>
