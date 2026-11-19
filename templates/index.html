@@ -43,9 +43,9 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #121214; c
 .welcome-title { font-size: 26px; font-weight: 900; color: #ffffff; margin-bottom: 8px; }
 .welcome-sub { font-size: 13px; color: #b0b0b8; line-height: 1.6; margin-bottom: 16px; }
 .creator-tag {
-    font-size: 13px; font-weight: 800; color: #34c759;
+    font-size: 14px; font-weight: 800; color: #34c759;
     background: rgba(52, 199, 89, 0.12); border: 1px solid rgba(52, 199, 89, 0.3);
-    padding: 7px 14px; border-radius: 12px; margin-bottom: 20px; display: inline-block;
+    padding: 7px 16px; border-radius: 12px; margin-bottom: 20px; display: inline-block;
 }
 .start-entry-btn {
     width: 100%; padding: 15px; border: none; border-radius: 14px; cursor: pointer;
@@ -84,10 +84,11 @@ button.login-btn { padding: 15px; font-size: 17px; border-radius: 12px; border: 
 .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; }
 .room-title { font-weight: bold; font-size: 12px; color: #f2f2f7; background: #2c2c2e; padding: 4px 12px; border-radius: 14px; border: 1px solid #3a3a3c; }
 .bids-counter { font-size: 11px; color: #ffd60a; font-weight: bold; background: rgba(0,0,0,0.82); padding: 3px 10px; border-radius: 10px; border: 1px solid #444; }
-.invite-mini-actions { display: flex; gap: 6px; margin-top: 2px; }
+.invite-mini-actions { display: flex; gap: 5px; margin-top: 2px; }
 .mini-inv-btn { border: none; border-radius: 8px; padding: 3px 8px; font-size: 10px; font-weight: 700; cursor: pointer; }
 .btn-wa { background: #25d366; color: #081c10; }
 .btn-cp { background: #3a3a3c; color: #fff; }
+.btn-snd { background: #2c2c2e; color: #ffd60a; border: 1px solid #48484a; }
 
 .last-trick-box { background: rgba(28,28,30,0.92); border: 1px solid #38383a; border-radius: 12px; padding: 4px; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .last-trick-title { font-size: 9px; color: #8e8e93; margin-bottom: 2px; font-weight: bold; }
@@ -195,7 +196,7 @@ button.login-btn { padding: 15px; font-size: 17px; border-radius: 12px; border: 
         <div class="welcome-badge">أهلاً وسهلاً بك • مرحبتين</div>
         <div class="welcome-title">طرنيب ليبي 🇱🇾</div>
         <div class="welcome-sub">جمعة الطاولة والشدة صارت أسهل؛ ادخل باسمك وابعث رابط الدعوة لصاحبك على الواتساب في أي مكان.</div>
-        <div class="creator-tag">اسم العطائي</div>
+        <div class="creator-tag">العطائي</div>
         <button class="start-entry-btn" onclick="openNameScreen()">ابدأ اللعب</button>
     </div>
 </div>
@@ -224,6 +225,7 @@ button.login-btn { padding: 15px; font-size: 17px; border-radius: 12px; border: 
 <div class="invite-mini-actions">
 <button class="mini-inv-btn btn-wa" onclick="shareWhatsApp()">واتساب</button>
 <button class="mini-inv-btn btn-cp" onclick="copyInviteLink()">نسخ الرابط</button>
+<button class="mini-inv-btn btn-snd" id="sound-toggle-btn" onclick="toggleSound()">🔊</button>
 </div>
 </div>
 
@@ -339,6 +341,108 @@ let invitedRoomFromUrl = "";
 let currentTurnGlobal = -1;
 let gameStateGlobal = "WAITING";
 let animatedThisTrick = false;
+let prevTrickLength = 0;
+let playedHeartCutThisTrick = false;
+let soundEnabled = true;
+let audioCtx = null;
+
+function ensureAudioContext() {
+    if (!soundEnabled) return null;
+    if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) audioCtx = new Ctx();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+    }
+    return audioCtx;
+}
+
+document.addEventListener('pointerdown', () => {
+    ensureAudioContext();
+}, { passive: true });
+
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById('sound-toggle-btn');
+    if (btn) btn.innerText = soundEnabled ? '🔊' : '🔇';
+    if (soundEnabled) {
+        ensureAudioContext();
+        playCardSound();
+    }
+}
+
+// 1. صوت لعب الكارت (حركة ورق سريعة وواضحة)
+function playCardSound() {
+    const ctx = ensureAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(520, now);
+    osc.frequency.exponentialRampToValueAtTime(190, now + 0.065);
+
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.22, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.075);
+}
+
+// 2. صوت الأكلة (نغمة جمع وأخذ الأكلة)
+function playTrickWinSound() {
+    const ctx = ensureAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const notes = [330, 440, 587.33];
+
+    notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const start = now + idx * 0.075;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+
+        gain.gain.setValueAtTime(0.001, start);
+        gain.gain.linearRampToValueAtTime(0.18, start + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.14);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.15);
+    });
+}
+
+// 3. صوت قانون القص على القلب الأحمر
+function playHeartCutSound() {
+    const ctx = ensureAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const freqs = [660, 880, 523.25];
+
+    freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const start = now + idx * 0.06;
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, start);
+
+        gain.gain.setValueAtTime(0.001, start);
+        gain.gain.linearRampToValueAtTime(0.14, start + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.12);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.13);
+    });
+}
 
 (function detectRoomFromUrl() {
     const params = new URLSearchParams(window.location.search);
@@ -362,6 +466,7 @@ function syncUrlRoomParam() {
 }
 
 function openNameScreen() {
+    ensureAudioContext();
     document.getElementById('welcome-screen').style.display = 'none';
     document.getElementById('login-box').style.display = 'block';
     const banner = document.getElementById('room-mode-banner');
@@ -438,6 +543,7 @@ return cardPreloadedObjs[cardNum] ? cardPreloadedObjs[cardNum].src : `/static/ca
 }
 
 function joinGame() {
+ensureAudioContext();
 const name = document.getElementById('username').value.trim();
 if (!name) return alert("يرجى كتابة اسمك أولاً");
 
@@ -477,8 +583,30 @@ myIndex = data.my_index;
 currentTurnGlobal = data.current_turn;
 gameStateGlobal = data.state;
 
-if (!data.current_trick || data.current_trick.length < 4) {
+const trickArr = data.current_trick || [];
+if (trickArr.length === 0) {
+prevTrickLength = 0;
+playedHeartCutThisTrick = false;
 animatedThisTrick = false;
+} else if (trickArr.length > prevTrickLength) {
+const latestPlay = trickArr[trickArr.length - 1];
+const leadPlay = trickArr[0];
+playCardSound();
+
+if (
+    latestPlay &&
+    leadPlay &&
+    latestPlay.card &&
+    leadPlay.card &&
+    trickArr.length > 1 &&
+    latestPlay.card.suit === 'Hearts' &&
+    leadPlay.card.suit !== 'Hearts' &&
+    !playedHeartCutThisTrick
+) {
+    playedHeartCutThisTrick = true;
+    setTimeout(() => playHeartCutSound(), 90);
+}
+prevTrickLength = trickArr.length;
 }
 
 const waitBox = document.getElementById('waiting-overlay');
@@ -528,6 +656,7 @@ renderTrick(data.current_trick);
 let winnerUI = (data.trick_winner_idx - myIndex + 4) % 4;
 
 setTimeout(() => {
+playTrickWinSound();
 const cards = document.querySelectorAll('#trick-area .played-card');
 cards.forEach(c => c.classList.add('gather-center'));
 }, 1400);
@@ -650,6 +779,7 @@ cardEl.innerHTML = renderCardHTML(card);
 
 cardEl.onclick = (e) => {
 e.preventDefault();
+ensureAudioContext();
 if (gameStateGlobal !== 'PLAYING' || currentTurnGlobal !== myIndex) return;
 socket.emit('play_card', {room: currentRoom, card: card});
 };
