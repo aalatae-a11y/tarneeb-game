@@ -29,30 +29,32 @@ def generate_unique_room_id():
             return room_id
 
 def sort_hand_alternating_colors(cards):
+    # تجميع الكروت حسب النوع أولاً بنفس ترتيبها الحالي
     grouped = {}
     for c in cards:
         grouped.setdefault(c['suit'], []).append(c)
 
-    red_suits = [s for s in ['Hearts', 'Tiles'] if s in grouped]
-    black_suits = [s for s in ['Pikes', 'Clovers'] if s in grouped]
+    # تسلسل الأنواع: أسود -> أحمر -> أسود -> أحمر
+    black_suits = [s for s in ['Clovers', 'Pikes'] if s in grouped]
+    red_suits = [s for s in ['Tiles', 'Hearts'] if s in grouped]
 
     ordered_cards = []
     i, j = 0, 0
-    turn_red = True
-    while i < len(red_suits) or j < len(black_suits):
-        if turn_red and i < len(red_suits):
-            ordered_cards.extend(grouped[red_suits[i]])
+    turn_black = True
+    while i < len(black_suits) or j < len(red_suits):
+        if turn_black and i < len(black_suits):
+            ordered_cards.extend(grouped[black_suits[i]])
             i += 1
-            turn_red = False
-        elif (not turn_red) and j < len(black_suits):
-            ordered_cards.extend(grouped[black_suits[j]])
+            turn_black = False
+        elif (not turn_black) and j < len(red_suits):
+            ordered_cards.extend(grouped[red_suits[j]])
             j += 1
-            turn_red = True
-        elif i < len(red_suits):
-            ordered_cards.extend(grouped[red_suits[i]])
+            turn_black = True
+        elif i < len(black_suits):
+            ordered_cards.extend(grouped[black_suits[i]])
             i += 1
-        elif j < len(black_suits):
-            ordered_cards.extend(grouped[black_suits[j]])
+        elif j < len(red_suits):
+            ordered_cards.extend(grouped[red_suits[j]])
             j += 1
 
     return ordered_cards
@@ -110,13 +112,11 @@ class TarneebRoom:
         return min(valid_cards, key=lambda x: x['value'])
 
     def add_or_replace_bot_player(self, name, sid=None):
-        # إعادة ربط اللاعب البشري بنفس مقعده إذا عاد بنفس الاسم
         for p in self.players:
             if not p['is_bot'] and p['name'] == name:
                 p['sid'] = sid
                 return p['idx'], False
 
-        # إذا كان هناك مقعد شاغر قبل اكتمال 4 لاعبين
         if len(self.players) < 4:
             idx = len(self.players)
             self.players.append({
@@ -133,7 +133,6 @@ class TarneebRoom:
             })
             return idx, False
 
-        # في حال وجود 4 لاعبين: استبدال أول بوت بلاعب بشري مع الاحتفاظ بنتائجه ومقعده
         for p in self.players:
             if p['is_bot']:
                 p['name'] = name
@@ -141,7 +140,6 @@ class TarneebRoom:
                 p['is_bot'] = False
                 return p['idx'], True
 
-        # الغرفة مكتملة بـ 4 لاعبين بشر بالفعل
         return None, False
 
     def add_bot(self, name):
