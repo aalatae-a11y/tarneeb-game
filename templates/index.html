@@ -149,7 +149,16 @@ button.login-btn { padding: 15px; font-size: 17px; border-radius: 12px; border: 
 .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 25; }
 
 .redeal-bar { margin-bottom: 6px; display: none; }
-.redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffd60a; padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.7); animation: pulse-btn 1.5s infinite; }
+.redeal-btn {
+    background: linear-gradient(135deg, #ff3b30, #c82333);
+    color: white; border: 2px solid #ffd60a; padding: 9px 22px; border-radius: 22px;
+    font-size: 13px; font-weight: 800; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(255,59,48,0.75); animation: pulse-btn 1.3s infinite;
+}
+.redeal-timer-pill {
+    background: #ffd60a; color: #121214; border-radius: 999px;
+    padding: 1px 7px; font-size: 12px; font-weight: 900; margin-right: 4px;
+}
 @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
 
 .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 105px; padding: 0 4px; overflow: hidden; }
@@ -272,7 +281,9 @@ button.login-btn { padding: 15px; font-size: 17px; border-radius: 12px; border: 
 
 <div class="bottom-section">
 <div class="redeal-bar" id="redeal-bar">
-<button class="redeal-btn" onclick="requestRedeal()">🔄 ورق ميت (إعادة توزيع)</button>
+<button class="redeal-btn" id="redeal-btn" onclick="requestRedeal()">
+🔄 ورق ميت (إعادة توزيع) <span class="redeal-timer-pill" id="redeal-sec-val">7ث</span>
+</button>
 </div>
 
 <div class="hand-cards-container" id="my-hand"></div>
@@ -335,6 +346,63 @@ reconnectionAttempts: Infinity,
 reconnectionDelay: 1000
 });
 
+const RANK_ORDER_MAP = {
+    'A': 14, 'K': 13, 'Q': 12, 'J': 11,
+    '10': 10, '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2
+};
+
+function getCardRankValue(card) {
+    if (typeof card.value === 'number') return card.value;
+    return RANK_ORDER_MAP[card.rank] || 0;
+}
+
+function sortHandAlternatingColorsClient(cards) {
+    if (!Array.isArray(cards) || cards.length === 0) return [];
+
+    const grouped = {};
+    for (const c of cards) {
+        if (!c || !c.suit) continue;
+        if (!grouped[c.suit]) grouped[c.suit] = [];
+        grouped[c.suit].push(c);
+    }
+
+    for (const suitName of Object.keys(grouped)) {
+        grouped[suitName].sort((a, b) => getCardRankValue(b) - getCardRankValue(a));
+    }
+
+    const reds = ['Hearts', 'Tiles'].filter(s => grouped[s] && grouped[s].length > 0);
+    const blacks = ['Clovers', 'Pikes'].filter(s => grouped[s] && grouped[s].length > 0);
+
+    let turnRed = reds.length >= blacks.length;
+    let rIdx = 0;
+    let bIdx = 0;
+    const suitSequence = [];
+
+    while (rIdx < reds.length || bIdx < blacks.length) {
+        if (turnRed) {
+            if (rIdx < reds.length) {
+                suitSequence.push(reds[rIdx++]);
+            } else if (bIdx < blacks.length) {
+                suitSequence.push(blacks[bIdx++]);
+            }
+            turnRed = false;
+        } else {
+            if (bIdx < blacks.length) {
+                suitSequence.push(blacks[bIdx++]);
+            } else if (rIdx < reds.length) {
+                suitSequence.push(reds[rIdx++]);
+            }
+            turnRed = true;
+        }
+    }
+
+    const ordered = [];
+    for (const s of suitSequence) {
+        ordered.push(...grouped[s]);
+    }
+    return ordered;
+}
+
 let myIndex = 0;
 let currentRoom = "";
 let invitedRoomFromUrl = "";
@@ -345,6 +413,7 @@ let prevTrickLength = 0;
 let playedHeartCutThisTrick = false;
 let soundEnabled = true;
 let audioCtx = null;
+let latestHandCache = [];
 
 function ensureAudioContext() {
     if (!soundEnabled) return null;
@@ -362,6 +431,12 @@ document.addEventListener('pointerdown', () => {
     ensureAudioContext();
 }, { passive: true });
 
+window.addEventListener('resize', () => {
+    if (latestHandCache.length > 0) {
+        renderHand(latestHandCache);
+    }
+});
+
 function toggleSound() {
     soundEnabled = !soundEnabled;
     const btn = document.getElementById('sound-toggle-btn');
@@ -372,7 +447,6 @@ function toggleSound() {
     }
 }
 
-// 1. صوت لعب الكارت (حركة ورق سريعة وواضحة)
 function playCardSound() {
     const ctx = ensureAudioContext();
     if (!ctx) return;
@@ -394,7 +468,6 @@ function playCardSound() {
     osc.stop(now + 0.075);
 }
 
-// 2. صوت الأكلة (نغمة جمع وأخذ الأكلة)
 function playTrickWinSound() {
     const ctx = ensureAudioContext();
     if (!ctx) return;
@@ -419,7 +492,6 @@ function playTrickWinSound() {
     });
 }
 
-// 3. صوت قانون القص على القلب الأحمر
 function playHeartCutSound() {
     const ctx = ensureAudioContext();
     if (!ctx) return;
@@ -565,6 +637,7 @@ if (name) socket.emit('join_game', { name: name, room: currentRoom });
 });
 
 function requestRedeal() {
+document.getElementById('redeal-bar').style.display = 'none';
 socket.emit('request_redeal', { room: currentRoom });
 }
 
@@ -624,12 +697,20 @@ document.getElementById('bids-status').innerText = `الدورة 1 | بدون ط
 document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
 }
 
-document.getElementById('redeal-bar').style.display = data.can_redeal ? 'block' : 'none';
+const redealBar = document.getElementById('redeal-bar');
+const redealSecEl = document.getElementById('redeal-sec-val');
+if (data.can_redeal) {
+    redealBar.style.display = 'block';
+    const secs = data.redeal_seconds_left ?? 7;
+    if (redealSecEl) redealSecEl.innerText = `${Math.max(1, secs)}ث`;
+} else {
+    redealBar.style.display = 'none';
+}
 
 const timerBox = document.getElementById('my-turn-timer');
 const secVal = document.getElementById('turn-sec-val');
 if (timerBox && secVal) {
-if (data.state === 'PLAYING' && data.current_turn === myIndex) {
+if (data.state === 'PLAYING' && data.current_turn === myIndex && !data.can_redeal) {
 timerBox.style.display = 'block';
 secVal.innerText = data.turn_seconds_left ?? 25;
 if ((data.turn_seconds_left ?? 25) <= 7) {
@@ -674,7 +755,7 @@ animatedThisTrick = false;
 renderTrick(data.current_trick);
 }
 
-if(data.state === 'BIDDING' && data.current_turn === myIndex) {
+if(data.state === 'BIDDING' && data.current_turn === myIndex && !data.can_redeal) {
 showBidModal(data.min_bid, data.is_dealer, data.total_bids);
 } else {
 document.getElementById('bid-modal').style.display = 'none';
@@ -755,11 +836,17 @@ function renderHand(hand) {
 const handDiv = document.getElementById('my-hand');
 if(!handDiv) return;
 handDiv.innerHTML = '';
-if(!hand || hand.length === 0) return;
+if(!hand || hand.length === 0) {
+latestHandCache = [];
+return;
+}
+
+const sortedHand = sortHandAlternatingColorsClient(hand);
+latestHandCache = sortedHand;
 
 const containerWidth = window.innerWidth - 16;
 const cardWidth = 64;
-const count = hand.length;
+const count = sortedHand.length;
 let overlap = 0;
 if (count > 1) {
 const neededWidth = count * cardWidth;
@@ -768,7 +855,7 @@ overlap = Math.ceil((neededWidth - containerWidth) / (count - 1));
 }
 }
 
-hand.forEach((card, i) => {
+sortedHand.forEach((card, i) => {
 let cardEl = document.createElement('div');
 cardEl.className = `hand-card`;
 if (i > 0 && overlap > 0) {
