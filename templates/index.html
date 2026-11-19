@@ -26,10 +26,10 @@
         .sc-other { color: #ffffff; }
 
         .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 3px; padding-top: 1px; }
-        .top-meta-row { display: flex; align-items: center; gap: 6px; }
+        .top-meta-row { display: flex; align-items: center; gap: 5px; }
         .room-title { font-weight: bold; font-size: 12px; color: #f2f2f7; background: #2c2c2e; padding: 3px 10px; border-radius: 12px; border: 1px solid #3a3a3c; }
-        .game-timer-badge { font-size: 11px; font-weight: bold; color: #34c759; background: rgba(28,28,30,0.95); padding: 3px 8px; border-radius: 12px; border: 1px solid #38383a; }
-        .sound-toggle-btn { background: #2c2c2e; color: #ffd60a; border: 1px solid #3a3a3c; border-radius: 12px; padding: 3px 8px; font-size: 12px; cursor: pointer; }
+        .game-timer-badge { font-size: 11px; font-weight: bold; color: #ffd60a; background: rgba(28,28,30,0.95); padding: 3px 8px; border-radius: 12px; border: 1px solid #38383a; }
+        .sound-toggle-btn { background: #2c2c2e; color: #34c759; border: 1px solid #3a3a3c; border-radius: 12px; padding: 3px 8px; font-size: 12px; cursor: pointer; }
         .bids-counter { font-size: 11px; color: #ffd60a; font-weight: bold; background: rgba(0,0,0,0.8); padding: 3px 10px; border-radius: 10px; border: 1px solid #444; }
 
         .last-trick-box { background: rgba(28,28,30,0.9); border: 1px solid #38383a; border-radius: 12px; padding: 4px; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -95,7 +95,7 @@
 
         #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 280px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
         #bid-modal h3 { font-size: 15px; margin-bottom: 6px; color: white; font-weight: 700; }
-        #bid-timer-text { font-size: 12px; color: #34c759; font-weight: bold; margin-bottom: 4px; }
+        #bid-timer-box { font-size: 12px; color: #34c759; font-weight: bold; margin-bottom: 4px; }
         #bid-hint { font-size: 11px; color: #ffd60a; margin-bottom: 12px; font-weight: 600; }
         .bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 180px; overflow-y: auto; }
         .bid-btn { background: #ffd60a; color: #000; border: none; border-radius: 10px; padding: 12px 0; font-weight: bold; font-size: 14px; cursor: pointer; }
@@ -125,7 +125,6 @@
 
     <div id="game-board">
         <div class="top-hud">
-            <!-- لوحة النتائج المرتبة حسب الاتجاهات: فوق، يسار، يمين، تحت -->
             <div class="cross-score">
                 <div></div><div id="score-top" class="sc-other">0</div><div></div>
                 <div id="score-left" class="sc-other">0</div><div style="color:#ffd60a; font-size:12px;">31</div><div id="score-right" class="sc-other">0</div>
@@ -135,7 +134,7 @@
             <div class="room-center-info">
                 <div class="top-meta-row">
                     <div class="room-title" id="room-display">tripoli</div>
-                    <div class="game-timer-badge" id="game-timer">10:00</div>
+                    <div class="game-timer-badge" id="game-timer">00:30</div>
                     <button class="sound-toggle-btn" id="sound-btn" onclick="toggleSound()">🔊</button>
                 </div>
                 <div class="bids-counter" id="bids-status">الدورة 1 | بدون طلبات</div>
@@ -212,7 +211,7 @@
 
         <div id="bid-modal">
             <h3>اختر طلبتك</h3>
-            <div id="bid-timer-text">الوقت المتبقي: 20 ث</div>
+            <div id="bid-timer-box">الوقت المتبقي: 20 ث</div>
             <div id="bid-hint"></div>
             <div class="bid-grid" id="bid-options"></div>
         </div>
@@ -248,15 +247,13 @@
         let currentTurnGlobal = -1;
         let gameStateGlobal = "WAITING";
         let animatedThisTrick = false;
-        let soundMuted = false;
+        let isMuted = false;
         let audioCtx = null;
 
-        function getAudioContext() {
+        function ensureAudio() {
             if (!audioCtx) {
-                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                if (AudioContextClass) {
-                    audioCtx = new AudioContextClass();
-                }
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (Ctx) audioCtx = new Ctx();
             }
             if (audioCtx && audioCtx.state === 'suspended') {
                 audioCtx.resume().catch(() => {});
@@ -265,53 +262,48 @@
         }
 
         function toggleSound() {
-            soundMuted = !soundMuted;
-            document.getElementById('sound-btn').innerText = soundMuted ? '🔇' : '🔊';
-            if (!soundMuted) getAudioContext();
+            isMuted = !isMuted;
+            document.getElementById('sound-btn').innerText = isMuted ? '🔇' : '🔊';
+            if (!isMuted) ensureAudio();
         }
 
-        function playTone(freq, duration, type = 'sine', delay = 0, gainVal = 0.12) {
-            if (soundMuted) return;
-            const ctx = getAudioContext();
+        function playNote(freq, dur, waveType = 'sine', delay = 0, vol = 0.12) {
+            if (isMuted) return;
+            const ctx = ensureAudio();
             if (!ctx) return;
 
-            const startTime = ctx.currentTime + delay;
+            const t0 = ctx.currentTime + delay;
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, startTime);
+            osc.type = waveType;
+            osc.frequency.setValueAtTime(freq, t0);
 
-            gain.gain.setValueAtTime(0.001, startTime);
-            gain.gain.exponentialRampToValueAtTime(gainVal, startTime + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+            gain.gain.setValueAtTime(0.001, t0);
+            gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
 
             osc.connect(gain);
             gain.connect(ctx.destination);
-            osc.start(startTime);
-            osc.stop(startTime + duration + 0.02);
+            osc.start(t0);
+            osc.stop(t0 + dur + 0.02);
         }
 
-        function playSoundEffect(kind) {
-            if (soundMuted) return;
-            if (kind === 'card') {
-                playTone(520, 0.07, 'triangle', 0, 0.1);
-            } else if (kind === 'trick') {
-                playTone(390, 0.11, 'sine', 0, 0.12);
-                playTone(580, 0.14, 'sine', 0.09, 0.12);
-            } else if (kind === 'laugh') {
-                // نغمة ضحك/شماتة مرحة عند نزول A♥ و K♥ مع بعض
-                const notes = [660, 520, 740, 520, 780, 580];
-                notes.forEach((n, idx) => {
-                    playTone(n, 0.09, 'sawtooth', idx * 0.09, 0.09);
-                });
-            }
+        function playCardSound() {
+            playNote(500, 0.06, 'triangle', 0, 0.1);
         }
 
-        socket.on('sound_event', (data) => {
-            if (data && data.type) {
-                playSoundEffect(data.type);
-            }
-        });
+        function playTrickSound() {
+            playNote(400, 0.1, 'sine', 0, 0.12);
+            playNote(600, 0.14, 'sine', 0.08, 0.12);
+        }
+
+        function playLaughSound() {
+            const seq = [680, 510, 760, 510, 820, 560];
+            seq.forEach((f, idx) => playNote(f, 0.085, 'sawtooth', idx * 0.085, 0.09));
+        }
+
+        socket.on('play_trick_sound', () => playTrickSound());
+        socket.on('play_laugh_sound', () => playLaughSound());
 
         const cardImagesCache = {};
         function preloadAllCardImages() {
@@ -352,7 +344,7 @@
             currentRoom = document.getElementById('room').value.trim();
             if(!name || !currentRoom) return alert("يرجى كتابة الاسم ورمز الغرفة");
 
-            getAudioContext();
+            ensureAudio();
             socket.emit('join_game', {name: name, room: currentRoom});
             document.getElementById('login-box').style.display = 'none';
             document.getElementById('game-board').style.display = 'flex';
@@ -379,38 +371,45 @@
             socket.emit('next_round', {room: currentRoom});
         }
 
-        function formatGameTimer(sec) {
-            const safeSec = Math.max(0, sec || 0);
-            const mins = Math.floor(safeSec / 60);
-            const rem = safeSec % 60;
-            return `${String(mins).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
+        function formatSecondsMMSS(sec) {
+            const val = Math.max(0, sec || 0);
+            const m = Math.floor(val / 60);
+            const s = val % 60;
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
 
-        // ترتيب أوراق اليد بالتناوب: أحمر ثم أسود ثم أحمر ثم أسود
-        function sortAlternatingColors(hand) {
-            if (!hand || hand.length === 0) return [];
-            const isRed = (c) => c.suit === 'Hearts' || c.suit === 'Tiles';
-            const reds = hand.filter(isRed).sort((a, b) => a.suit.localeCompare(b.suit) || a.value - b.value);
-            const blacks = hand.filter(c => !isRed(c)).sort((a, b) => a.suit.localeCompare(b.suit) || a.value - b.value);
+        // ترتيب أوراق اليد حسب المجموعات (Tiles ثم Pikes ثم Hearts ثم Clovers) وتناوب الألوان (أحمر / أسود)
+        function arrangeAlternatingHand(hand) {
+            if (!hand || !hand.length) return [];
+            const groupOrder = { 'Tiles': 0, 'Pikes': 1, 'Hearts': 2, 'Clovers': 3 };
+            const isRedCard = (c) => c.suit === 'Hearts' || c.suit === 'Tiles';
 
-            const result = [];
-            let rIdx = 0, bIdx = 0;
-            let turnRed = reds.length >= blacks.length;
+            const sorted = [...hand].sort((a, b) => {
+                const gDiff = (groupOrder[a.suit] ?? 99) - (groupOrder[b.suit] ?? 99);
+                if (gDiff !== 0) return gDiff;
+                return a.value - b.value;
+            });
 
-            while (rIdx < reds.length || bIdx < blacks.length) {
-                if (turnRed && rIdx < reds.length) {
-                    result.push(reds[rIdx++]);
-                    turnRed = false;
-                } else if (!turnRed && bIdx < blacks.length) {
-                    result.push(blacks[bIdx++]);
-                    turnRed = true;
-                } else if (rIdx < reds.length) {
-                    result.push(reds[rIdx++]);
-                } else if (bIdx < blacks.length) {
-                    result.push(blacks[bIdx++]);
+            const reds = sorted.filter(isRedCard);
+            const blacks = sorted.filter(c => !isRedCard(c));
+            const mixed = [];
+            let r = 0, b = 0;
+            let wantRed = reds.length >= blacks.length;
+
+            while (r < reds.length || b < blacks.length) {
+                if (wantRed && r < reds.length) {
+                    mixed.push(reds[r++]);
+                    wantRed = false;
+                } else if (!wantRed && b < blacks.length) {
+                    mixed.push(blacks[b++]);
+                    wantRed = true;
+                } else if (r < reds.length) {
+                    mixed.push(reds[r++]);
+                } else {
+                    mixed.push(blacks[b++]);
                 }
             }
-            return result;
+            return mixed;
         }
 
         socket.on('game_update', (data) => {
@@ -418,8 +417,8 @@
             currentTurnGlobal = data.current_turn;
             gameStateGlobal = data.state;
 
-            document.getElementById('game-timer').innerText = formatGameTimer(data.game_seconds_left);
-            document.getElementById('bid-timer-text').innerText = `الوقت المتبقي: ${data.bid_seconds_left ?? 20} ث`;
+            document.getElementById('game-timer').innerText = formatSecondsMMSS(data.game_seconds_left);
+            document.getElementById('bid-timer-box').innerText = `الوقت المتبقي: ${data.bid_seconds_left ?? 20} ث`;
 
             const waitBox = document.getElementById('waiting-overlay');
             if (!data.game_started) {
@@ -439,7 +438,7 @@
             document.getElementById('redeal-bar').style.display = data.can_redeal ? 'block' : 'none';
 
             renderPlayers(data.players, data.current_turn, data.dealer_idx, data.round_number);
-            renderHand(sortAlternatingColors(data.my_hand));
+            renderHand(arrangeAlternatingHand(data.my_hand));
             renderLastTrick(data.last_trick);
             updateCrossScore(data);
 
@@ -481,19 +480,17 @@
 
         socket.on('error', (data) => alert(data.msg));
 
-        // ربط لوحة النتائج بالاتجاهات النسبية للاعب:
-        // ui = 0 (تحت - أنا)، ui = 1 (يسار)، ui = 2 (فوق)، ui = 3 (يمين)
         function updateCrossScore(data) {
             if (!data.players) return;
-            const directionMap = {
+            const posIds = {
                 0: 'score-bottom',
                 1: 'score-left',
                 2: 'score-top',
                 3: 'score-right'
             };
             data.players.forEach((p, idx) => {
-                let uiIdx = (idx - myIndex + 4) % 4;
-                const scEl = document.getElementById(directionMap[uiIdx]);
+                let uiPos = (idx - myIndex + 4) % 4;
+                const scEl = document.getElementById(posIds[uiPos]);
                 if (scEl) scEl.innerText = p.score;
             });
         }
@@ -573,7 +570,7 @@
                 cardEl.onclick = (e) => {
                     e.preventDefault();
                     if (gameStateGlobal !== 'PLAYING' || currentTurnGlobal !== myIndex) return;
-                    playSoundEffect('card');
+                    playCardSound();
                     socket.emit('play_card', {room: currentRoom, card: card});
                 };
 
