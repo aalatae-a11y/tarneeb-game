@@ -1,5 +1,6 @@
 import os
 import random
+import string
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room
 
@@ -7,14 +8,54 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tarneeb_libya_secret_key_2026'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', ping_timeout=60, ping_interval=25)
 
+@app.after_request
+def add_cache_headers(response):
+    if '/static/cards/' in request.path:
+        response.cache_control.max_age = 86400 * 7
+        response.cache_control.public = True
+    return response
+
 ROOMS = {}
 
 SUITS = ['Hearts', 'Tiles', 'Clovers', 'Pikes']
 RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 RANK_VALUES = {r: i for i, r in enumerate(RANKS, start=2)}
 
-BID_TIMEOUT_SECONDS = 20
-TURN_TIMEOUT_SECONDS = 30
+def generate_unique_room_id():
+    while True:
+        code = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+        room_id = f"trb-{code}"
+        if room_id not in ROOMS:
+            return room_id
+
+def sort_hand_alternating_colors(cards):
+    grouped = {}
+    for c in cards:
+        grouped.setdefault(c['suit'], []).append(c)
+
+    red_suits = [s for s in ['Hearts', 'Tiles'] if s in grouped]
+    black_suits = [s for s in ['Pikes', 'Clovers'] if s in grouped]
+
+    ordered_cards = []
+    i, j = 0, 0
+    turn_red = True
+    while i < len(red_suits) or j < len(black_suits):
+        if turn_red and i < len(red_suits):
+            ordered_cards.extend(grouped[red_suits[i]])
+            i += 1
+            turn_red = False
+        elif (not turn_red) and j < len(black_suits):
+            ordered_cards.extend(grouped[black_suits[j]])
+            j += 1
+            turn_red = True
+        elif i < len(red_suits):
+            ordered_cards.extend(grouped[red_suits[i]])
+            i += 1
+        elif j < len(black_suits):
+            ordered_cards.extend(grouped[black_suits[j]])
+            j += 1
+
+    return ordered_cards
 
 def create_deck():
     deck = []
@@ -51,26 +92,67 @@ class TarneebRoom:
         self.round_summary = []
         self.trick_winner_idx = None
         self.is_processing_trick = False
-        self.action_timer_left = 0
-        self.turn_token = 0
+        self.turn_timer_id = 0
+        self.turn_seconds_left = 25
+        self.played_cards_history = []
 
-    def bump_turn_token(self):
-        self.turn_token += 1
-        return self.turn_token
+    def _reset_turn_timer(self, seconds=25):
+        self.turn_timer_id += 1
+        self.turn_seconds_left = seconds
 
-    def add_player(self, name, sid=None, is_bot=False):
+    def get_forced_card_for_player(self, player_idx):
+        p = self.players[player_idx]
+        valid_cards = [c for c in p['hand'] if self.validate_card_play(player_idx, c)[0]]
+        if not valid_cards and p['hand']:
+            valid_cards = list(p['hand'])
+        if not valid_cards:
+            return None
+        return min(valid_cards, key=lambda x: x['value'])
+
+    def add_or_replace_bot_player(self, name, sid=None):
+        # إعادة ربط اللاعب البشري بنفس مقعده إذا عاد بنفس الاسم
         for p in self.players:
-            if p['name'] == name and not p['is_bot']:
+            if not p['is_bot'] and p['name'] == name:
                 p['sid'] = sid
-                return p['idx']
+                return p['idx'], False
 
-        if len(self.players) >= 4: return None
+        # إذا كان هناك مقعد شاغر قبل اكتمال 4 لاعبين
+        if len(self.players) < 4:
+            idx = len(self.players)
+            self.players.append({
+                'idx': idx,
+                'name': name,
+                'sid': sid,
+                'is_bot': False,
+                'score': 0,
+                'hand': [],
+                'bid': 0,
+                'tricks_won': 0,
+                'won_cards_count': 0,
+                'king_ace_delta': 0
+            })
+            return idx, False
+
+        # في حال وجود 4 لاعبين: استبدال أول بوت بلاعب بشري مع الاحتفاظ بنتائجه ومقعده
+        for p in self.players:
+            if p['is_bot']:
+                p['name'] = name
+                p['sid'] = sid
+                p['is_bot'] = False
+                return p['idx'], True
+
+        # الغرفة مكتملة بـ 4 لاعبين بشر بالفعل
+        return None, False
+
+    def add_bot(self, name):
+        if len(self.players) >= 4:
+            return None
         idx = len(self.players)
         self.players.append({
             'idx': idx,
             'name': name,
-            'sid': sid,
-            'is_bot': is_bot,
+            'sid': None,
+            'is_bot': True,
             'score': 0,
             'hand': [],
             'bid': 0,
@@ -83,7 +165,7 @@ class TarneebRoom:
     def fill_with_bots(self):
         bot_count = 1
         while len(self.players) < 4:
-            self.add_player(f"بوت {bot_count}", is_bot=True)
+            self.add_bot(f"بوت {bot_count}")
             bot_count += 1
 
     def check_redeal_eligibility(self, player_idx):
@@ -114,7 +196,8 @@ class TarneebRoom:
             self.round_number += 1
         deck = create_deck()
         for p in self.players:
-            p['hand'] = sorted(deck[p['idx']*13 : (p['idx']+1)*13], key=lambda x: (x['suit'], x['value']))
+            raw_hand = sorted(deck[p['idx']*13 : (p['idx']+1)*13], key=lambda x: (x['suit'], x['value']))
+            p['hand'] = sort_hand_alternating_colors(raw_hand)
             p['bid'] = 0
             p['tricks_won'] = 0
             p['won_cards_count'] = 0
@@ -124,12 +207,10 @@ class TarneebRoom:
             self.state = 'PLAYING'
             self.total_bids = 0
             self.bids_collected = 4
-            self.action_timer_left = TURN_TIMEOUT_SECONDS
         else:
             self.state = 'BIDDING'
             self.total_bids = 0
             self.bids_collected = 0
-            self.action_timer_left = BID_TIMEOUT_SECONDS
 
         self.current_turn = (self.dealer_idx - 1) % 4
         self.trick_lead_suit = None
@@ -139,7 +220,8 @@ class TarneebRoom:
         self.round_summary = []
         self.trick_winner_idx = None
         self.is_processing_trick = False
-        self.bump_turn_token()
+        self.played_cards_history = []
+        self._reset_turn_timer(25)
 
     def get_dealer_min_bid(self, player_idx):
         min_b = get_min_bid(self.players[player_idx]['score'])
@@ -148,15 +230,6 @@ class TarneebRoom:
             if needed > min_b:
                 return needed
         return min_b
-
-    def get_safe_timeout_bid(self, player_idx):
-        p = self.players[player_idx]
-        min_b = get_min_bid(p['score'])
-        if player_idx == self.dealer_idx:
-            needed = 11 - self.total_bids
-            if needed > 0:
-                return max(needed, min_b)
-        return max(2, min_b)
 
     def calculate_smart_bid(self, player_idx):
         p = self.players[player_idx]
@@ -199,16 +272,11 @@ class TarneebRoom:
         if self.bids_collected == 4:
             self.state = 'PLAYING'
             self.current_turn = (self.dealer_idx - 1) % 4
-            self.action_timer_left = TURN_TIMEOUT_SECONDS
+            self._reset_turn_timer(25)
         else:
             self.current_turn = (self.current_turn - 1) % 4
-            self.action_timer_left = BID_TIMEOUT_SECONDS
-
-        self.bump_turn_token()
 
     def validate_card_play(self, player_idx, card):
-        if not card or 'suit' not in card or 'rank' not in card:
-            return False, "ورقة غير صالحة!"
         p = self.players[player_idx]
         
         if not self.round_first_card_played and card['suit'] == 'Hearts':
@@ -222,19 +290,24 @@ class TarneebRoom:
 
         return True, "ناجح"
 
-    def select_smart_card(self, player_idx, valid_cards):
+    def select_smart_bot_card(self, player_idx, valid_cards):
         p = self.players[player_idx]
-        
+
+        ace_hearts_played = any(c['suit'] == 'Hearts' and c['rank'] == 'A' for c in self.played_cards_history)
+        non_king_hearts = [c for c in valid_cards if not (c['suit'] == 'Hearts' and c['rank'] == 'K')]
+        pool = non_king_hearts if (non_king_hearts and not ace_hearts_played) else valid_cards
+
         if len(self.current_trick) == 0:
-            aces = [c for c in valid_cards if c['rank'] == 'A']
-            if aces and random.random() < 0.7:
-                return random.choice(aces)
-            non_hearts = [c for c in valid_cards if c['suit'] != 'Hearts']
+            strong_safe = [c for c in pool if c['suit'] != 'Hearts' and c['rank'] in ['A', 'K']]
+            if strong_safe and p['tricks_won'] < p['bid']:
+                return max(strong_safe, key=lambda x: x['value'])
+
+            non_hearts = [c for c in pool if c['suit'] != 'Hearts']
             if non_hearts:
                 return min(non_hearts, key=lambda x: x['value'])
-            return min(valid_cards, key=lambda x: x['value'])
 
-        lead_suit = self.trick_lead_suit
+            return min(pool, key=lambda x: x['value'])
+
         current_winner_play = self.current_trick[0]
         for play in self.current_trick[1:]:
             curr_c = play['card']
@@ -244,38 +317,39 @@ class TarneebRoom:
             elif curr_c['suit'] == win_c['suit'] and curr_c['value'] > win_c['value']:
                 current_winner_play = play
 
-        if lead_suit == 'Hearts' or any(c['card']['suit'] == 'Hearts' and c['card']['rank'] == 'K' for c in self.current_trick):
-            bot_aces_hearts = [c for c in valid_cards if c['suit'] == 'Hearts' and c['rank'] == 'A']
-            if bot_aces_hearts:
-                return bot_aces_hearts[0]
+        if any(c['card']['suit'] == 'Hearts' and c['card']['rank'] == 'K' for c in self.current_trick):
+            bot_ace_h = [c for c in valid_cards if c['suit'] == 'Hearts' and c['rank'] == 'A']
+            if bot_ace_h:
+                return bot_ace_h[0]
 
-        winning_cards = [c for c in valid_cards if c['suit'] == current_winner_play['card']['suit'] and c['value'] > current_winner_play['card']['value']]
-        if winning_cards and p['tricks_won'] < p['bid']:
-            return min(winning_cards, key=lambda x: x['value'])
+        if p['tricks_won'] < p['bid']:
+            winning_cards = [
+                c for c in pool
+                if (c['suit'] == current_winner_play['card']['suit'] and c['value'] > current_winner_play['card']['value'])
+                or (c['suit'] == 'Hearts' and current_winner_play['card']['suit'] != 'Hearts')
+            ]
+            if winning_cards:
+                return min(winning_cards, key=lambda x: x['value'])
 
-        return min(valid_cards, key=lambda x: x['value'])
+        return min(pool, key=lambda x: x['value'])
 
     def play_card(self, player_idx, card):
-        if self.is_processing_trick or self.state != 'PLAYING':
+        if self.is_processing_trick:
             return False
 
         p = self.players[player_idx]
-        card_matches = [c for c in p['hand'] if c['suit'] == card['suit'] and c['rank'] == card['rank']]
-        if not card_matches:
-            return False
-
-        played_card = card_matches[0]
-        p['hand'].remove(played_card)
+        p['hand'] = [c for c in p['hand'] if not (c['suit'] == card['suit'] and c['rank'] == card['rank'])]
         
         if len(self.current_trick) == 0:
-            self.trick_lead_suit = played_card['suit']
+            self.trick_lead_suit = card['suit']
 
-        self.current_trick.append({'player_idx': player_idx, 'card': played_card})
+        self.current_trick.append({'player_idx': player_idx, 'card': card})
         self.round_first_card_played = True
+        self.played_cards_history.append(card)
+        self._reset_turn_timer(25)
 
         if len(self.current_trick) == 4:
             self.is_processing_trick = True
-            self.action_timer_left = 0
             winning_play = self.current_trick[0]
             for play in self.current_trick[1:]:
                 curr_c = play['card']
@@ -287,19 +361,27 @@ class TarneebRoom:
             
             self.trick_winner_idx = winning_play['player_idx']
             self.state = 'TRICK_PAUSE'
-            self.bump_turn_token()
             return True
         else:
-            self.current_turn = (self.current_turn - 1) % 4
-            self.action_timer_left = TURN_TIMEOUT_SECONDS
-            self.bump_turn_token()
+            self.advance_to_next_active_player()
             return False
+
+    def advance_to_next_active_player(self):
+        active_players = [i for i, p in enumerate(self.players) if len(p['hand']) > 0]
+        if not active_players:
+            return
+        
+        current = self.current_turn
+        while True:
+            current = (current - 1) % 4
+            if len(self.players[current]['hand']) > 0:
+                self.current_turn = current
+                break
 
     def finalize_trick(self):
         if len(self.current_trick) != 4:
-            return False
+            return
 
-        laugh_triggered = False
         if self.round_number > 1:
             king_owner = None
             ace_owner = None
@@ -313,7 +395,6 @@ class TarneebRoom:
                 self.players[king_owner]['king_ace_delta'] -= 5
                 self.players[ace_owner]['score'] += 5
                 self.players[ace_owner]['king_ace_delta'] += 5
-                laugh_triggered = True
 
         winner_idx = self.trick_winner_idx
         self.players[winner_idx]['tricks_won'] += 1
@@ -325,10 +406,10 @@ class TarneebRoom:
         self.trick_winner_idx = None
         self.current_turn = winner_idx
         self.is_processing_trick = False
+        self._reset_turn_timer(25)
 
         if sum(p['tricks_won'] for p in self.players) == 13 or all(len(p['hand']) == 0 for p in self.players):
             game_ended = self.calculate_round_scores()
-            self.action_timer_left = 0
             if game_ended:
                 self.state = 'GAME_OVER'
             else:
@@ -336,10 +417,6 @@ class TarneebRoom:
                 self.dealer_idx = (self.dealer_idx - 1) % 4
         else:
             self.state = 'PLAYING'
-            self.action_timer_left = TURN_TIMEOUT_SECONDS
-
-        self.bump_turn_token()
-        return laugh_triggered
 
     def calculate_round_scores(self):
         self.round_summary = []
@@ -407,81 +484,40 @@ class TarneebRoom:
             
         return False
 
-def start_turn_coordinator(room):
-    socketio.start_background_task(coordinate_turn_lifecycle, room, room.turn_token)
-
-def coordinate_turn_lifecycle(room, token):
-    while room.game_started and room.turn_token == token and room.state in ['BIDDING', 'PLAYING']:
-        if room.is_processing_trick or room.current_turn >= len(room.players):
-            break
-
-        p_idx = room.current_turn
-        p = room.players[p_idx]
-
-        if p['is_bot']:
-            socketio.sleep(0.6)
-            if room.turn_token != token or room.state not in ['BIDDING', 'PLAYING'] or room.is_processing_trick:
-                break
-
-            if room.state == 'BIDDING':
-                smart_b = room.calculate_smart_bid(p_idx)
-                room.process_bid(p_idx, smart_b)
-                broadcast_state(room)
-                start_turn_coordinator(room)
-                break
-            elif room.state == 'PLAYING':
-                valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
-                if valid_cards:
-                    chosen = room.select_smart_card(p_idx, valid_cards)
-                    trick_done = room.play_card(p_idx, chosen)
-                    broadcast_state(room)
-                    if trick_done:
-                        socketio.start_background_task(handle_trick_pause_and_resume, room)
-                    else:
-                        start_turn_coordinator(room)
-                break
-        else:
-            if room.action_timer_left <= 0:
-                if room.state == 'BIDDING':
-                    safe_bid = room.get_safe_timeout_bid(p_idx)
-                    room.process_bid(p_idx, safe_bid)
-                    broadcast_state(room)
-                    start_turn_coordinator(room)
-                elif room.state == 'PLAYING' and not room.is_processing_trick:
-                    valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
-                    if valid_cards:
-                        chosen = room.select_smart_card(p_idx, valid_cards)
-                        trick_done = room.play_card(p_idx, chosen)
-                        broadcast_state(room)
-                        if trick_done:
-                            socketio.start_background_task(handle_trick_pause_and_resume, room)
-                        else:
-                            start_turn_coordinator(room)
-                break
-
-            broadcast_state(room)
-            socketio.sleep(1)
-            if room.turn_token != token or room.state not in ['BIDDING', 'PLAYING'] or room.is_processing_trick:
-                break
-            room.action_timer_left = max(0, room.action_timer_left - 1)
-
 @app.route('/')
 def index():
     return render_template('index.html')
 
+@socketio.on('create_room_id')
+def on_create_room_id():
+    new_id = generate_unique_room_id()
+    ROOMS[new_id] = TarneebRoom(new_id)
+    emit('room_created', {'room': new_id})
+
 @socketio.on('join_game')
 def on_join(data):
-    room_id = data.get('room', 'tripoli')
-    player_name = data.get('name', 'عبد الله')
-    join_room(room_id)
+    raw_room = (data.get('room') or '').strip()
+    if not raw_room:
+        raw_room = generate_unique_room_id()
+    room_id = raw_room
+    player_name = (data.get('name') or 'عبد الله').strip() or 'عبد الله'
 
     if room_id not in ROOMS:
         ROOMS[room_id] = TarneebRoom(room_id)
     
     room = ROOMS[room_id]
-    idx = room.add_player(player_name, sid=request.sid)
+    idx, replaced_bot = room.add_or_replace_bot_player(player_name, sid=request.sid)
     if idx is None:
-        emit('error', {'msg': 'الغرفة مكتملة!'})
+        emit('error', {'msg': 'هذه الغرفة مكتملة بـ 4 لاعبين بشر! أنشئ غرفة جديدة عبر زر ابدأ اللعب.'})
+        return
+
+    join_room(room_id)
+
+    if replaced_bot and room.game_started:
+        room._reset_turn_timer(25)
+        broadcast_state(room)
+        if room.state == 'PLAYING' and room.current_turn == idx:
+            socketio.start_background_task(turn_timeout_task, room, room.turn_timer_id)
         return
     
     if len(room.players) == 4 and not room.game_started:
@@ -489,7 +525,7 @@ def on_join(data):
         room.waiting_timer_running = False
         room.start_new_round(increment_round=True)
         broadcast_state(room)
-        start_turn_coordinator(room)
+        socketio.start_background_task(run_game_loop, room)
         return
 
     broadcast_state(room)
@@ -511,7 +547,7 @@ def waiting_countdown_task(room):
         room.waiting_timer_running = False
         room.start_new_round(increment_round=True)
         broadcast_state(room)
-        start_turn_coordinator(room)
+        socketio.start_background_task(run_game_loop, room)
 
 @socketio.on('force_start_bots')
 def on_force_start(data):
@@ -522,7 +558,7 @@ def on_force_start(data):
         room.waiting_timer_running = False
         room.start_new_round(increment_round=True)
         broadcast_state(room)
-        start_turn_coordinator(room)
+        socketio.start_background_task(run_game_loop, room)
 
 @socketio.on('request_redeal')
 def on_redeal(data):
@@ -532,7 +568,7 @@ def on_redeal(data):
         if p_idx != -1 and room.check_redeal_eligibility(p_idx):
             room.start_new_round(increment_round=False)
             broadcast_state(room)
-            start_turn_coordinator(room)
+            socketio.start_background_task(run_game_loop, room)
 
 @socketio.on('next_round')
 def on_next_round(data):
@@ -544,7 +580,7 @@ def on_next_round(data):
             room.round_number = 0
         room.start_new_round(increment_round=True)
         broadcast_state(room)
-        start_turn_coordinator(room)
+        socketio.start_background_task(run_game_loop, room)
 
 @socketio.on('submit_bid')
 def on_bid(data):
@@ -554,7 +590,7 @@ def on_bid(data):
         if p_idx == room.current_turn:
             room.process_bid(p_idx, int(data.get('bid', 2)))
             broadcast_state(room)
-            start_turn_coordinator(room)
+            socketio.start_background_task(run_game_loop, room)
 
 @socketio.on('play_card')
 def on_play_card(data):
@@ -576,16 +612,66 @@ def on_play_card(data):
             if trick_done:
                 socketio.start_background_task(handle_trick_pause_and_resume, room)
             else:
-                start_turn_coordinator(room)
+                socketio.start_background_task(run_game_loop, room)
 
 def handle_trick_pause_and_resume(room):
     socketio.sleep(2.4)
-    laugh_triggered = room.finalize_trick()
-    if laugh_triggered:
-        socketio.emit('play_laugh_sound', {'room_id': room.room_id}, to=room.room_id)
+    room.finalize_trick()
     broadcast_state(room)
-    if room.state == 'PLAYING':
-        start_turn_coordinator(room)
+    socketio.start_background_task(run_game_loop, room)
+
+def turn_timeout_task(room, timer_id):
+    for _ in range(25):
+        socketio.sleep(1)
+        if not room.game_started or room.turn_timer_id != timer_id or room.state != 'PLAYING':
+            return
+        if room.turn_seconds_left > 0:
+            room.turn_seconds_left -= 1
+        broadcast_state(room)
+
+    if not room.game_started or room.turn_timer_id != timer_id or room.state != 'PLAYING':
+        return
+
+    p_idx = room.current_turn
+    if p_idx < len(room.players) and not room.players[p_idx]['is_bot'] and not room.is_processing_trick:
+        forced_card = room.get_forced_card_for_player(p_idx)
+        if forced_card:
+            trick_done = room.play_card(p_idx, forced_card)
+            broadcast_state(room)
+            if trick_done:
+                socketio.start_background_task(handle_trick_pause_and_resume, room)
+            else:
+                socketio.start_background_task(run_game_loop, room)
+
+def run_game_loop(room):
+    socketio.sleep(0.3)
+    while room.game_started and room.state in ['BIDDING', 'PLAYING']:
+        p_idx = room.current_turn
+        if p_idx >= len(room.players):
+            break
+        p = room.players[p_idx]
+        
+        if not p['is_bot'] or len(p['hand']) == 0:
+            if not p['is_bot'] and len(p['hand']) > 0 and room.state == 'PLAYING':
+                socketio.start_background_task(turn_timeout_task, room, room.turn_timer_id)
+            break
+        
+        socketio.sleep(0.6)
+        if room.state == 'BIDDING':
+            smart_b = room.calculate_smart_bid(p_idx)
+            room.process_bid(p_idx, smart_b)
+            broadcast_state(room)
+        elif room.state == 'PLAYING' and not room.is_processing_trick:
+            valid_cards = [c for c in p['hand'] if room.validate_card_play(p_idx, c)[0]]
+            if valid_cards:
+                chosen = room.select_smart_bot_card(p_idx, valid_cards)
+                trick_done = room.play_card(p_idx, chosen)
+                broadcast_state(room)
+                if trick_done:
+                    socketio.start_background_task(handle_trick_pause_and_resume, room)
+                    break
+        else:
+            break
 
 def get_player_idx_by_sid(room, sid):
     for p in room.players:
@@ -604,7 +690,7 @@ def broadcast_state(room):
                 'room_id': room.room_id,
                 'game_started': room.game_started,
                 'wait_seconds_left': room.wait_seconds_left,
-                'action_timer_left': room.action_timer_left,
+                'turn_seconds_left': room.turn_seconds_left,
                 'state': room.state,
                 'round_number': room.round_number,
                 'current_turn': room.current_turn,
