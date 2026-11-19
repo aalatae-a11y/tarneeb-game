@@ -1,6 +1,7 @@
 import os
 import random
 import string
+import time
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room
 
@@ -21,6 +22,9 @@ SUITS = ['Hearts', 'Tiles', 'Clovers', 'Pikes']
 RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 RANK_VALUES = {r: i for i, r in enumerate(RANKS, start=2)}
 
+RED_SUITS_SET = {'Hearts', 'Tiles'}
+BLACK_SUITS_SET = {'Clovers', 'Pikes'}
+
 def generate_unique_room_id():
     while True:
         code = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
@@ -29,33 +33,48 @@ def generate_unique_room_id():
             return room_id
 
 def sort_hand_alternating_colors(cards):
-    # تجميع الكروت حسب النوع أولاً بنفس ترتيبها الحالي
+    """
+    يجمع الكروت حسب النوع (Suit) ويرتب كل نوع بقيمته،
+    ثم يرتب الأنواع بالتناوب الصارم بين اللون الأحمر واللون الأسود:
+    أحمر -> أسود -> أحمر -> أسود (بحيث لا يتجاور نوعان من نفس اللون).
+    """
     grouped = {}
     for c in cards:
         grouped.setdefault(c['suit'], []).append(c)
 
-    # تسلسل الأنواع: أسود -> أحمر -> أسود -> أحمر
-    black_suits = [s for s in ['Clovers', 'Pikes'] if s in grouped]
-    red_suits = [s for s in ['Tiles', 'Hearts'] if s in grouped]
+    for suit_name in grouped:
+        grouped[suit_name] = sorted(grouped[suit_name], key=lambda x: x['value'])
+
+    red_present = [s for s in ['Hearts', 'Tiles'] if s in grouped]
+    black_present = [s for s in ['Pikes', 'Clovers'] if s in grouped]
+
+    # نبدأ باللون الذي يملك عدداً أكبر من الأنواع المتوفرة (أو الأحمر افتراضياً)
+    start_with_red = len(red_present) >= len(black_present)
+
+    suit_sequence = []
+    r_idx = 0
+    b_idx = 0
+    expect_red = start_with_red
+
+    while r_idx < len(red_present) or b_idx < len(black_present):
+        if expect_red and r_idx < len(red_present):
+            suit_sequence.append(red_present[r_idx])
+            r_idx += 1
+            expect_red = False
+        elif (not expect_red) and b_idx < len(black_present):
+            suit_sequence.append(black_present[b_idx])
+            b_idx += 1
+            expect_red = True
+        elif r_idx < len(red_present):
+            suit_sequence.append(red_present[r_idx])
+            r_idx += 1
+        elif b_idx < len(black_present):
+            suit_sequence.append(black_present[b_idx])
+            b_idx += 1
 
     ordered_cards = []
-    i, j = 0, 0
-    turn_black = True
-    while i < len(black_suits) or j < len(red_suits):
-        if turn_black and i < len(black_suits):
-            ordered_cards.extend(grouped[black_suits[i]])
-            i += 1
-            turn_black = False
-        elif (not turn_black) and j < len(red_suits):
-            ordered_cards.extend(grouped[red_suits[j]])
-            j += 1
-            turn_black = True
-        elif i < len(black_suits):
-            ordered_cards.extend(grouped[black_suits[i]])
-            i += 1
-        elif j < len(red_suits):
-            ordered_cards.extend(grouped[red_suits[j]])
-            j += 1
+    for s in suit_sequence:
+        ordered_cards.extend(grouped[s])
 
     return ordered_cards
 
@@ -97,6 +116,7 @@ class TarneebRoom:
         self.turn_timer_id = 0
         self.turn_seconds_left = 25
         self.played_cards_history = []
+        self.redeal_grace_until = 0.0
 
     def _reset_turn_timer(self, seconds=25):
         self.turn_timer_id += 1
@@ -167,8 +187,12 @@ class TarneebRoom:
             bot_count += 1
 
     def check_redeal_eligibility(self, player_idx):
+        if time.time() > self.redeal_grace_until:
+            return False
+
         if self.round_number == 1:
-            if self.round_first_card_played: return False
+            if len(self.current_trick) > 0 or len(self.last_completed_trick) > 0:
+                return False
         else:
             if self.state != 'BIDDING' or self.bids_collected > 0:
                 return False
@@ -194,7 +218,7 @@ class TarneebRoom:
             self.round_number += 1
         deck = create_deck()
         for p in self.players:
-            raw_hand = sorted(deck[p['idx']*13 : (p['idx']+1)*13], key=lambda x: (x['suit'], x['value']))
+            raw_hand = deck[p['idx']*13 : (p['idx']+1)*13]
             p['hand'] = sort_hand_alternating_colors(raw_hand)
             p['bid'] = 0
             p['tricks_won'] = 0
@@ -220,6 +244,36 @@ class TarneebRoom:
         self.is_processing_trick = False
         self.played_cards_history = []
         self._reset_turn_timer(25)
+
+        any_human_eligible = any(
+            (not pl['is_bot']) and self.check_redeal_eligibility_without_timer(pl['idx'])
+            for pl in self.players
+        )
+        self.redeal_grace_until = (time.time() + 7.0) if any_human_eligible else 0.0
+
+    def check_redeal_eligibility_without_timer(self, player_idx):
+        if self.round_number == 1:
+            if len(self.current_trick) > 0 or len(self.last_completed_trick) > 0:
+                return False
+        else:
+            if self.state != 'BIDDING' or self.bids_collected > 0:
+                return False
+
+        hand = self.players[player_idx]['hand']
+        if len(hand) != 13:
+            return False
+
+        suit_counts = {s: 0 for s in SUITS}
+        for c in hand:
+            suit_counts[c['suit']] += 1
+        if any(count >= 7 for count in suit_counts.values()):
+            return True
+
+        hearts = [c for c in hand if c['suit'] == 'Hearts']
+        if len(hearts) == 1 and hearts[0]['rank'] == 'K':
+            return True
+
+        return False
 
     def get_dealer_min_bid(self, player_idx):
         min_b = get_min_bid(self.players[player_idx]['score'])
@@ -335,6 +389,7 @@ class TarneebRoom:
         if self.is_processing_trick:
             return False
 
+        self.redeal_grace_until = 0.0
         p = self.players[player_idx]
         p['hand'] = [c for c in p['hand'] if not (c['suit'] == card['suit'] and c['rank'] == card['rank'])]
         
@@ -644,6 +699,10 @@ def turn_timeout_task(room, timer_id):
 def run_game_loop(room):
     socketio.sleep(0.3)
     while room.game_started and room.state in ['BIDDING', 'PLAYING']:
+        if room.redeal_grace_until > time.time():
+            socketio.sleep(0.4)
+            continue
+
         p_idx = room.current_turn
         if p_idx >= len(room.players):
             break
@@ -655,6 +714,9 @@ def run_game_loop(room):
             break
         
         socketio.sleep(0.6)
+        if room.redeal_grace_until > time.time():
+            continue
+
         if room.state == 'BIDDING':
             smart_b = room.calculate_smart_bid(p_idx)
             room.process_bid(p_idx, smart_b)
