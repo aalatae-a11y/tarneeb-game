@@ -6,14 +6,22 @@ from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tarneeb_libya_secret_key_2026'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', ping_timeout=60, ping_interval=25)
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='threading',
+    ping_timeout=60,
+    ping_interval=25
+)
 
 ROOMS = {}
 
 SUITS = ['Hearts', 'Tiles', 'Clovers', 'Pikes']
+HAND_SUIT_ORDER = {'Tiles': 0, 'Clovers': 1, 'Hearts': 2, 'Pikes': 3}
 RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 RANK_VALUES = {r: i for i, r in enumerate(RANKS, start=2)}
 
+ALLOWED_BIDS = [2, 3, 4, 5, 7, 9, 13]
 BID_TIMEOUT_SECONDS = 20
 TURN_TIMEOUT_SECONDS = 30
 
@@ -35,6 +43,13 @@ def get_min_bid(score):
     if score >= 21:
         return 3
     return 2
+
+
+def snap_to_allowed_bid(val):
+    for b in ALLOWED_BIDS:
+        if b >= val:
+            return b
+    return 13
 
 
 class TarneebRoom:
@@ -137,7 +152,11 @@ class TarneebRoom:
 
         deck = create_deck()
         for p in self.players:
-            p['hand'] = sorted(deck[p['idx'] * 13 : (p['idx'] + 1) * 13], key=lambda x: (x['suit'], x['value']))
+            raw_hand = deck[p['idx'] * 13 : (p['idx'] + 1) * 13]
+            p['hand'] = sorted(
+                raw_hand,
+                key=lambda x: (HAND_SUIT_ORDER.get(x['suit'], 99), x['value'])
+            )
             p['bid'] = 0
             p['tricks_won'] = 0
             p['won_cards_count'] = 0
@@ -162,29 +181,29 @@ class TarneebRoom:
         self.is_processing_trick = False
 
     def get_dealer_min_bid(self, player_idx):
-        min_b = get_min_bid(self.players[player_idx]['score'])
+        min_b = snap_to_allowed_bid(get_min_bid(self.players[player_idx]['score']))
         if player_idx == self.dealer_idx:
             needed = 11 - self.total_bids
             if needed > min_b:
-                return needed
+                return snap_to_allowed_bid(needed)
         return min_b
 
     def get_auto_timeout_bid(self, player_idx):
         p = self.players[player_idx]
-        min_b = get_min_bid(p['score'])
+        min_b = snap_to_allowed_bid(get_min_bid(p['score']))
         auto_b = max(2, min_b)
         if player_idx == self.dealer_idx:
             needed = 11 - self.total_bids
             if needed > auto_b:
-                auto_b = needed
+                auto_b = snap_to_allowed_bid(needed)
         return min(auto_b, 13)
 
     def calculate_smart_bid(self, player_idx):
         p = self.players[player_idx]
         hand = p['hand']
-        min_b = get_min_bid(p['score'])
+        min_b = snap_to_allowed_bid(get_min_bid(p['score']))
 
-        strength = 0
+        strength = 0.0
         for c in hand:
             if c['rank'] == 'A':
                 strength += 2.2
@@ -195,29 +214,28 @@ class TarneebRoom:
             elif c['value'] >= 12:
                 strength += 0.5
 
-        smart_bid = int(round(strength / 2.2))
-        smart_bid = max(min_b, min(smart_bid, 11))
+        raw_bid = int(round(strength / 2.2))
+        smart_bid = snap_to_allowed_bid(max(min_b, min(raw_bid, 13)))
 
         if player_idx == self.dealer_idx:
             needed = 11 - self.total_bids
             if needed > 0 and smart_bid < needed:
-                smart_bid = needed
+                smart_bid = snap_to_allowed_bid(needed)
         return smart_bid
 
     def process_bid(self, player_idx, bid_val):
         p = self.players[player_idx]
-        min_b = get_min_bid(p['score'])
+        min_b = snap_to_allowed_bid(get_min_bid(p['score']))
+        needed = 11 - self.total_bids if player_idx == self.dealer_idx else 0
 
-        if player_idx == self.dealer_idx:
-            needed = 11 - self.total_bids
-            if needed > 0:
-                if bid_val < needed:
-                    bid_val = needed
-            else:
-                if bid_val != 0 and bid_val < min_b and bid_val != 13:
-                    bid_val = min_b
+        if bid_val != 0 and bid_val not in ALLOWED_BIDS:
+            bid_val = snap_to_allowed_bid(bid_val)
+
+        if player_idx == self.dealer_idx and needed > 0:
+            if bid_val < needed:
+                bid_val = snap_to_allowed_bid(needed)
         else:
-            if bid_val != 0 and bid_val < min_b and bid_val != 13:
+            if bid_val != 0 and bid_val < min_b:
                 bid_val = min_b
 
         p['bid'] = bid_val
@@ -382,8 +400,7 @@ class TarneebRoom:
 
     def calculate_round_scores(self):
         self.round_summary = []
-        instant_winner = None
-        instant_loser = None
+        bid_13_ended = False
 
         for p in self.players:
             bid = p['bid']
@@ -403,29 +420,22 @@ class TarneebRoom:
                     else:
                         round_pts = -5
                         reason = f"خسر الصفر بأكل {won} (-5)"
-                elif bid == 7:
-                    if won >= 7:
-                        round_pts = 14
-                        reason = "حقق طلب 7 (+14)"
+                elif bid in [7, 9]:
+                    double_pts = bid * 2
+                    if won >= bid:
+                        round_pts = double_pts
+                        reason = f"حقق طلب {bid} دبل (+{double_pts})"
                     else:
-                        round_pts = -14
-                        reason = "كسر طلب 7 (-14)"
-                elif bid == 9:
-                    if won >= 9:
-                        round_pts = 27
-                        reason = "حقق طلب 9 (+27)"
-                    else:
-                        round_pts = -27
-                        reason = "كسر طلب 9 (-27)"
+                        round_pts = -double_pts
+                        reason = f"كسر طلب {bid} دبل (-{double_pts})"
                 elif bid == 13:
+                    bid_13_ended = True
                     if won == 13:
-                        round_pts = 31
-                        reason = "حقق الكبسة 13 (فوز فوري!)"
-                        instant_winner = p['name']
+                        round_pts = 26
+                        reason = "حقق طلب 13 وأنهى اللعبة (+26)"
                     else:
-                        round_pts = -31
-                        reason = "خسر الكبسة 13 (خسارة فورية!)"
-                        instant_loser = p['name']
+                        round_pts = -26
+                        reason = "كسر طلب 13 وأنهى اللعبة (-26)"
                 else:
                     if won >= bid:
                         round_pts = bid
@@ -452,20 +462,18 @@ class TarneebRoom:
                 'detail': reason + ka_note
             })
 
-        if instant_winner:
-            self.winner_message = f"🏆 مبروك للبطل {instant_winner} الفوز بالكبسة (13)!"
-            return True
-
         max_score = max(p['score'] for p in self.players)
         min_score = min(p['score'] for p in self.players)
+        leaders = [p['name'] for p in self.players if p['score'] == max_score]
 
         if max_score >= 31:
-            winners = [p['name'] for p in self.players if p['score'] == max_score]
-            self.winner_message = f"🏆 مبروك للبطل: {' و '.join(winners)} لتجاوز 31 نقطة!"
+            self.winner_message = f"🏆 انتهت اللعبة! الفائز: {' و '.join(leaders)} (وصل 31)"
             return True
-        if min_score <= -31 or instant_loser:
-            leader = [p['name'] for p in self.players if p['score'] == max_score]
-            self.winner_message = f"🏆 انتهت اللعبة! الفائز الأعلى نقاطاً: {' و '.join(leader)}"
+        if min_score <= -31:
+            self.winner_message = f"🏆 انتهت اللعبة! الأعلى نقاطاً: {' و '.join(leaders)}"
+            return True
+        if bid_13_ended:
+            self.winner_message = f"🏆 انتهت اللعبة بطلب 13! المتصدر: {' و '.join(leaders)}"
             return True
 
         return False
@@ -563,12 +571,7 @@ def on_redeal(data):
 @socketio.on('next_round')
 def on_next_round(data):
     room = ROOMS.get(data.get('room'))
-    if room and room.state in ['ROUND_OVER', 'GAME_OVER']:
-        if room.state == 'GAME_OVER':
-            for p in room.players:
-                p['score'] = 0
-            room.dealer_idx = 0
-            room.round_number = 0
+    if room and room.state == 'ROUND_OVER':
         room.start_new_round(increment_round=True)
         broadcast_state(room)
         socketio.start_background_task(run_game_loop, room)
@@ -750,4 +753,5 @@ def broadcast_state(room):
 
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)
