@@ -51,23 +51,51 @@
 
         #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 6px 8px 10px 8px; overflow: hidden; background: radial-gradient(circle at center, #1e1e24 0%, #121214 100%); }
 
-        .top-hud { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; height: 74px; flex-shrink: 0; z-index: 20; }
+        .top-hud { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; height: 78px; flex-shrink: 0; z-index: 20; gap: 6px; }
 
-        .cross-score { background: rgba(28,28,30,0.9); border-radius: 12px; padding: 4px 8px; display: grid; grid-template-columns: repeat(3, 26px); grid-template-rows: repeat(3, 20px); gap: 2px; text-align: center; font-size: 11px; font-weight: bold; border: 1px solid #38383a; }
-        .cross-score div { display: flex; justify-content: center; align-items: center; }
-        .sc-bottom { color: #34c759; font-size: 12px; }
-        .sc-other { color: #ffffff; }
+        .cross-score {
+            background: rgba(28,28,30,0.95);
+            border-radius: 12px;
+            padding: 5px 7px;
+            display: grid;
+            grid-template-columns: 44px 30px 44px;
+            grid-template-rows: 20px 22px 20px;
+            gap: 2px;
+            align-items: center;
+            justify-items: center;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid #38383a;
+            direction: ltr;
+            min-width: 132px;
+        }
+        .sc-cell {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.04);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 3px;
+        }
+        .sc-center { color: #ffd60a; font-size: 12px; font-weight: 900; background: rgba(255,214,10,0.12); }
+        .sc-bottom { color: #34c759; font-size: 11px; }
+        .sc-other { color: #f2f2f7; font-size: 10px; }
 
-        .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; }
+        .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; flex: 1; min-width: 0; }
         .top-bar-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: center; }
         .room-title { font-weight: bold; font-size: 11px; color: #f2f2f7; background: #2c2c2e; padding: 4px 9px; border-radius: 12px; border: 1px solid #3a3a3c; }
         .invite-btn { font-weight: bold; font-size: 11px; color: #000; background: #ffd60a; border: none; padding: 4px 9px; border-radius: 12px; cursor: pointer; }
         .mute-btn { background: #2c2c2e; color: #fff; border: 1px solid #3a3a3c; border-radius: 12px; padding: 3px 8px; font-size: 13px; cursor: pointer; line-height: 1.2; }
         .turn-timer-pill { font-size: 11px; font-weight: bold; color: #34c759; background: rgba(0,0,0,0.85); padding: 3px 9px; border-radius: 10px; border: 1px solid #3a3a3c; display: none; }
         .turn-timer-pill.urgent { color: #ff3b30; border-color: #ff3b30; }
-        .bids-counter { font-size: 11px; color: #ffd60a; font-weight: bold; background: rgba(0,0,0,0.8); padding: 3px 12px; border-radius: 10px; border: 1px solid #444; }
+        .bids-counter { font-size: 11px; color: #ffd60a; font-weight: bold; background: rgba(0,0,0,0.8); padding: 3px 10px; border-radius: 10px; border: 1px solid #444; white-space: nowrap; }
 
-        .last-trick-box { background: rgba(28,28,30,0.9); border: 1px solid #38383a; border-radius: 12px; padding: 4px; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .last-trick-box { background: rgba(28,28,30,0.9); border: 1px solid #38383a; border-radius: 12px; padding: 4px; width: 72px; height: 74px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
         .last-trick-title { font-size: 9px; color: #8e8e93; margin-bottom: 2px; font-weight: bold; }
         .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
         .mini-card { width: 22px; height: 30px; background: white; border-radius: 3px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #444; }
@@ -115,9 +143,19 @@
         .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffd60a; padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.7); animation: pulse-btn 1.5s infinite; }
         @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
 
-        .hand-cards-container { display: flex; justify-content: center; align-items: flex-end; width: 100%; height: 105px; padding: 0 4px; overflow: hidden; }
+        .hand-cards-container {
+            display: flex;
+            flex-direction: row;
+            direction: ltr;
+            justify-content: center;
+            align-items: flex-end;
+            width: 100%;
+            height: 105px;
+            padding: 0 4px;
+            overflow: hidden;
+        }
 
-        .hand-card { width: 64px; height: 94px; background: #ffffff; border-radius: 7px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: -3px 3px 10px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.18s ease, border-color 0.18s; flex-shrink: 0; position: relative; }
+        .hand-card { width: 64px; height: 94px; background: #ffffff; border-radius: 7px; border: 1px solid rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; overflow: hidden; box-shadow: 2px 3px 10px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.18s ease, border-color 0.18s; flex-shrink: 0; position: relative; }
         .hand-card:active { transform: translateY(-14px) scale(1.05); border-color: #34c759; z-index: 10; }
         .hand-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 6px; background: white; }
 
@@ -172,10 +210,18 @@
 
     <div id="game-board">
         <div class="top-hud">
-            <div class="cross-score">
-                <div></div><div id="score-top" class="sc-other">0</div><div></div>
-                <div id="score-left" class="sc-other">0</div><div style="color:#ffd60a; font-size:12px;">31</div><div id="score-right" class="sc-other">0</div>
-                <div></div><div id="score-bottom" class="sc-bottom">0</div><div></div>
+            <div class="cross-score" title="النتائج حول الطاولة">
+                <div class="sc-cell"></div>
+                <div id="score-top" class="sc-cell sc-other">0</div>
+                <div class="sc-cell"></div>
+
+                <div id="score-left" class="sc-cell sc-other">0</div>
+                <div class="sc-cell sc-center">31</div>
+                <div id="score-right" class="sc-cell sc-other">0</div>
+
+                <div class="sc-cell"></div>
+                <div id="score-bottom" class="sc-cell sc-bottom">0</div>
+                <div class="sc-cell"></div>
             </div>
 
             <div class="room-center-info">
@@ -634,6 +680,12 @@
 
         socket.on('error', (data) => alert(data.msg));
 
+        function formatPlayerScoreLabel(player, fallbackLabel) {
+            if (!player) return `${fallbackLabel}: 0`;
+            const shortName = player.name.length > 6 ? player.name.slice(0, 6) : player.name;
+            return `${shortName} ${player.score}`;
+        }
+
         function updateCrossScore(data) {
             if (!data.players) return;
             const pBottom = data.players[myIndex];
@@ -641,10 +693,10 @@
             const pTop = data.players[(myIndex + 2) % 4];
             const pRight = data.players[(myIndex + 3) % 4];
 
-            document.getElementById('score-bottom').innerText = pBottom ? pBottom.score : 0;
-            document.getElementById('score-left').innerText = pLeft ? pLeft.score : 0;
-            document.getElementById('score-top').innerText = pTop ? pTop.score : 0;
-            document.getElementById('score-right').innerText = pRight ? pRight.score : 0;
+            document.getElementById('score-bottom').innerText = formatPlayerScoreLabel(pBottom, 'أنت');
+            document.getElementById('score-left').innerText = formatPlayerScoreLabel(pLeft, 'يسار');
+            document.getElementById('score-top').innerText = formatPlayerScoreLabel(pTop, 'فوق');
+            document.getElementById('score-right').innerText = formatPlayerScoreLabel(pRight, 'يمين');
         }
 
         function renderPlayers(players, turn, dealerIdx, roundNum) {
@@ -725,7 +777,7 @@
                 let cardEl = document.createElement('div');
                 cardEl.className = `hand-card`;
                 if (i > 0 && overlap > 0) {
-                    cardEl.style.marginRight = `-${overlap}px`;
+                    cardEl.style.marginLeft = `-${overlap}px`;
                 }
 
                 cardEl.innerHTML = renderCardHTML(card);
