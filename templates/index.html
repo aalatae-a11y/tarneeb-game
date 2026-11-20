@@ -9,12 +9,134 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #121214; color: white; position: fixed; inset: 0; }
 
-        #login-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 26px; background: #1c1c1e; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.9); width: 90%; max-width: 340px; z-index: 200; border: 1px solid #2c2c2e; }
-        #login-box h2 { text-align: center; margin-bottom: 20px; color: #34c759; font-size: 24px; font-weight: 800; }
+        /* واجهة البداية بخلفية أوراق شدة */
+        #splash-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 250;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 36px 20px 22px 20px;
+            background:
+                radial-gradient(circle at center, rgba(18, 18, 20, 0.72) 0%, rgba(12, 12, 14, 0.94) 100%),
+                repeating-linear-gradient(45deg, rgba(52, 199, 89, 0.06) 0px, rgba(52, 199, 89, 0.06) 2px, transparent 2px, transparent 18px),
+                repeating-linear-gradient(-45deg, rgba(255, 214, 10, 0.05) 0px, rgba(255, 214, 10, 0.05) 2px, transparent 2px, transparent 18px);
+            overflow: hidden;
+        }
+
+        .splash-cards-bg {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .bg-card {
+            position: absolute;
+            width: 68px;
+            height: 98px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1.5px solid rgba(255, 255, 255, 0.28);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 6px;
+            font-weight: 800;
+            opacity: 0.24;
+        }
+
+        .bg-card.red { color: #e02424; }
+        .bg-card.black { color: #18181b; }
+        .bg-card .top-pip { font-size: 13px; line-height: 1; text-align: right; }
+        .bg-card .mid-pip { font-size: 26px; line-height: 1; text-align: center; }
+        .bg-card .bot-pip { font-size: 13px; line-height: 1; text-align: left; transform: rotate(180deg); }
+
+        .splash-center {
+            position: relative;
+            z-index: 2;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 18px;
+        }
+
+        .splash-badge {
+            font-size: 13px;
+            color: #ffd60a;
+            background: rgba(28, 28, 30, 0.9);
+            border: 1px solid rgba(255, 214, 10, 0.35);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+
+        .splash-title {
+            font-size: 32px;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 6px 24px rgba(0, 0, 0, 0.85);
+        }
+
+        .start-play-btn {
+            padding: 16px 44px;
+            font-size: 20px;
+            font-weight: 800;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #34c759, #249e43);
+            color: #ffffff;
+            cursor: pointer;
+            box-shadow: 0 10px 28px rgba(52, 199, 89, 0.45);
+            transition: transform 0.15s ease;
+        }
+
+        .start-play-btn:active {
+            transform: scale(0.97);
+        }
+
+        .splash-footer {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #d1d1d6;
+            background: rgba(24, 24, 27, 0.85);
+            border: 1px solid #2c2c2e;
+            padding: 10px 14px;
+            border-radius: 14px;
+        }
+
+        /* نافذة إدخال الاسم */
+        #login-box {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 26px;
+            background: #1c1c1e;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+            width: 90%;
+            max-width: 340px;
+            z-index: 210;
+            border: 1px solid #2c2c2e;
+        }
+        #login-box h2 { text-align: center; margin-bottom: 14px; color: #34c759; font-size: 23px; font-weight: 800; }
+        .auto-room-note { text-align: center; font-size: 11px; color: #ffd60a; margin-bottom: 16px; background: rgba(255, 214, 10, 0.08); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(255, 214, 10, 0.25); }
         .input-group { margin-bottom: 16px; }
         .input-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #8e8e93; font-weight: 600; }
         input { padding: 14px; font-size: 16px; border-radius: 12px; border: 1px solid #3a3a3c; width: 100%; background: #2c2c2e; color: white; outline: none; }
-        button.login-btn { padding: 15px; font-size: 17px; border-radius: 12px; border: none; width: 100%; background: linear-gradient(135deg, #34c759, #28a745); color: white; cursor: pointer; font-weight: bold; margin-top: 10px; box-shadow: 0 4px 15px rgba(52,199,89,0.4); }
+        button.login-btn { padding: 15px; font-size: 17px; border-radius: 12px; border: none; width: 100%; background: linear-gradient(135deg, #34c759, #28a745); color: white; cursor: pointer; font-weight: bold; margin-top: 8px; box-shadow: 0 4px 15px rgba(52,199,89,0.4); }
 
         #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 6px 8px 10px 8px; overflow: hidden; background: radial-gradient(circle at center, #1e1e24 0%, #121214 100%); }
 
@@ -27,7 +149,7 @@
 
         .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; }
         .top-bar-row { display: flex; align-items: center; gap: 6px; }
-        .room-title { font-weight: bold; font-size: 13px; color: #f2f2f7; background: #2c2c2e; padding: 4px 12px; border-radius: 14px; border: 1px solid #3a3a3c; }
+        .room-title { font-weight: bold; font-size: 12px; color: #f2f2f7; background: #2c2c2e; padding: 4px 10px; border-radius: 14px; border: 1px solid #3a3a3c; cursor: pointer; }
         .mute-btn { background: #2c2c2e; color: #fff; border: 1px solid #3a3a3c; border-radius: 12px; padding: 3px 8px; font-size: 13px; cursor: pointer; line-height: 1.2; }
         .turn-timer-pill { font-size: 11px; font-weight: bold; color: #34c759; background: rgba(0,0,0,0.85); padding: 3px 10px; border-radius: 10px; border: 1px solid #3a3a3c; display: none; }
         .turn-timer-pill.urgent { color: #ff3b30; border-color: #ff3b30; }
@@ -111,17 +233,30 @@
 </head>
 <body>
 
+    <!-- شاشة البداية بخلفية أوراق شدة -->
+    <div id="splash-screen">
+        <div class="splash-cards-bg" id="splash-cards-bg"></div>
+
+        <div class="splash-center">
+            <div class="splash-badge">طرنيب ليبي أونلاين</div>
+            <div class="splash-title">طاولة الطرنيب</div>
+            <button class="start-play-btn" onclick="openNameScreen()">بدء اللعب</button>
+        </div>
+
+        <div class="splash-footer">
+            إعداد وتصميم المهندس عبد الله العطائي
+        </div>
+    </div>
+
+    <!-- نافذة إدخال الاسم مع إدارة الغرفة تلقائياً -->
     <div id="login-box">
-        <h2>طرنيب ليبي 🇱🇾</h2>
+        <h2>إضافة اسم اللاعب</h2>
+        <div class="auto-room-note">المنظومة تدير الغرفة والرابط تلقائياً</div>
         <div class="input-group">
-            <label>اسم اللاعب:</label>
+            <label>الاسم:</label>
             <input type="text" id="username" placeholder="اكتب اسمك هنا...">
         </div>
-        <div class="input-group">
-            <label>رمز الغرفة:</label>
-            <input type="text" id="room" placeholder="اكتب رمز الغرفة...">
-        </div>
-        <button class="login-btn" onclick="joinGame()">دخول اللعبة</button>
+        <button class="login-btn" onclick="joinGame()">دخول الطاولة</button>
     </div>
 
     <div id="game-board">
@@ -134,7 +269,7 @@
 
             <div class="room-center-info">
                 <div class="top-bar-row">
-                    <div class="room-title" id="room-display">tripoli</div>
+                    <div class="room-title" id="room-display" onclick="copyRoomLink()" title="نسخ رابط الغرفة">غرفة تلقائية</div>
                     <button class="mute-btn" id="mute-btn" onclick="toggleMute()" title="كتم/تشغيل الصوت">🔊</button>
                     <div class="turn-timer-pill" id="turn-timer-badge">30ث</div>
                 </div>
@@ -236,6 +371,46 @@
     </div>
 
     <script>
+        function renderSplashCardsBackground() {
+            const container = document.getElementById('splash-cards-bg');
+            if (!container) return;
+            const sampleCards = [
+                { r: 'A', s: '♥', red: true, top: '6%', left: '8%', rot: -16 },
+                { r: 'K', s: '♠', red: false, top: '12%', left: '74%', rot: 14 },
+                { r: 'Q', s: '♦', red: true, top: '28%', left: '18%', rot: 10 },
+                { r: 'J', s: '♣', red: false, top: '34%', left: '78%', rot: -12 },
+                { r: '10', s: '♥', red: true, top: '54%', left: '6%', rot: 15 },
+                { r: 'A', s: '♠', red: false, top: '58%', left: '72%', rot: -18 },
+                { r: '9', s: '♦', red: true, top: '72%', left: '22%', rot: -8 },
+                { r: 'K', s: '♥', red: true, top: '76%', left: '62%', rot: 12 }
+            ];
+            container.innerHTML = '';
+            sampleCards.forEach(c => {
+                const el = document.createElement('div');
+                el.className = `bg-card ${c.red ? 'red' : 'black'}`;
+                el.style.top = c.top;
+                el.style.left = c.left;
+                el.style.transform = `rotate(${c.rot}deg)`;
+                el.innerHTML = `
+                    <div class="top-pip">${c.r}${c.s}</div>
+                    <div class="mid-pip">${c.s}</div>
+                    <div class="bot-pip">${c.r}${c.s}</div>
+                `;
+                container.appendChild(el);
+            });
+        }
+        renderSplashCardsBackground();
+
+        function openNameScreen() {
+            ensureAudioCtx();
+            document.getElementById('splash-screen').style.display = 'none';
+            document.getElementById('login-box').style.display = 'block';
+            setTimeout(() => {
+                const inp = document.getElementById('username');
+                if (inp) inp.focus();
+            }, 80);
+        }
+
         const socket = io({
             transports: ['websocket', 'polling'],
             reconnection: true,
@@ -312,7 +487,6 @@
             ensureAudioCtx();
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
-            // نغمة ضحك/شماتة سريعة متقطعة
             const notes = [620, 480, 660, 460, 700, 440];
             notes.forEach((freq, i) => {
                 const osc = audioCtx.createOscillator();
@@ -368,42 +542,68 @@
             return cardImagesCache[cardNum] || `/static/cards/${getCardImageFilename(card)}`;
         }
 
+        function getRoomParamFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return (params.get('room') || '').trim();
+        }
+
+        function syncRoomToUrl(roomId) {
+            if (!roomId) return;
+            const url = new URL(window.location.href);
+            url.searchParams.set('room', roomId);
+            window.history.replaceState({}, '', url.toString());
+        }
+
+        function copyRoomLink() {
+            if (!currentRoom) return;
+            const url = new URL(window.location.href);
+            url.searchParams.set('room', currentRoom);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url.toString()).catch(() => {});
+            }
+        }
+
         function joinGame() {
             const name = document.getElementById('username').value.trim();
-            currentRoom = document.getElementById('room').value.trim();
-            if(!name || !currentRoom) return alert("يرجى كتابة الاسم ورمز الغرفة");
+            if (!name) return alert("يرجى كتابة الاسم");
 
+            const presetRoom = getRoomParamFromUrl();
             ensureAudioCtx();
-            socket.emit('join_game', {name: name, room: currentRoom});
+            socket.emit('join_game', { name: name, room: presetRoom });
             document.getElementById('login-box').style.display = 'none';
             document.getElementById('game-board').style.display = 'flex';
-            document.getElementById('room-display').innerText = currentRoom;
         }
 
         function forceStartBots() {
-            socket.emit('force_start_bots', {room: currentRoom});
+            socket.emit('force_start_bots', { room: currentRoom });
         }
 
         socket.on('connect', () => {
             if (currentRoom) {
                 const name = document.getElementById('username').value.trim();
-                if(name) socket.emit('join_game', {name: name, room: currentRoom});
+                if (name) socket.emit('join_game', { name: name, room: currentRoom });
             }
         });
 
         function requestRedeal() {
-            socket.emit('request_redeal', {room: currentRoom});
+            socket.emit('request_redeal', { room: currentRoom });
         }
 
         function nextRound() {
             document.getElementById('round-modal').style.display = 'none';
-            socket.emit('next_round', {room: currentRoom});
+            socket.emit('next_round', { room: currentRoom });
         }
 
         socket.on('game_update', (data) => {
             myIndex = data.my_index;
             currentTurnGlobal = data.current_turn;
             gameStateGlobal = data.state;
+
+            if (data.room_id) {
+                currentRoom = data.room_id;
+                document.getElementById('room-display').innerText = `غرفة: ${data.room_id}`;
+                syncRoomToUrl(data.room_id);
+            }
 
             const waitBox = document.getElementById('waiting-overlay');
             if (!data.game_started) {
@@ -470,13 +670,13 @@
                 renderTrick(data.current_trick);
             }
 
-            if(data.state === 'BIDDING' && data.current_turn === myIndex) {
+            if (data.state === 'BIDDING' && data.current_turn === myIndex) {
                 showBidModal(data.min_bid, data.is_dealer, data.total_bids, secLeft);
             } else {
                 document.getElementById('bid-modal').style.display = 'none';
             }
 
-            if(data.state === 'ROUND_OVER' || data.state === 'GAME_OVER') {
+            if (data.state === 'ROUND_OVER' || data.state === 'GAME_OVER') {
                 showRoundSummary(data);
             }
         });
@@ -485,8 +685,6 @@
 
         function updateCrossScore(data) {
             if (!data.players) return;
-            // الاتجاهات النسبية لـ myIndex:
-            // offset 0 = تحت (bottom), offset 1 = يسار (left), offset 2 = فوق (top), offset 3 = يمين (right)
             const dirMap = ['bottom', 'left', 'top', 'right'];
             for (let offset = 0; offset < 4; offset++) {
                 const playerIdx = (myIndex + offset) % 4;
@@ -506,27 +704,27 @@
                 const pileEl = document.getElementById(`pile-${ui}`);
 
                 if (!p) {
-                    if(nameEl) nameEl.innerText = "في الانتظار..";
-                    if(bidEl) bidEl.innerText = "-";
+                    if (nameEl) nameEl.innerText = "في الانتظار..";
+                    if (bidEl) bidEl.innerText = "-";
                     continue;
                 }
 
-                if(nameEl) nameEl.innerText = p.name;
-                if(bidEl) {
+                if (nameEl) nameEl.innerText = p.name;
+                if (bidEl) {
                     bidEl.innerText = roundNum === 1 ? `${p.tricks_won}` : `${p.tricks_won} / ${p.bid}`;
                 }
 
-                if(ui === 0) {
+                if (ui === 0) {
                     document.getElementById('my-tricks-count').innerText = roundNum === 1 ? `${p.tricks_won}` : `${p.tricks_won} / ${p.bid}`;
                 }
 
-                if(pileEl) {
+                if (pileEl) {
                     pileEl.style.display = p.won_cards_count > 0 ? 'block' : 'none';
                 }
 
-                if(avatarEl) {
+                if (avatarEl) {
                     avatarEl.innerHTML = realIdx === dealerIdx ? `👤<span class="dealer-tag">موزع</span>` : `👤`;
-                    if(realIdx === turn && gameStateGlobal === 'PLAYING') {
+                    if (realIdx === turn && gameStateGlobal === 'PLAYING') {
                         avatarEl.style.borderColor = '#34c759';
                         avatarEl.style.boxShadow = '0 0 14px #34c759';
                     } else {
@@ -544,9 +742,9 @@
 
         function renderHand(hand) {
             const handDiv = document.getElementById('my-hand');
-            if(!handDiv) return;
+            if (!handDiv) return;
             handDiv.innerHTML = '';
-            if(!hand || hand.length === 0) return;
+            if (!hand || hand.length === 0) return;
 
             const containerWidth = window.innerWidth - 16;
             const cardWidth = 64;
@@ -572,7 +770,7 @@
                     e.preventDefault();
                     if (gameStateGlobal !== 'PLAYING' || currentTurnGlobal !== myIndex) return;
                     ensureAudioCtx();
-                    socket.emit('play_card', {room: currentRoom, card: card});
+                    socket.emit('play_card', { room: currentRoom, card: card });
                 };
 
                 handDiv.appendChild(cardEl);
@@ -581,10 +779,10 @@
 
         function renderTrick(trick) {
             const area = document.getElementById('trick-area');
-            if(!area) return;
+            if (!area) return;
             area.innerHTML = '';
 
-            if(!trick) return;
+            if (!trick) return;
             trick.forEach(play => {
                 let UI_idx = (play.player_idx - myIndex + 4) % 4;
                 let c = play.card;
@@ -598,10 +796,10 @@
 
         function renderLastTrick(lastTrick) {
             const container = document.getElementById('last-trick-cards');
-            if(!container) return;
+            if (!container) return;
             container.innerHTML = '';
 
-            if(!lastTrick || lastTrick.length === 0) {
+            if (!lastTrick || lastTrick.length === 0) {
                 container.innerHTML = `<div style="font-size:8px; color:#777; grid-column: span 2; text-align:center;">لا توجد</div>`;
                 return;
             }
@@ -621,7 +819,7 @@
             const opts = document.getElementById('bid-options');
             const hint = document.getElementById('bid-hint');
             const timerEl = document.getElementById('bid-timer-text');
-            if(!modal || !opts) return;
+            if (!modal || !opts) return;
 
             if (timerEl) {
                 timerEl.innerText = `الوقت المتبقي: ${secLeft || 20}ث`;
@@ -640,7 +838,8 @@
 
             if (!(isDealer && needed > 0)) {
                 let b0 = document.createElement('button');
-                b0.className = 'bid-btn'; b0.innerText = '0';
+                b0.className = 'bid-btn';
+                b0.innerText = '0';
                 b0.onclick = () => submitBid(0);
                 opts.appendChild(b0);
             }
@@ -649,7 +848,8 @@
             validBids.forEach(i => {
                 if (i >= minBid) {
                     let b = document.createElement('button');
-                    b.className = 'bid-btn'; b.innerText = i;
+                    b.className = 'bid-btn';
+                    b.innerText = i;
                     b.onclick = () => submitBid(i);
                     opts.appendChild(b);
                 }
@@ -658,7 +858,7 @@
 
         function submitBid(val) {
             ensureAudioCtx();
-            socket.emit('submit_bid', {room: currentRoom, bid: val});
+            socket.emit('submit_bid', { room: currentRoom, bid: val });
             document.getElementById('bid-modal').style.display = 'none';
         }
 
