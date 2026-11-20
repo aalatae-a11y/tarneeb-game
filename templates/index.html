@@ -9,7 +9,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #121214; color: white; position: fixed; inset: 0; }
 
-        /* واجهة البداية بخلفية أوراق شدة */
         #splash-screen {
             position: fixed;
             inset: 0;
@@ -26,111 +25,23 @@
             overflow: hidden;
         }
 
-        .splash-cards-bg {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            overflow: hidden;
-            z-index: 0;
-        }
-
-        .bg-card {
-            position: absolute;
-            width: 68px;
-            height: 98px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1.5px solid rgba(255, 255, 255, 0.28);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 6px;
-            font-weight: 800;
-            opacity: 0.24;
-        }
-
+        .splash-cards-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+        .bg-card { position: absolute; width: 68px; height: 98px; background: #f8f9fa; border-radius: 8px; border: 1.5px solid rgba(255, 255, 255, 0.28); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65); display: flex; flex-direction: column; justify-content: space-between; padding: 6px; font-weight: 800; opacity: 0.24; }
         .bg-card.red { color: #e02424; }
         .bg-card.black { color: #18181b; }
         .bg-card .top-pip { font-size: 13px; line-height: 1; text-align: right; }
         .bg-card .mid-pip { font-size: 26px; line-height: 1; text-align: center; }
         .bg-card .bot-pip { font-size: 13px; line-height: 1; text-align: left; transform: rotate(180deg); }
 
-        .splash-center {
-            position: relative;
-            z-index: 2;
-            margin: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 18px;
-        }
+        .splash-center { position: relative; z-index: 2; margin: auto; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 18px; }
+        .splash-badge { font-size: 13px; color: #ffd60a; background: rgba(28, 28, 30, 0.9); border: 1px solid rgba(255, 214, 10, 0.35); padding: 6px 16px; border-radius: 20px; font-weight: 700; }
+        .splash-title { font-size: 32px; font-weight: 900; color: #ffffff; text-shadow: 0 6px 24px rgba(0, 0, 0, 0.85); }
+        .start-play-btn { padding: 16px 44px; font-size: 20px; font-weight: 800; border: none; border-radius: 16px; background: linear-gradient(135deg, #34c759, #249e43); color: #ffffff; cursor: pointer; box-shadow: 0 10px 28px rgba(52, 199, 89, 0.45); transition: transform 0.15s ease; }
+        .start-play-btn:active { transform: scale(0.97); }
 
-        .splash-badge {
-            font-size: 13px;
-            color: #ffd60a;
-            background: rgba(28, 28, 30, 0.9);
-            border: 1px solid rgba(255, 214, 10, 0.35);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-weight: 700;
-        }
+        .splash-footer { position: relative; z-index: 2; width: 100%; text-align: center; font-size: 12px; font-weight: 700; color: #d1d1d6; background: rgba(24, 24, 27, 0.85); border: 1px solid #2c2c2e; padding: 10px 14px; border-radius: 14px; }
 
-        .splash-title {
-            font-size: 32px;
-            font-weight: 900;
-            color: #ffffff;
-            text-shadow: 0 6px 24px rgba(0, 0, 0, 0.85);
-        }
-
-        .start-play-btn {
-            padding: 16px 44px;
-            font-size: 20px;
-            font-weight: 800;
-            border: none;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #34c759, #249e43);
-            color: #ffffff;
-            cursor: pointer;
-            box-shadow: 0 10px 28px rgba(52, 199, 89, 0.45);
-            transition: transform 0.15s ease;
-        }
-
-        .start-play-btn:active {
-            transform: scale(0.97);
-        }
-
-        .splash-footer {
-            position: relative;
-            z-index: 2;
-            width: 100%;
-            text-align: center;
-            font-size: 12px;
-            font-weight: 700;
-            color: #d1d1d6;
-            background: rgba(24, 24, 27, 0.85);
-            border: 1px solid #2c2c2e;
-            padding: 10px 14px;
-            border-radius: 14px;
-        }
-
-        /* نافذة إدخال الاسم */
-        #login-box {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 26px;
-            background: #1c1c1e;
-            border-radius: 20px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.9);
-            width: 90%;
-            max-width: 340px;
-            z-index: 210;
-            border: 1px solid #2c2c2e;
-        }
+        #login-box { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 26px; background: #1c1c1e; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.9); width: 90%; max-width: 340px; z-index: 210; border: 1px solid #2c2c2e; }
         #login-box h2 { text-align: center; margin-bottom: 14px; color: #34c759; font-size: 23px; font-weight: 800; }
         .auto-room-note { text-align: center; font-size: 11px; color: #ffd60a; margin-bottom: 16px; background: rgba(255, 214, 10, 0.08); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(255, 214, 10, 0.25); }
         .input-group { margin-bottom: 16px; }
@@ -148,10 +59,11 @@
         .sc-other { color: #ffffff; }
 
         .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; }
-        .top-bar-row { display: flex; align-items: center; gap: 6px; }
-        .room-title { font-weight: bold; font-size: 12px; color: #f2f2f7; background: #2c2c2e; padding: 4px 10px; border-radius: 14px; border: 1px solid #3a3a3c; cursor: pointer; }
+        .top-bar-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: center; }
+        .room-title { font-weight: bold; font-size: 11px; color: #f2f2f7; background: #2c2c2e; padding: 4px 9px; border-radius: 12px; border: 1px solid #3a3a3c; }
+        .invite-btn { font-weight: bold; font-size: 11px; color: #000; background: #ffd60a; border: none; padding: 4px 9px; border-radius: 12px; cursor: pointer; }
         .mute-btn { background: #2c2c2e; color: #fff; border: 1px solid #3a3a3c; border-radius: 12px; padding: 3px 8px; font-size: 13px; cursor: pointer; line-height: 1.2; }
-        .turn-timer-pill { font-size: 11px; font-weight: bold; color: #34c759; background: rgba(0,0,0,0.85); padding: 3px 10px; border-radius: 10px; border: 1px solid #3a3a3c; display: none; }
+        .turn-timer-pill { font-size: 11px; font-weight: bold; color: #34c759; background: rgba(0,0,0,0.85); padding: 3px 9px; border-radius: 10px; border: 1px solid #3a3a3c; display: none; }
         .turn-timer-pill.urgent { color: #ff3b30; border-color: #ff3b30; }
         .bids-counter { font-size: 11px; color: #ffd60a; font-weight: bold; background: rgba(0,0,0,0.8); padding: 3px 12px; border-radius: 10px; border: 1px solid #444; }
 
@@ -214,7 +126,8 @@
 
         #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(24,24,26,0.98); padding: 22px; border-radius: 20px; z-index: 180; border: 1px solid #38383a; width: 88%; max-width: 310px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
         .timer-circle { width: 68px; height: 68px; border-radius: 50%; border: 4px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: #ffd60a; margin: 12px auto; background: #121214; }
-        .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 12px; }
+        .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 10px; }
+        .invite-wait-btn { background: #2c2c2e; color: #ffd60a; border: 1px solid #ffd60a; padding: 10px 14px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; margin-top: 8px; }
 
         #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 280px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
         #bid-modal h3 { font-size: 15px; margin-bottom: 4px; color: white; font-weight: 700; }
@@ -233,7 +146,6 @@
 </head>
 <body>
 
-    <!-- شاشة البداية بخلفية أوراق شدة -->
     <div id="splash-screen">
         <div class="splash-cards-bg" id="splash-cards-bg"></div>
 
@@ -248,10 +160,9 @@
         </div>
     </div>
 
-    <!-- نافذة إدخال الاسم مع إدارة الغرفة تلقائياً -->
     <div id="login-box">
         <h2>إضافة اسم اللاعب</h2>
-        <div class="auto-room-note">المنظومة تدير الغرفة والرابط تلقائياً</div>
+        <div class="auto-room-note" id="login-room-banner">المنظومة تدير الغرفة والرابط تلقائياً</div>
         <div class="input-group">
             <label>الاسم:</label>
             <input type="text" id="username" placeholder="اكتب اسمك هنا...">
@@ -269,7 +180,8 @@
 
             <div class="room-center-info">
                 <div class="top-bar-row">
-                    <div class="room-title" id="room-display" onclick="copyRoomLink()" title="نسخ رابط الغرفة">غرفة تلقائية</div>
+                    <div class="room-title" id="room-display">غرفة تلقائية</div>
+                    <button class="invite-btn" id="invite-btn" onclick="inviteFriend()">دعوة صديق</button>
                     <button class="mute-btn" id="mute-btn" onclick="toggleMute()" title="كتم/تشغيل الصوت">🔊</button>
                     <div class="turn-timer-pill" id="turn-timer-badge">30ث</div>
                 </div>
@@ -342,6 +254,7 @@
             <p id="joined-count-text" style="font-size:12px; color:#d1d1d6; margin-top:6px;">اللاعبون الحاليون: 1 / 4</p>
             <div class="timer-circle" id="wait-timer-num">30</div>
             <p style="font-size:11px; color:#8e8e93;">سيتم إكمال المقاعد الشاغرة بالبوتات تلقائياً عند انتهاء الوقت</p>
+            <button class="invite-wait-btn" onclick="inviteFriend()">🔗 نسخ رابط دعوة صديق للغرفة</button>
             <button class="start-now-btn" onclick="forceStartBots()">تأكيد البدء بالبوتات الآن ▶</button>
         </div>
 
@@ -366,7 +279,7 @@
                 </thead>
                 <tbody id="summary-body"></tbody>
             </table>
-            <button onclick="nextRound()" style="width:100%; background:#34c759; border:none; padding:12px; color:white; border-radius:12px; font-weight:bold; font-size:15px; cursor:pointer;">الدورة التالية</button>
+            <button id="round-action-btn" onclick="handleRoundAction()" style="width:100%; background:#34c759; border:none; padding:12px; color:white; border-radius:12px; font-weight:bold; font-size:15px; cursor:pointer;">الدورة التالية</button>
         </div>
     </div>
 
@@ -401,8 +314,24 @@
         }
         renderSplashCardsBackground();
 
+        function getRoomParamFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return (params.get('room') || '').trim();
+        }
+
+        function syncRoomBanner() {
+            const presetRoom = getRoomParamFromUrl();
+            const banner = document.getElementById('login-room-banner');
+            if (banner) {
+                banner.innerText = presetRoom
+                    ? `دعوة غرفة مباشرة: ${presetRoom}`
+                    : 'المنظومة تدير الغرفة والرابط تلقائياً';
+            }
+        }
+
         function openNameScreen() {
             ensureAudioCtx();
+            syncRoomBanner();
             document.getElementById('splash-screen').style.display = 'none';
             document.getElementById('login-box').style.display = 'block';
             setTimeout(() => {
@@ -542,11 +471,6 @@
             return cardImagesCache[cardNum] || `/static/cards/${getCardImageFilename(card)}`;
         }
 
-        function getRoomParamFromUrl() {
-            const params = new URLSearchParams(window.location.search);
-            return (params.get('room') || '').trim();
-        }
-
         function syncRoomToUrl(roomId) {
             if (!roomId) return;
             const url = new URL(window.location.href);
@@ -554,12 +478,20 @@
             window.history.replaceState({}, '', url.toString());
         }
 
-        function copyRoomLink() {
+        function inviteFriend() {
             if (!currentRoom) return;
             const url = new URL(window.location.href);
             url.searchParams.set('room', currentRoom);
+            const inviteUrl = url.toString();
+
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(url.toString()).catch(() => {});
+                navigator.clipboard.writeText(inviteUrl).then(() => {
+                    alert(`تم نسخ رابط الدعوة للغرفة (${currentRoom}):\n${inviteUrl}`);
+                }).catch(() => {
+                    prompt("انسخ رابط الدعوة وأرسله لصديقك:", inviteUrl);
+                });
+            } else {
+                prompt("انسخ رابط الدعوة وأرسله لصديقك:", inviteUrl);
             }
         }
 
@@ -579,7 +511,7 @@
         }
 
         socket.on('connect', () => {
-            if (currentRoom) {
+            if (currentRoom && document.getElementById('game-board').style.display === 'flex') {
                 const name = document.getElementById('username').value.trim();
                 if (name) socket.emit('join_game', { name: name, room: currentRoom });
             }
@@ -589,7 +521,26 @@
             socket.emit('request_redeal', { room: currentRoom });
         }
 
-        function nextRound() {
+        function returnToHomeScreen() {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('room');
+            window.history.replaceState({}, '', url.toString());
+
+            currentRoom = "";
+            gameStateGlobal = "WAITING";
+            document.getElementById('round-modal').style.display = 'none';
+            document.getElementById('bid-modal').style.display = 'none';
+            document.getElementById('waiting-overlay').style.display = 'none';
+            document.getElementById('game-board').style.display = 'none';
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('splash-screen').style.display = 'flex';
+        }
+
+        function handleRoundAction() {
+            if (gameStateGlobal === 'GAME_OVER') {
+                returnToHomeScreen();
+                return;
+            }
             document.getElementById('round-modal').style.display = 'none';
             socket.emit('next_round', { room: currentRoom });
         }
@@ -615,7 +566,7 @@
             }
 
             if (data.round_number === 1) {
-                document.getElementById('bids-status').innerText = `الدورة 1 | بدون طلبات (لعب حر)`;
+                document.getElementById('bids-status').innerText = `الدورة 1 | بدون طلبات`;
             } else {
                 document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
             }
@@ -685,13 +636,15 @@
 
         function updateCrossScore(data) {
             if (!data.players) return;
-            const dirMap = ['bottom', 'left', 'top', 'right'];
-            for (let offset = 0; offset < 4; offset++) {
-                const playerIdx = (myIndex + offset) % 4;
-                const p = data.players[playerIdx];
-                const el = document.getElementById(`score-${dirMap[offset]}`);
-                if (el) el.innerText = p ? p.score : 0;
-            }
+            const pBottom = data.players[myIndex];
+            const pLeft = data.players[(myIndex + 1) % 4];
+            const pTop = data.players[(myIndex + 2) % 4];
+            const pRight = data.players[(myIndex + 3) % 4];
+
+            document.getElementById('score-bottom').innerText = pBottom ? pBottom.score : 0;
+            document.getElementById('score-left').innerText = pLeft ? pLeft.score : 0;
+            document.getElementById('score-top').innerText = pTop ? pTop.score : 0;
+            document.getElementById('score-right').innerText = pRight ? pRight.score : 0;
         }
 
         function renderPlayers(players, turn, dealerIdx, roundNum) {
@@ -740,15 +693,26 @@
             return `<img src="${imgSrc}" alt="${card.rank} ${card.suit}" loading="eager" decoding="async">`;
         }
 
+        function sortHandBySuitOrder(hand) {
+            const suitRank = { 'Tiles': 0, 'Clovers': 1, 'Hearts': 2, 'Pikes': 3 };
+            return [...hand].sort((a, b) => {
+                const sa = suitRank[a.suit] ?? 99;
+                const sb = suitRank[b.suit] ?? 99;
+                if (sa !== sb) return sa - sb;
+                return (a.value || 0) - (b.value || 0);
+            });
+        }
+
         function renderHand(hand) {
             const handDiv = document.getElementById('my-hand');
             if (!handDiv) return;
             handDiv.innerHTML = '';
             if (!hand || hand.length === 0) return;
 
+            const orderedHand = sortHandBySuitOrder(hand);
             const containerWidth = window.innerWidth - 16;
             const cardWidth = 64;
-            const count = hand.length;
+            const count = orderedHand.length;
             let overlap = 0;
             if (count > 1) {
                 const neededWidth = count * cardWidth;
@@ -757,7 +721,7 @@
                 }
             }
 
-            hand.forEach((card, i) => {
+            orderedHand.forEach((card, i) => {
                 let cardEl = document.createElement('div');
                 cardEl.className = `hand-card`;
                 if (i > 0 && overlap > 0) {
@@ -844,7 +808,7 @@
                 opts.appendChild(b0);
             }
 
-            const validBids = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+            const validBids = [2, 3, 4, 5, 7, 9, 13];
             validBids.forEach(i => {
                 if (i >= minBid) {
                     let b = document.createElement('button');
@@ -867,9 +831,12 @@
             const tbody = document.getElementById('summary-body');
             const banner = document.getElementById('winner-banner');
             const title = document.getElementById('round-title');
+            const actionBtn = document.getElementById('round-action-btn');
 
-            title.innerText = data.state === 'GAME_OVER' ? "نهاية اللعبة" : `ملخص الدورة ${data.round_number}`;
+            const isGameOver = data.state === 'GAME_OVER';
+            title.innerText = isGameOver ? "نهاية اللعبة" : `ملخص الدورة ${data.round_number}`;
             banner.innerText = data.winner_message || "";
+            actionBtn.innerText = isGameOver ? "العودة للصفحة الرئيسية" : "الدورة التالية";
             tbody.innerHTML = '';
 
             if (data.round_summary) {
