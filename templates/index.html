@@ -41,33 +41,45 @@
 
         .splash-footer { position: relative; z-index: 2; width: 100%; text-align: center; font-size: 12px; font-weight: 700; color: #d1d1d6; background: rgba(24, 24, 27, 0.85); border: 1px solid #2c2c2e; padding: 10px 14px; border-radius: 14px; }
 
-        #login-box { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 26px; background: #1c1c1e; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.9); width: 90%; max-width: 340px; z-index: 210; border: 1px solid #2c2c2e; }
-        #login-box h2 { text-align: center; margin-bottom: 14px; color: #34c759; font-size: 23px; font-weight: 800; }
-        .auto-room-note { text-align: center; font-size: 11px; color: #ffd60a; margin-bottom: 16px; background: rgba(255, 214, 10, 0.08); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(255, 214, 10, 0.25); }
-        .input-group { margin-bottom: 16px; }
-        .input-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #8e8e93; font-weight: 600; }
-        input { padding: 14px; font-size: 16px; border-radius: 12px; border: 1px solid #3a3a3c; width: 100%; background: #2c2c2e; color: white; outline: none; }
-        button.login-btn { padding: 15px; font-size: 17px; border-radius: 12px; border: none; width: 100%; background: linear-gradient(135deg, #34c759, #28a745); color: white; cursor: pointer; font-weight: bold; margin-top: 8px; box-shadow: 0 4px 15px rgba(52,199,89,0.4); }
+        #login-box { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 24px; background: #1c1c1e; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.9); width: 92%; max-width: 345px; z-index: 210; border: 1px solid #2c2c2e; }
+        #login-box h2 { text-align: center; margin-bottom: 12px; color: #34c759; font-size: 22px; font-weight: 800; }
+        .auto-room-note { text-align: center; font-size: 11px; color: #ffd60a; margin-bottom: 14px; background: rgba(255, 214, 10, 0.08); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(255, 214, 10, 0.25); }
+        .input-group { margin-bottom: 13px; }
+        .input-group label { display: block; font-size: 12px; margin-bottom: 5px; color: #a1a1aa; font-weight: 600; }
+        input { padding: 13px; font-size: 15px; border-radius: 12px; border: 1px solid #3a3a3c; width: 100%; background: #2c2c2e; color: white; outline: none; }
+        input.code-input { text-align: center; letter-spacing: 4px; font-weight: 800; font-size: 18px; color: #ffd60a; }
+        button.login-btn { padding: 14px; font-size: 16px; border-radius: 12px; border: none; width: 100%; background: linear-gradient(135deg, #34c759, #28a745); color: white; cursor: pointer; font-weight: bold; margin-top: 6px; box-shadow: 0 4px 15px rgba(52,199,89,0.4); }
 
-        #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 6px 8px 10px 8px; overflow: hidden; background: radial-gradient(circle at center, #1e1e24 0%, #121214 100%); }
+        #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 8px 8px 10px 8px; overflow: hidden; background: radial-gradient(circle at center, #1e1e24 0%, #121214 100%); }
 
-        .top-hud { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; height: 78px; flex-shrink: 0; z-index: 20; gap: 6px; }
+        /* الشق الفوقي المنظم والمستف (3 أعمدة متوازنة) */
+        .top-hud {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 118px 1fr 74px;
+            align-items: center;
+            gap: 6px;
+            height: 76px;
+            flex-shrink: 0;
+            z-index: 20;
+        }
 
         .cross-score {
             background: rgba(28,28,30,0.95);
             border-radius: 12px;
-            padding: 5px 7px;
+            padding: 4px 5px;
             display: grid;
-            grid-template-columns: 44px 30px 44px;
-            grid-template-rows: 20px 22px 20px;
+            grid-template-columns: 38px 26px 38px;
+            grid-template-rows: 20px 21px 20px;
             gap: 2px;
             align-items: center;
             justify-items: center;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             border: 1px solid #38383a;
             direction: ltr;
-            min-width: 132px;
+            width: 118px;
+            height: 72px;
         }
         .sc-cell {
             width: 100%;
@@ -75,31 +87,112 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 6px;
+            border-radius: 5px;
             background: rgba(255,255,255,0.04);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            padding: 0 3px;
+            padding: 0 2px;
         }
-        .sc-center { color: #ffd60a; font-size: 12px; font-weight: 900; background: rgba(255,214,10,0.12); }
-        .sc-bottom { color: #34c759; font-size: 11px; }
-        .sc-other { color: #f2f2f7; font-size: 10px; }
+        .sc-center { color: #ffd60a; font-size: 11px; font-weight: 900; background: rgba(255,214,10,0.14); }
+        .sc-bottom { color: #34c759; font-size: 10px; }
+        .sc-other { color: #f2f2f7; font-size: 9.5px; }
 
-        .room-center-info { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px; flex: 1; min-width: 0; }
-        .top-bar-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: center; }
-        .room-title { font-weight: bold; font-size: 11px; color: #f2f2f7; background: #2c2c2e; padding: 4px 9px; border-radius: 12px; border: 1px solid #3a3a3c; }
-        .invite-btn { font-weight: bold; font-size: 11px; color: #000; background: #ffd60a; border: none; padding: 4px 9px; border-radius: 12px; cursor: pointer; }
-        .wa-btn { font-weight: bold; font-size: 11px; color: #fff; background: #25d366; border: none; padding: 4px 9px; border-radius: 12px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
-        .mute-btn { background: #2c2c2e; color: #fff; border: 1px solid #3a3a3c; border-radius: 12px; padding: 3px 8px; font-size: 13px; cursor: pointer; line-height: 1.2; }
-        .turn-timer-pill { font-size: 11px; font-weight: bold; color: #34c759; background: rgba(0,0,0,0.85); padding: 3px 9px; border-radius: 10px; border: 1px solid #3a3a3c; display: none; }
+        .room-center-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            height: 72px;
+            background: rgba(28,28,30,0.75);
+            border: 1px solid #323236;
+            border-radius: 12px;
+            padding: 4px 6px;
+            min-width: 0;
+        }
+        .top-bar-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            width: 100%;
+        }
+        .room-title {
+            font-weight: 800;
+            font-size: 11px;
+            color: #ffd60a;
+            background: #2c2c2e;
+            padding: 4px 7px;
+            border-radius: 9px;
+            border: 1px solid #3a3a3c;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .share-quick-btn {
+            font-weight: 800;
+            font-size: 10.5px;
+            color: #fff;
+            background: #25d366;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 9px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .mute-btn {
+            background: #2c2c2e;
+            color: #fff;
+            border: 1px solid #3a3a3c;
+            border-radius: 9px;
+            padding: 3px 6px;
+            font-size: 12px;
+            cursor: pointer;
+            line-height: 1.2;
+            flex-shrink: 0;
+        }
+        .turn-timer-pill {
+            font-size: 10px;
+            font-weight: 800;
+            color: #34c759;
+            background: rgba(0,0,0,0.85);
+            padding: 3px 6px;
+            border-radius: 8px;
+            border: 1px solid #3a3a3c;
+            display: none;
+            flex-shrink: 0;
+        }
         .turn-timer-pill.urgent { color: #ff3b30; border-color: #ff3b30; }
-        .bids-counter { font-size: 11px; color: #ffd60a; font-weight: bold; background: rgba(0,0,0,0.8); padding: 3px 10px; border-radius: 10px; border: 1px solid #444; white-space: nowrap; }
 
-        .last-trick-box { background: rgba(28,28,30,0.9); border: 1px solid #38383a; border-radius: 12px; padding: 4px; width: 72px; height: 74px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
-        .last-trick-title { font-size: 9px; color: #8e8e93; margin-bottom: 2px; font-weight: bold; }
+        .bids-counter {
+            font-size: 10.5px;
+            color: #f2f2f7;
+            font-weight: 700;
+            background: rgba(0,0,0,0.65);
+            padding: 3px 8px;
+            border-radius: 8px;
+            border: 1px solid #3a3a3c;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        .last-trick-box {
+            background: rgba(28,28,30,0.95);
+            border: 1px solid #38383a;
+            border-radius: 12px;
+            padding: 4px;
+            width: 74px;
+            height: 72px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .last-trick-title { font-size: 9px; color: #a1a1aa; margin-bottom: 2px; font-weight: 700; }
         .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
-        .mini-card { width: 22px; height: 30px; background: white; border-radius: 3px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #444; }
+        .mini-card { width: 22px; height: 28px; background: white; border-radius: 3px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #444; }
         .mini-card img { width: 100%; height: 100%; object-fit: fill; background: white; }
 
         .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 12px 18px; min-height: 0; }
@@ -184,9 +277,10 @@
         .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 0 10px; }
         .tricks-box { background: #1c1c1e; padding: 6px 14px; border-radius: 10px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
 
-        #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(24,24,26,0.98); padding: 22px; border-radius: 20px; z-index: 180; border: 1px solid #38383a; width: 88%; max-width: 310px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
-        .timer-circle { width: 68px; height: 68px; border-radius: 50%; border: 4px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: #ffd60a; margin: 12px auto; background: #121214; }
-        .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 10px; }
+        #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(24,24,26,0.98); padding: 20px; border-radius: 20px; z-index: 180; border: 1px solid #38383a; width: 90%; max-width: 315px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
+        .room-code-big { font-size: 26px; font-weight: 900; color: #ffd60a; letter-spacing: 5px; background: #121214; border: 1.5px dashed #ffd60a; padding: 8px 14px; border-radius: 12px; margin: 10px auto 4px auto; display: inline-block; }
+        .timer-circle { width: 58px; height: 58px; border-radius: 50%; border: 3px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 21px; font-weight: bold; color: #ffd60a; margin: 10px auto; background: #121214; }
+        .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 8px; }
         .wa-wait-btn { background: #25d366; color: #fff; border: none; padding: 11px 14px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; margin-top: 8px; display: block; text-decoration: none; }
         .invite-wait-btn { background: #2c2c2e; color: #ffd60a; border: 1px solid #ffd60a; padding: 10px 14px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; margin-top: 8px; }
 
@@ -223,10 +317,14 @@
 
     <div id="login-box">
         <h2>إضافة اسم اللاعب</h2>
-        <div class="auto-room-note" id="login-room-banner">المنظومة تدير الغرفة والرابط تلقائياً</div>
+        <div class="auto-room-note" id="login-room-banner">اترك رقم الغرفة فارغاً لفتح طاولة جديدة أو اكتب كود صديقك</div>
         <div class="input-group">
             <label>الاسم:</label>
             <input type="text" id="username" placeholder="اكتب اسمك هنا...">
+        </div>
+        <div class="input-group">
+            <label>رقم الغرفة (اختياري للانضمام لصديق):</label>
+            <input type="text" id="room-code-input" class="code-input" maxlength="8" placeholder="مثلاً: 4821">
         </div>
         <button class="login-btn" onclick="joinGame()">دخول الطاولة</button>
     </div>
@@ -249,9 +347,8 @@
 
             <div class="room-center-info">
                 <div class="top-bar-row">
-                    <div class="room-title" id="room-display">غرفة تلقائية</div>
-                    <a class="wa-btn" id="wa-share-link" href="#" target="_blank" rel="noopener noreferrer">واتساب</a>
-                    <button class="invite-btn" id="invite-btn" onclick="inviteFriend()">نسخ الرابط</button>
+                    <div class="room-title" id="room-display" onclick="copyRoomCodeQuick()" title="اضغط لنسخ كود الغرفة">غرفة: ----</div>
+                    <button class="share-quick-btn" onclick="smartShareRoom()">مشاركة</button>
                     <button class="mute-btn" id="mute-btn" onclick="toggleMute()" title="كتم/تشغيل الصوت">🔊</button>
                     <div class="turn-timer-pill" id="turn-timer-badge">30ث</div>
                 </div>
@@ -328,11 +425,12 @@
 
         <div id="waiting-overlay">
             <h3 style="font-size:16px; color:#34c759;">في انتظار انضمام اللاعبين...</h3>
-            <p id="joined-count-text" style="font-size:12px; color:#d1d1d6; margin-top:6px;">اللاعبون الحاليون: 1 / 4</p>
+            <div class="room-code-big" id="wait-room-code">----</div>
+            <p id="joined-count-text" style="font-size:12px; color:#d1d1d6; margin-top:4px;">اللاعبون الحاليون: 1 / 4</p>
             <div class="timer-circle" id="wait-timer-num">30</div>
-            <p style="font-size:11px; color:#8e8e93;">سيتم إكمال المقاعد الشاغرة بالبوتات تلقائياً عند انتهاء الوقت</p>
-            <a class="wa-wait-btn" id="wa-wait-link" href="#" target="_blank" rel="noopener noreferrer">💬 إرسال دعوة الغرفة بالواتساب</a>
-            <button class="invite-wait-btn" onclick="inviteFriend()">🔗 نسخ رابط الدعوة</button>
+            <p style="font-size:11px; color:#8e8e93;">يمكن لبقية أصدقائك الانضمام برقم الغرفة حتى بعد بدء اللعب</p>
+            <button class="wa-wait-btn" onclick="smartShareRoom()">💬 مشاركة سريعة مع الأصدقاء</button>
+            <button class="invite-wait-btn" onclick="copyRoomCodeQuick()">📋 نسخ رقم الغرفة والرابط</button>
             <button class="start-now-btn" onclick="forceStartBots()">تأكيد البدء بالبوتات الآن ▶</button>
         </div>
 
@@ -394,16 +492,20 @@
 
         function getRoomParamFromUrl() {
             const params = new URLSearchParams(window.location.search);
-            return (params.get('room') || '').trim();
+            let r = (params.get('room') || '').trim();
+            if (r.toLowerCase().startsWith('room_')) r = r.slice(5).trim();
+            return r;
         }
 
         function syncRoomBanner() {
             const presetRoom = getRoomParamFromUrl();
             const banner = document.getElementById('login-room-banner');
-            if (banner) {
-                banner.innerText = presetRoom
-                    ? `دعوة غرفة مباشرة: ${presetRoom}`
-                    : 'المنظومة تدير الغرفة والرابط تلقائياً';
+            const codeInput = document.getElementById('room-code-input');
+            if (presetRoom) {
+                if (banner) banner.innerText = `أنت مدعو إلى الغرفة رقم: ${presetRoom}`;
+                if (codeInput) codeInput.value = presetRoom;
+            } else {
+                if (banner) banner.innerText = 'اترك رقم الغرفة فارغاً لفتح طاولة جديدة أو اكتب كود صديقك';
             }
         }
 
@@ -557,37 +659,43 @@
             return url.toString();
         }
 
-        function updateWhatsAppShareLinks(roomId) {
-            if (!roomId) return;
-            const inviteUrl = getInviteUrl(roomId);
-            const msg = `🃏 يلا طرنيب على طاولتي (${roomId})\nادخل من هنا:\n${inviteUrl}`;
-            const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-            const topWa = document.getElementById('wa-share-link');
-            const waitWa = document.getElementById('wa-wait-link');
-            if (topWa) topWa.href = waUrl;
-            if (waitWa) waitWa.href = waUrl;
-        }
-
         function syncRoomToUrl(roomId) {
             if (!roomId) return;
             const url = new URL(window.location.href);
             url.searchParams.set('room', roomId);
             window.history.replaceState({}, '', url.toString());
-            updateWhatsAppShareLinks(roomId);
         }
 
-        function inviteFriend() {
+        function smartShareRoom() {
             if (!currentRoom) return;
             const inviteUrl = getInviteUrl(currentRoom);
+            const shareText = `🃏 يلا طرنيب على طاولتي\nرقم الغرفة: ${currentRoom}\nادخل مباشرة:\n${inviteUrl}`;
 
+            if (navigator.share) {
+                navigator.share({
+                    title: 'طاولة الطرنيب',
+                    text: shareText,
+                    url: inviteUrl
+                }).catch(() => {});
+                return;
+            }
+
+            const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+            window.open(waUrl, '_blank', 'noopener,noreferrer');
+        }
+
+        function copyRoomCodeQuick() {
+            if (!currentRoom) return;
+            const inviteUrl = getInviteUrl(currentRoom);
+            const fullText = `رقم الغرفة: ${currentRoom}\n${inviteUrl}`;
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(inviteUrl).then(() => {
-                    alert(`تم نسخ رابط الدعوة للغرفة (${currentRoom}):\n${inviteUrl}`);
+                navigator.clipboard.writeText(fullText).then(() => {
+                    alert(`تم نسخ رقم الغرفة (${currentRoom}) والرابط المباشر!`);
                 }).catch(() => {
-                    prompt("انسخ رابط الدعوة وأرسله لصديقك:", inviteUrl);
+                    prompt("انسخ رقم الغرفة أو الرابط:", fullText);
                 });
             } else {
-                prompt("انسخ رابط الدعوة وأرسله لصديقك:", inviteUrl);
+                prompt("انسخ رقم الغرفة أو الرابط:", fullText);
             }
         }
 
@@ -595,9 +703,10 @@
             const name = document.getElementById('username').value.trim();
             if (!name) return alert("يرجى كتابة الاسم");
 
-            const presetRoom = getRoomParamFromUrl();
+            const typedCode = (document.getElementById('room-code-input').value || '').trim();
+            const targetRoom = typedCode || getRoomParamFromUrl();
             ensureAudioCtx();
-            socket.emit('join_game', { name: name, room: presetRoom });
+            socket.emit('join_game', { name: name, room: targetRoom });
             document.getElementById('login-box').style.display = 'none';
             document.getElementById('game-board').style.display = 'flex';
         }
@@ -654,6 +763,8 @@
             if (data.room_id) {
                 currentRoom = data.room_id;
                 document.getElementById('room-display').innerText = `غرفة: ${data.room_id}`;
+                const waitCodeEl = document.getElementById('wait-room-code');
+                if (waitCodeEl) waitCodeEl.innerText = data.room_id;
                 syncRoomToUrl(data.room_id);
             }
 
@@ -669,11 +780,11 @@
             const secLeft = data.action_seconds_left || 0;
 
             if (data.state === 'REDEAL_WINDOW') {
-                document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | مهلة إعادة التوزيع (${secLeft}ث)`;
+                document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | مهلة التوزيع (${secLeft}ث)`;
             } else if (data.round_number === 1) {
                 document.getElementById('bids-status').innerText = `الدورة 1 | بدون طلبات`;
             } else if (data.has_zero_bid) {
-                document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} (يوجد صفر)`;
+                document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} (صفر)`;
             } else {
                 document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
             }
@@ -762,7 +873,7 @@
 
         function formatPlayerScoreLabel(player, fallbackLabel) {
             if (!player) return `${fallbackLabel}: 0`;
-            const shortName = player.name.length > 6 ? player.name.slice(0, 6) : player.name;
+            const shortName = player.name.length > 5 ? player.name.slice(0, 5) : player.name;
             return `${shortName} ${player.score}`;
         }
 
