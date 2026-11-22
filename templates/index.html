@@ -818,8 +818,8 @@
         }
 
         function sortHandBySuitOrder(hand) {
-            const suitOrder = ['Tiles', 'Clovers', 'Hearts', 'Pikes'];
-            const buckets = { Tiles: [], Clovers: [], Hearts: [], Pikes: [], other: [] };
+            const suitOrder = ['Tiles', 'Clovers', 'Pikes', 'Hearts'];
+            const buckets = { Tiles: [], Clovers: [], Pikes: [], Hearts: [], other: [] };
 
             hand.forEach(c => {
                 if (buckets[c.suit]) {
