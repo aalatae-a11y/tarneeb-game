@@ -27,6 +27,13 @@ BID_TIMEOUT_SECONDS = 35
 TURN_TIMEOUT_SECONDS = 30
 
 
+def normalize_room_code(raw_code):
+    code = (raw_code or '').strip()
+    if code.lower().startswith('room_'):
+        code = code[5:].strip()
+    return code
+
+
 def create_deck():
     deck = []
     for s in SUITS:
@@ -81,6 +88,7 @@ class TarneebRoom:
         self.has_zero_bid = False
         self.current_trick = []
         self.last_completed_trick = []
+        self.played_cards_history = []
         self.trick_lead_suit = None
         self.round_first_card_played = False
         self.winner_message = ""
@@ -108,33 +116,49 @@ class TarneebRoom:
         self.action_deadline = 0.0
         self.action_seconds_left = 0
 
-    def add_player(self, name, sid=None, is_bot=False):
+    def add_or_takeover_player(self, name, sid=None, is_bot=False):
+        # 1. إعادة اتصال نفس اللاعب البشري بالاسم
         for p in self.players:
             if p['name'] == name and not p['is_bot']:
                 p['sid'] = sid
-                return p['idx']
+                return p['idx'], False
 
-        if len(self.players) >= 4:
-            return None
-        idx = len(self.players)
-        self.players.append({
-            'idx': idx,
-            'name': name,
-            'sid': sid,
-            'is_bot': is_bot,
-            'score': 0,
-            'hand': [],
-            'bid': 0,
-            'tricks_won': 0,
-            'won_cards_count': 0,
-            'king_ace_delta': 0
-        })
-        return idx
+        # 2. إذا كان هناك مقعد شاغر أقل من 4
+        if len(self.players) < 4:
+            idx = len(self.players)
+            self.players.append({
+                'idx': idx,
+                'name': name,
+                'sid': sid,
+                'is_bot': is_bot,
+                'score': 0,
+                'hand': [],
+                'bid': 0,
+                'tricks_won': 0,
+                'won_cards_count': 0,
+                'king_ace_delta': 0
+            })
+            return idx, False
+
+        # 3. الانضمام المتدرج: إذا كانت الطاولة 4 وممتلئة بالبوتات، يستبدل اللاعب الجديد أول بوت متاح
+        if not is_bot and self.state != 'GAME_OVER':
+            for p in self.players:
+                if p['is_bot']:
+                    p['name'] = name
+                    p['sid'] = sid
+                    p['is_bot'] = False
+                    return p['idx'], True
+
+        return None, False
 
     def fill_with_bots(self):
         bot_count = 1
         while len(self.players) < 4:
-            self.add_player(f"بوت {bot_count}", is_bot=True)
+            bot_name = f"بوت {bot_count}"
+            while any(p['name'] == bot_name for p in self.players):
+                bot_count += 1
+                bot_name = f"بوت {bot_count}"
+            self.add_or_takeover_player(bot_name, is_bot=True)
             bot_count += 1
 
     def is_dead_hand(self, player_idx):
@@ -200,6 +224,7 @@ class TarneebRoom:
         self.trick_lead_suit = None
         self.current_trick = []
         self.last_completed_trick = []
+        self.played_cards_history = []
         self.round_first_card_played = False
         self.round_summary = []
         self.trick_winner_idx = None
@@ -249,22 +274,37 @@ class TarneebRoom:
         hand = p['hand']
         min_b = snap_to_allowed_bid(get_min_bid(p['score']))
 
+        suit_counts = {s: 0 for s in SUITS}
+        for c in hand:
+            suit_counts[c['suit']] += 1
+
         strength = 0.0
         for c in hand:
-            if c['rank'] == 'A':
-                strength += 2.2
-            elif c['rank'] == 'K':
-                strength += 1.5
-            elif c['rank'] == 'Q':
-                strength += 1.0
-            elif c['value'] >= 12:
-                strength += 0.5
+            if c['suit'] == 'Hearts':
+                if c['rank'] == 'A':
+                    strength += 1.4
+                elif c['rank'] == 'K' and suit_counts['Hearts'] >= 2:
+                    strength += 1.15
+                elif c['rank'] == 'Q' and suit_counts['Hearts'] >= 3:
+                    strength += 0.9
+                elif c['value'] >= 10 and suit_counts['Hearts'] >= 4:
+                    strength += 0.65
+            else:
+                if c['rank'] == 'A':
+                    strength += 1.05
+                elif c['rank'] == 'K' and suit_counts[c['suit']] >= 2:
+                    strength += 0.75
+                elif c['rank'] == 'Q' and suit_counts[c['suit']] >= 3:
+                    strength += 0.45
 
-        raw_bid = int(round(strength / 2.2))
+        if suit_counts['Hearts'] >= 5:
+            strength += (suit_counts['Hearts'] - 4) * 0.7
+
+        raw_bid = int(round(strength))
         if raw_bid == 0 and self.can_bid_zero(player_idx):
             return 0
 
-        smart_bid = snap_to_allowed_bid(max(min_b, min(raw_bid, 13)))
+        smart_bid = snap_to_allowed_bid(max(min_b, min(raw_bid, 9)))
 
         needed = self.get_required_dealer_bid(player_idx)
         if needed > 0 and smart_bid < needed:
@@ -320,39 +360,148 @@ class TarneebRoom:
 
         return True, "ناجح"
 
-    def select_smart_card(self, player_idx, valid_cards):
-        p = self.players[player_idx]
+    def is_card_played_in_round(self, suit, rank):
+        for c in self.played_cards_history:
+            if c['suit'] == suit and c['rank'] == rank:
+                return True
+        for play in self.current_trick:
+            if play['card']['suit'] == suit and play['card']['rank'] == rank:
+                return True
+        return False
 
-        if len(self.current_trick) == 0:
-            aces = [c for c in valid_cards if c['rank'] == 'A']
-            if aces and random.random() < 0.7:
-                return random.choice(aces)
-            non_hearts = [c for c in valid_cards if c['suit'] != 'Hearts']
-            if non_hearts:
-                return min(non_hearts, key=lambda x: x['value'])
-            return min(valid_cards, key=lambda x: x['value'])
+    def is_card_currently_highest_remaining(self, card, hand):
+        suit = card['suit']
+        val = card['value']
+        my_set = {(c['suit'], c['rank']) for c in hand}
+        for r in RANKS:
+            if RANK_VALUES[r] > val:
+                if (suit, r) not in my_set and not self.is_card_played_in_round(suit, r):
+                    return False
+        return True
 
-        lead_suit = self.trick_lead_suit
-        current_winner_play = self.current_trick[0]
+    def get_current_trick_winner(self):
+        if not self.current_trick:
+            return None
+        winning_play = self.current_trick[0]
         for play in self.current_trick[1:]:
             curr_c = play['card']
-            win_c = current_winner_play['card']
+            win_c = winning_play['card']
             if curr_c['suit'] == 'Hearts' and win_c['suit'] != 'Hearts':
-                current_winner_play = play
+                winning_play = play
             elif curr_c['suit'] == win_c['suit'] and curr_c['value'] > win_c['value']:
-                current_winner_play = play
+                winning_play = play
+        return winning_play
 
-        if lead_suit == 'Hearts' or any(c['card']['suit'] == 'Hearts' and c['card']['rank'] == 'K' for c in self.current_trick):
-            bot_aces_hearts = [c for c in valid_cards if c['suit'] == 'Hearts' and c['rank'] == 'A']
-            if bot_aces_hearts:
-                return bot_aces_hearts[0]
+    def can_beat_current_winner(self, card, win_c):
+        if card['suit'] == 'Hearts' and win_c['suit'] != 'Hearts':
+            return True
+        if card['suit'] == win_c['suit'] and card['value'] > win_c['value']:
+            return True
+        return False
 
-        winning_cards = [
-            c for c in valid_cards
-            if c['suit'] == current_winner_play['card']['suit'] and c['value'] > current_winner_play['card']['value']
-        ]
-        if winning_cards and p['tricks_won'] < p['bid']:
+    def select_smart_card(self, player_idx, valid_cards):
+        p = self.players[player_idx]
+        hand = p['hand']
+        wants_zero = (self.round_number > 1 and p['bid'] == 0)
+        needs_tricks = (self.round_number == 1 or p['tricks_won'] < p['bid'])
+
+        king_hearts_out = not self.is_card_played_in_round('Hearts', 'K')
+        ace_hearts_out = not self.is_card_played_in_round('Hearts', 'A')
+
+        # 1. إذا كان اللاعب يفتح الأكلة (أول لاعب)
+        if len(self.current_trick) == 0:
+            if wants_zero:
+                # يحاول التخلص من الأوراق المتوسطة/العالية بأمان أو أقل ورقة
+                return min(valid_cards, key=lambda x: x['value'])
+
+            non_hearts = [c for c in valid_cards if c['suit'] != 'Hearts']
+            pool = non_hearts if non_hearts else valid_cards
+
+            # لا يرمي الآص (A) أو الأوراق التي أصبحت الأعلى في نوعها إلا عند الحاجة لأكلات أو في نهاية الدورة
+            # بل يبحث عن استدراج الكينج (K) أو سحب الورق المتوسط/الصغير أولاً
+            if needs_tricks:
+                # إذا عنده K بدون A وكان A ما زال برا، يفضّل يفتح بورقة صغيرة من نفس النوع لتعليق الآص
+                smart_leads = []
+                for c in pool:
+                    if c['rank'] == 'A' and len(hand) > 6:
+                        # احتفظ بالآص لتعليق K أو Q إلا إذا كان معه K أو Q من نفس النوع
+                        has_king_same = any(x['suit'] == c['suit'] and x['rank'] == 'K' for x in hand)
+                        if not has_king_same:
+                            continue
+                    if c['suit'] == 'Hearts' and c['rank'] == 'K' and ace_hearts_out:
+                        continue
+                    smart_leads.append(c)
+
+                if smart_leads:
+                    # افتح بأصغر ورقة في النوع الأطول لتفريغ الخصوم وتعليق أوراقهم الكبيرة
+                    suit_counts = {s: sum(1 for x in hand if x['suit'] == s) for s in SUITS}
+                    return min(smart_leads, key=lambda x: (x['value'], -suit_counts[x['suit']]))
+
+            return min(pool, key=lambda x: x['value'])
+
+        # 2. إذا كان اللاعب يرد على أكلة مفتوحة
+        lead_suit = self.trick_lead_suit
+        current_winner_play = self.get_current_trick_winner()
+        win_c = current_winner_play['card']
+        is_last_to_play = (len(self.current_trick) == 3)
+
+        # أولوية قصوى: صيد K♥ بـ A♥ في الدورات ذات الطلبات
+        if self.round_number > 1:
+            k_hearts_on_table = any(
+                play['card']['suit'] == 'Hearts' and play['card']['rank'] == 'K'
+                for play in self.current_trick
+            )
+            if k_hearts_on_table:
+                ace_hearts = [c for c in valid_cards if c['suit'] == 'Hearts' and c['rank'] == 'A']
+                if ace_hearts:
+                    return ace_hearts[0]
+
+        # حماية K♥ من الوقوع في يد A♥
+        if self.round_number > 1 and lead_suit == 'Hearts' and ace_hearts_out:
+            non_king_hearts = [c for c in valid_cards if not (c['suit'] == 'Hearts' and c['rank'] == 'K')]
+            if non_king_hearts:
+                valid_cards = non_king_hearts
+
+        winning_cards = [c for c in valid_cards if self.can_beat_current_winner(c, win_c)]
+        losing_cards = [c for c in valid_cards if not self.can_beat_current_winner(c, win_c)]
+
+        # إذا كان يريد الصفر (0): يتخلص من أعلى ورقة خاسرة تحت الورقة الرابحة
+        if wants_zero:
+            if losing_cards:
+                return max(losing_cards, key=lambda x: x['value'])
+            return min(valid_cards, key=lambda x: x['value'])
+
+        # إذا كان يحتاج أكلات (أو في الدورة الأولى)
+        if needs_tricks and winning_cards:
+            # إذا لم يكن آخر لاعب، لا يضيع الآص (A) على ورقة صغيرة مثل 4 أو 5 إذا عنده ورقة متوسطة تكفي للربح
+            if not is_last_to_play and win_c['value'] <= 10:
+                mid_winners = [c for c in winning_cards if c['rank'] != 'A']
+                if mid_winners:
+                    return min(mid_winners, key=lambda x: x['value'])
+
+            # إذا كان عنده A و K من نفس النوع، يضرب بـ K أولاً ليستدرج او يحتفظ بالسيطرة
+            for c in winning_cards:
+                if c['rank'] == 'K' and any(x['suit'] == c['suit'] and x['rank'] == 'A' for x in winning_cards):
+                    return c
+
+            # لا يحرق A♥ بلا داعٍ إذا K♥ ما زال بالخارج ولم ينزل على الطاولة
+            if self.round_number > 1 and king_hearts_out and len(winning_cards) > 1:
+                without_ace_hearts = [c for c in winning_cards if not (c['suit'] == 'Hearts' and c['rank'] == 'A')]
+                if without_ace_hearts:
+                    winning_cards = without_ace_hearts
+
             return min(winning_cards, key=lambda x: x['value'])
+
+        # إذا اكتفى من طلباته أو لا يستطيع الربح: يرمي أقل ورقة غير مؤثرة (ويحافظ على أوراق الحماية)
+        if losing_cards:
+            # في التخلص من نوع مختلف (رمي ورقة): تخلص من الأوراق المنفردة أو الضعيفة، ولا ترمِ A أو طرنيب عالي
+            safe_discards = [
+                c for c in losing_cards
+                if c['rank'] != 'A' and not (c['suit'] == 'Hearts' and c['value'] >= 11)
+            ]
+            if safe_discards:
+                return min(safe_discards, key=lambda x: x['value'])
+            return min(losing_cards, key=lambda x: x['value'])
 
         return min(valid_cards, key=lambda x: x['value'])
 
@@ -377,15 +526,7 @@ class TarneebRoom:
 
         if len(self.current_trick) == 4:
             self.is_processing_trick = True
-            winning_play = self.current_trick[0]
-            for play in self.current_trick[1:]:
-                curr_c = play['card']
-                win_c = winning_play['card']
-                if curr_c['suit'] == 'Hearts' and win_c['suit'] != 'Hearts':
-                    winning_play = play
-                elif curr_c['suit'] == win_c['suit'] and curr_c['value'] > win_c['value']:
-                    winning_play = play
-
+            winning_play = self.get_current_trick_winner()
             self.trick_winner_idx = winning_play['player_idx']
             self.state = 'TRICK_PAUSE'
             return True
@@ -430,6 +571,9 @@ class TarneebRoom:
         winner_idx = self.trick_winner_idx
         self.players[winner_idx]['tricks_won'] += 1
         self.players[winner_idx]['won_cards_count'] += 4
+
+        for play in self.current_trick:
+            self.played_cards_history.append(play['card'])
 
         self.last_completed_trick = list(self.current_trick)
         self.current_trick = []
@@ -534,7 +678,7 @@ class TarneebRoom:
 
 
 def resolve_auto_room_id(requested_room):
-    req = (requested_room or '').strip()
+    req = normalize_room_code(requested_room)
     if req:
         return req
 
@@ -542,9 +686,9 @@ def resolve_auto_room_id(requested_room):
         if not r.game_started and len(r.players) < 4:
             return rid
 
-    new_id = f"room_{random.randint(1000, 9999)}"
+    new_id = f"{random.randint(1000, 9999)}"
     while new_id in ROOMS:
-        new_id = f"room_{random.randint(1000, 9999)}"
+        new_id = f"{random.randint(1000, 9999)}"
     return new_id
 
 
@@ -563,9 +707,9 @@ def on_join(data):
         ROOMS[room_id] = TarneebRoom(room_id)
 
     room = ROOMS[room_id]
-    idx = room.add_player(player_name, sid=request.sid)
+    idx, took_over_bot = room.add_or_takeover_player(player_name, sid=request.sid)
     if idx is None:
-        emit('error', {'msg': 'الغرفة مكتملة!'})
+        emit('error', {'msg': 'الغرفة مكتملة بـ 4 لاعبين!'})
         return
 
     if len(room.players) == 4 and not room.game_started:
@@ -577,6 +721,10 @@ def on_join(data):
         return
 
     broadcast_state(room)
+
+    if took_over_bot and room.game_started:
+        socketio.start_background_task(run_game_loop, room)
+        return
 
     if not room.game_started and not room.waiting_timer_running:
         room.waiting_timer_running = True
@@ -601,7 +749,8 @@ def waiting_countdown_task(room):
 
 @socketio.on('force_start_bots')
 def on_force_start(data):
-    room = ROOMS.get(data.get('room'))
+    room_id = normalize_room_code(data.get('room'))
+    room = ROOMS.get(room_id)
     if room and not room.game_started:
         room.fill_with_bots()
         room.game_started = True
@@ -613,7 +762,8 @@ def on_force_start(data):
 
 @socketio.on('request_redeal')
 def on_redeal(data):
-    room = ROOMS.get(data.get('room'))
+    room_id = normalize_room_code(data.get('room'))
+    room = ROOMS.get(room_id)
     if room:
         p_idx = get_player_idx_by_sid(room, request.sid)
         if p_idx != -1 and room.check_redeal_eligibility(p_idx):
@@ -624,7 +774,8 @@ def on_redeal(data):
 
 @socketio.on('keep_current_hand')
 def on_keep_current_hand(data):
-    room = ROOMS.get(data.get('room'))
+    room_id = normalize_room_code(data.get('room'))
+    room = ROOMS.get(room_id)
     if room and room.state == 'REDEAL_WINDOW':
         p_idx = get_player_idx_by_sid(room, request.sid)
         if p_idx != -1 and room.check_redeal_eligibility(p_idx):
@@ -635,7 +786,8 @@ def on_keep_current_hand(data):
 
 @socketio.on('next_round')
 def on_next_round(data):
-    room = ROOMS.get(data.get('room'))
+    room_id = normalize_room_code(data.get('room'))
+    room = ROOMS.get(room_id)
     if room and room.state == 'ROUND_OVER':
         room.start_new_round(increment_round=True)
         broadcast_state(room)
@@ -644,7 +796,8 @@ def on_next_round(data):
 
 @socketio.on('submit_bid')
 def on_bid(data):
-    room = ROOMS.get(data.get('room'))
+    room_id = normalize_room_code(data.get('room'))
+    room = ROOMS.get(room_id)
     if room and room.state == 'BIDDING':
         p_idx = get_player_idx_by_sid(room, request.sid)
         if p_idx == room.current_turn:
@@ -655,7 +808,8 @@ def on_bid(data):
 
 @socketio.on('play_card')
 def on_play_card(data):
-    room = ROOMS.get(data.get('room'))
+    room_id = normalize_room_code(data.get('room'))
+    room = ROOMS.get(room_id)
     if not room or room.is_processing_trick:
         return
     if room.state == 'PLAYING':
