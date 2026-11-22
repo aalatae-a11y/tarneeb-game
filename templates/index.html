@@ -90,6 +90,7 @@
         .top-bar-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: center; }
         .room-title { font-weight: bold; font-size: 11px; color: #f2f2f7; background: #2c2c2e; padding: 4px 9px; border-radius: 12px; border: 1px solid #3a3a3c; }
         .invite-btn { font-weight: bold; font-size: 11px; color: #000; background: #ffd60a; border: none; padding: 4px 9px; border-radius: 12px; cursor: pointer; }
+        .wa-btn { font-weight: bold; font-size: 11px; color: #fff; background: #25d366; border: none; padding: 4px 9px; border-radius: 12px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
         .mute-btn { background: #2c2c2e; color: #fff; border: 1px solid #3a3a3c; border-radius: 12px; padding: 3px 8px; font-size: 13px; cursor: pointer; line-height: 1.2; }
         .turn-timer-pill { font-size: 11px; font-weight: bold; color: #34c759; background: rgba(0,0,0,0.85); padding: 3px 9px; border-radius: 10px; border: 1px solid #3a3a3c; display: none; }
         .turn-timer-pill.urgent { color: #ff3b30; border-color: #ff3b30; }
@@ -185,6 +186,7 @@
         #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(24,24,26,0.98); padding: 22px; border-radius: 20px; z-index: 180; border: 1px solid #38383a; width: 88%; max-width: 310px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
         .timer-circle { width: 68px; height: 68px; border-radius: 50%; border: 4px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: #ffd60a; margin: 12px auto; background: #121214; }
         .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 10px; }
+        .wa-wait-btn { background: #25d366; color: #fff; border: none; padding: 11px 14px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; margin-top: 8px; display: block; text-decoration: none; }
         .invite-wait-btn { background: #2c2c2e; color: #ffd60a; border: 1px solid #ffd60a; padding: 10px 14px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; margin-top: 8px; }
 
         #bid-modal { display: none; position: fixed; top: 36%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 280px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
@@ -247,7 +249,8 @@
             <div class="room-center-info">
                 <div class="top-bar-row">
                     <div class="room-title" id="room-display">غرفة تلقائية</div>
-                    <button class="invite-btn" id="invite-btn" onclick="inviteFriend()">دعوة صديق</button>
+                    <a class="wa-btn" id="wa-share-link" href="#" target="_blank" rel="noopener noreferrer">واتساب</a>
+                    <button class="invite-btn" id="invite-btn" onclick="inviteFriend()">نسخ الرابط</button>
                     <button class="mute-btn" id="mute-btn" onclick="toggleMute()" title="كتم/تشغيل الصوت">🔊</button>
                     <div class="turn-timer-pill" id="turn-timer-badge">30ث</div>
                 </div>
@@ -326,7 +329,8 @@
             <p id="joined-count-text" style="font-size:12px; color:#d1d1d6; margin-top:6px;">اللاعبون الحاليون: 1 / 4</p>
             <div class="timer-circle" id="wait-timer-num">30</div>
             <p style="font-size:11px; color:#8e8e93;">سيتم إكمال المقاعد الشاغرة بالبوتات تلقائياً عند انتهاء الوقت</p>
-            <button class="invite-wait-btn" onclick="inviteFriend()">🔗 نسخ رابط دعوة صديق للغرفة</button>
+            <a class="wa-wait-btn" id="wa-wait-link" href="#" target="_blank" rel="noopener noreferrer">💬 إرسال دعوة الغرفة بالواتساب</a>
+            <button class="invite-wait-btn" onclick="inviteFriend()">🔗 نسخ رابط الدعوة</button>
             <button class="start-now-btn" onclick="forceStartBots()">تأكيد البدء بالبوتات الآن ▶</button>
         </div>
 
@@ -543,18 +547,36 @@
             return cardImagesCache[cardNum] || `/static/cards/${getCardImageFilename(card)}`;
         }
 
+        function getInviteUrl(roomId) {
+            const url = new URL(window.location.href);
+            if (roomId) {
+                url.searchParams.set('room', roomId);
+            }
+            return url.toString();
+        }
+
+        function updateWhatsAppShareLinks(roomId) {
+            if (!roomId) return;
+            const inviteUrl = getInviteUrl(roomId);
+            const msg = `🃏 يلا طرنيب على طاولتي (${roomId})\nادخل من هنا:\n${inviteUrl}`;
+            const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            const topWa = document.getElementById('wa-share-link');
+            const waitWa = document.getElementById('wa-wait-link');
+            if (topWa) topWa.href = waUrl;
+            if (waitWa) waitWa.href = waUrl;
+        }
+
         function syncRoomToUrl(roomId) {
             if (!roomId) return;
             const url = new URL(window.location.href);
             url.searchParams.set('room', roomId);
             window.history.replaceState({}, '', url.toString());
+            updateWhatsAppShareLinks(roomId);
         }
 
         function inviteFriend() {
             if (!currentRoom) return;
-            const url = new URL(window.location.href);
-            url.searchParams.set('room', currentRoom);
-            const inviteUrl = url.toString();
+            const inviteUrl = getInviteUrl(currentRoom);
 
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(inviteUrl).then(() => {
@@ -718,7 +740,7 @@
             }
 
             if (data.state === 'BIDDING' && data.current_turn === myIndex) {
-                showBidModal(data.min_bid, data.is_dealer, data.total_bids, secLeft);
+                showBidModal(data.min_bid, data.is_dealer, data.total_bids, secLeft, data.allow_zero);
             } else {
                 document.getElementById('bid-modal').style.display = 'none';
             }
@@ -795,27 +817,6 @@
             return `<img src="${imgSrc}" alt="${card.rank} ${card.suit}" loading="eager" decoding="async">`;
         }
 
-        function getSuitColor(suit) {
-            return (suit === 'Tiles' || suit === 'Hearts') ? 'red' : 'black';
-        }
-
-        function arrangeSuitAlternating(cards) {
-            if (cards.length <= 1) return [...cards];
-            const desc = [...cards].sort((a, b) => (b.value || 0) - (a.value || 0));
-            const reds = desc.filter(c => getSuitColor(c.suit) === 'red');
-            const blacks = desc.filter(c => getSuitColor(c.suit) === 'black');
-
-            const firstPool = reds.length >= blacks.length ? reds : blacks;
-            const secondPool = reds.length >= blacks.length ? blacks : reds;
-            const result = [];
-
-            while (firstPool.length > 0 || secondPool.length > 0) {
-                if (firstPool.length > 0) result.push(firstPool.shift());
-                if (secondPool.length > 0) result.push(secondPool.shift());
-            }
-            return result;
-        }
-
         function sortHandBySuitOrder(hand) {
             const suitOrder = ['Tiles', 'Clovers', 'Hearts', 'Pikes'];
             const buckets = { Tiles: [], Clovers: [], Hearts: [], Pikes: [], other: [] };
@@ -830,7 +831,8 @@
 
             const ordered = [];
             suitOrder.forEach(s => {
-                ordered.push(...arrangeSuitAlternating(buckets[s]));
+                const sortedGroup = [...buckets[s]].sort((a, b) => (a.value || 0) - (b.value || 0));
+                ordered.push(...sortedGroup);
             });
             ordered.push(...buckets.other);
             return ordered;
@@ -911,7 +913,7 @@
             });
         }
 
-        function showBidModal(minBid, isDealer, totalBids, secLeft) {
+        function showBidModal(minBid, isDealer, totalBids, secLeft, allowZero) {
             const modal = document.getElementById('bid-modal');
             const opts = document.getElementById('bid-options');
             const hint = document.getElementById('bid-hint');
@@ -928,12 +930,14 @@
 
             let needed = 11 - totalBids;
             if (isDealer && needed > 0) {
-                hint.innerText = `أنت الموزع! إجباري تطلب ${needed} على الأقل`;
+                hint.innerText = `أنت الموزع! إجباري تطلب ${needed} على الأقل (الصفر ممنوع)`;
+            } else if (!allowZero) {
+                hint.innerText = `الصفر ممنوع (سكور فوق 20 أو سالب أو موزع) | مجموع الطلبات: ${totalBids}`;
             } else {
                 hint.innerText = `مجموع الطلبات الحالية: ${totalBids}`;
             }
 
-            if (!(isDealer && needed > 0)) {
+            if (allowZero && !(isDealer && needed > 0)) {
                 let b0 = document.createElement('button');
                 b0.className = 'bid-btn';
                 b0.innerText = '0';
