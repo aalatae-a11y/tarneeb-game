@@ -117,13 +117,11 @@ class TarneebRoom:
         self.action_seconds_left = 0
 
     def add_or_takeover_player(self, name, sid=None, is_bot=False):
-        # 1. إعادة اتصال نفس اللاعب البشري بالاسم
         for p in self.players:
             if p['name'] == name and not p['is_bot']:
                 p['sid'] = sid
                 return p['idx'], False
 
-        # 2. إذا كان هناك مقعد شاغر أقل من 4
         if len(self.players) < 4:
             idx = len(self.players)
             self.players.append({
@@ -140,7 +138,6 @@ class TarneebRoom:
             })
             return idx, False
 
-        # 3. الانضمام المتدرج: إذا كانت الطاولة 4 وممتلئة بالبوتات، يستبدل اللاعب الجديد أول بوت متاح
         if not is_bot and self.state != 'GAME_OVER':
             for p in self.players:
                 if p['is_bot']:
@@ -369,16 +366,6 @@ class TarneebRoom:
                 return True
         return False
 
-    def is_card_currently_highest_remaining(self, card, hand):
-        suit = card['suit']
-        val = card['value']
-        my_set = {(c['suit'], c['rank']) for c in hand}
-        for r in RANKS:
-            if RANK_VALUES[r] > val:
-                if (suit, r) not in my_set and not self.is_card_played_in_round(suit, r):
-                    return False
-        return True
-
     def get_current_trick_winner(self):
         if not self.current_trick:
             return None
@@ -408,23 +395,17 @@ class TarneebRoom:
         king_hearts_out = not self.is_card_played_in_round('Hearts', 'K')
         ace_hearts_out = not self.is_card_played_in_round('Hearts', 'A')
 
-        # 1. إذا كان اللاعب يفتح الأكلة (أول لاعب)
         if len(self.current_trick) == 0:
             if wants_zero:
-                # يحاول التخلص من الأوراق المتوسطة/العالية بأمان أو أقل ورقة
                 return min(valid_cards, key=lambda x: x['value'])
 
             non_hearts = [c for c in valid_cards if c['suit'] != 'Hearts']
             pool = non_hearts if non_hearts else valid_cards
 
-            # لا يرمي الآص (A) أو الأوراق التي أصبحت الأعلى في نوعها إلا عند الحاجة لأكلات أو في نهاية الدورة
-            # بل يبحث عن استدراج الكينج (K) أو سحب الورق المتوسط/الصغير أولاً
             if needs_tricks:
-                # إذا عنده K بدون A وكان A ما زال برا، يفضّل يفتح بورقة صغيرة من نفس النوع لتعليق الآص
                 smart_leads = []
                 for c in pool:
                     if c['rank'] == 'A' and len(hand) > 6:
-                        # احتفظ بالآص لتعليق K أو Q إلا إذا كان معه K أو Q من نفس النوع
                         has_king_same = any(x['suit'] == c['suit'] and x['rank'] == 'K' for x in hand)
                         if not has_king_same:
                             continue
@@ -433,19 +414,16 @@ class TarneebRoom:
                     smart_leads.append(c)
 
                 if smart_leads:
-                    # افتح بأصغر ورقة في النوع الأطول لتفريغ الخصوم وتعليق أوراقهم الكبيرة
                     suit_counts = {s: sum(1 for x in hand if x['suit'] == s) for s in SUITS}
                     return min(smart_leads, key=lambda x: (x['value'], -suit_counts[x['suit']]))
 
             return min(pool, key=lambda x: x['value'])
 
-        # 2. إذا كان اللاعب يرد على أكلة مفتوحة
         lead_suit = self.trick_lead_suit
         current_winner_play = self.get_current_trick_winner()
         win_c = current_winner_play['card']
         is_last_to_play = (len(self.current_trick) == 3)
 
-        # أولوية قصوى: صيد K♥ بـ A♥ في الدورات ذات الطلبات
         if self.round_number > 1:
             k_hearts_on_table = any(
                 play['card']['suit'] == 'Hearts' and play['card']['rank'] == 'K'
@@ -456,7 +434,6 @@ class TarneebRoom:
                 if ace_hearts:
                     return ace_hearts[0]
 
-        # حماية K♥ من الوقوع في يد A♥
         if self.round_number > 1 and lead_suit == 'Hearts' and ace_hearts_out:
             non_king_hearts = [c for c in valid_cards if not (c['suit'] == 'Hearts' and c['rank'] == 'K')]
             if non_king_hearts:
@@ -465,26 +442,21 @@ class TarneebRoom:
         winning_cards = [c for c in valid_cards if self.can_beat_current_winner(c, win_c)]
         losing_cards = [c for c in valid_cards if not self.can_beat_current_winner(c, win_c)]
 
-        # إذا كان يريد الصفر (0): يتخلص من أعلى ورقة خاسرة تحت الورقة الرابحة
         if wants_zero:
             if losing_cards:
                 return max(losing_cards, key=lambda x: x['value'])
             return min(valid_cards, key=lambda x: x['value'])
 
-        # إذا كان يحتاج أكلات (أو في الدورة الأولى)
         if needs_tricks and winning_cards:
-            # إذا لم يكن آخر لاعب، لا يضيع الآص (A) على ورقة صغيرة مثل 4 أو 5 إذا عنده ورقة متوسطة تكفي للربح
             if not is_last_to_play and win_c['value'] <= 10:
                 mid_winners = [c for c in winning_cards if c['rank'] != 'A']
                 if mid_winners:
                     return min(mid_winners, key=lambda x: x['value'])
 
-            # إذا كان عنده A و K من نفس النوع، يضرب بـ K أولاً ليستدرج او يحتفظ بالسيطرة
             for c in winning_cards:
                 if c['rank'] == 'K' and any(x['suit'] == c['suit'] and x['rank'] == 'A' for x in winning_cards):
                     return c
 
-            # لا يحرق A♥ بلا داعٍ إذا K♥ ما زال بالخارج ولم ينزل على الطاولة
             if self.round_number > 1 and king_hearts_out and len(winning_cards) > 1:
                 without_ace_hearts = [c for c in winning_cards if not (c['suit'] == 'Hearts' and c['rank'] == 'A')]
                 if without_ace_hearts:
@@ -492,9 +464,7 @@ class TarneebRoom:
 
             return min(winning_cards, key=lambda x: x['value'])
 
-        # إذا اكتفى من طلباته أو لا يستطيع الربح: يرمي أقل ورقة غير مؤثرة (ويحافظ على أوراق الحماية)
         if losing_cards:
-            # في التخلص من نوع مختلف (رمي ورقة): تخلص من الأوراق المنفردة أو الضعيفة، ولا ترمِ A أو طرنيب عالي
             safe_discards = [
                 c for c in losing_cards
                 if c['rank'] != 'A' and not (c['suit'] == 'Hearts' and c['value'] >= 11)
