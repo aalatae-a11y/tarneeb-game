@@ -52,78 +52,44 @@
 
         #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 8px 8px 10px 8px; overflow: hidden; background: radial-gradient(circle at center, #1e1e24 0%, #121214 100%); }
 
-        /* الشق الفوقي المنظم والمستف (3 أعمدة متوازنة) */
+        /* الشق الفوقي المنظم والمستف: جدول نتائج مرتب بالسكور + تحكم الغرفة وحالة الدورة */
         .top-hud {
             width: 100%;
             display: grid;
-            grid-template-columns: 118px 1fr 74px;
-            align-items: center;
-            gap: 6px;
-            height: 76px;
+            grid-template-columns: 1fr 148px;
+            align-items: stretch;
+            gap: 8px;
+            min-height: 92px;
             flex-shrink: 0;
             z-index: 20;
         }
-
-        .cross-score {
-            background: rgba(28,28,30,0.95);
-            border-radius: 12px;
-            padding: 4px 5px;
-            display: grid;
-            grid-template-columns: 38px 26px 38px;
-            grid-template-rows: 20px 21px 20px;
-            gap: 2px;
-            align-items: center;
-            justify-items: center;
-            font-size: 10px;
-            font-weight: 700;
-            border: 1px solid #38383a;
-            direction: ltr;
-            width: 118px;
-            height: 72px;
-        }
-        .sc-cell {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 5px;
-            background: rgba(255,255,255,0.04);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding: 0 2px;
-        }
-        .sc-center { color: #ffd60a; font-size: 11px; font-weight: 900; background: rgba(255,214,10,0.14); }
-        .sc-bottom { color: #34c759; font-size: 10px; }
-        .sc-other { color: #f2f2f7; font-size: 9.5px; }
 
         .room-center-info {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 5px;
-            height: 72px;
-            background: rgba(28,28,30,0.75);
-            border: 1px solid #323236;
-            border-radius: 12px;
-            padding: 4px 6px;
+            gap: 6px;
+            background: rgba(28,28,30,0.88);
+            border: 1px solid #343438;
+            border-radius: 14px;
+            padding: 7px 8px;
             min-width: 0;
         }
         .top-bar-row {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 5px;
             width: 100%;
+            flex-wrap: nowrap;
         }
         .room-title {
             font-weight: 800;
             font-size: 11px;
             color: #ffd60a;
             background: #2c2c2e;
-            padding: 4px 7px;
+            padding: 4px 8px;
             border-radius: 9px;
             border: 1px solid #3a3a3c;
             white-space: nowrap;
@@ -131,11 +97,11 @@
         }
         .share-quick-btn {
             font-weight: 800;
-            font-size: 10.5px;
+            font-size: 11px;
             color: #fff;
             background: #25d366;
             border: none;
-            padding: 4px 8px;
+            padding: 4px 9px;
             border-radius: 9px;
             cursor: pointer;
             white-space: nowrap;
@@ -145,18 +111,18 @@
             color: #fff;
             border: 1px solid #3a3a3c;
             border-radius: 9px;
-            padding: 3px 6px;
+            padding: 3px 7px;
             font-size: 12px;
             cursor: pointer;
             line-height: 1.2;
             flex-shrink: 0;
         }
         .turn-timer-pill {
-            font-size: 10px;
+            font-size: 10.5px;
             font-weight: 800;
             color: #34c759;
             background: rgba(0,0,0,0.85);
-            padding: 3px 6px;
+            padding: 3px 7px;
             border-radius: 8px;
             border: 1px solid #3a3a3c;
             display: none;
@@ -165,35 +131,120 @@
         .turn-timer-pill.urgent { color: #ff3b30; border-color: #ff3b30; }
 
         .bids-counter {
-            font-size: 10.5px;
+            font-size: 11px;
             color: #f2f2f7;
             font-weight: 700;
             background: rgba(0,0,0,0.65);
-            padding: 3px 8px;
-            border-radius: 8px;
+            padding: 4px 10px;
+            border-radius: 9px;
             border: 1px solid #3a3a3c;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 100%;
+            text-align: center;
         }
 
-        .last-trick-box {
-            background: rgba(28,28,30,0.95);
-            border: 1px solid #38383a;
-            border-radius: 12px;
-            padding: 4px;
-            width: 74px;
-            height: 72px;
+        /* جدول النتائج الديناميكي المرتب حسب الأعلى سكور */
+        .leaderboard-box {
+            width: 148px;
+            background: rgba(24,24,27,0.96);
+            border: 1px solid #38383c;
+            border-radius: 14px;
+            padding: 5px 7px;
             display: flex;
             flex-direction: column;
+            justify-content: center;
+        }
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10.5px;
+        }
+        .leaderboard-table tr {
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .leaderboard-table tr:last-child {
+            border-bottom: none;
+        }
+        .leaderboard-table td {
+            padding: 2px 3px;
+            vertical-align: middle;
+        }
+        .lb-rank {
+            color: #8e8e93;
+            font-weight: 800;
+            width: 14px;
+            font-size: 9.5px;
+        }
+        .lb-name {
+            color: #f2f2f7;
+            font-weight: 700;
+            max-width: 78px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .lb-name.is-me {
+            color: #34c759;
+        }
+        .lb-score {
+            text-align: left;
+            font-weight: 900;
+            color: #ffd60a;
+            direction: ltr;
+            font-size: 11px;
+        }
+        .lb-row-top .lb-rank,
+        .lb-row-top .lb-score {
+            color: #ffd60a;
+        }
+
+        /* عرض آخر أكلة المؤقت (لمدة ثانيتين عند الضغط على النص المضيء) */
+        #last-trick-popup {
+            display: none;
+            position: fixed;
+            bottom: 156px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(14, 14, 17, 0.96);
+            border: 1.5px solid #ffd60a;
+            border-radius: 14px;
+            padding: 8px 12px;
+            z-index: 265;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.9);
+            text-align: center;
+        }
+        .popup-trick-label {
+            font-size: 10px;
+            color: #ffd60a;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+        .popup-trick-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            direction: ltr;
+        }
+        .popup-mini-card {
+            width: 34px;
+            height: 48px;
+            background: #fff;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid #444;
+            display: flex;
             align-items: center;
             justify-content: center;
         }
-        .last-trick-title { font-size: 9px; color: #a1a1aa; margin-bottom: 2px; font-weight: 700; }
-        .mini-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
-        .mini-card { width: 22px; height: 28px; background: white; border-radius: 3px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #444; }
-        .mini-card img { width: 100%; height: 100%; object-fit: fill; background: white; }
+        .popup-mini-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            background: #fff;
+        }
 
         .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 12px 18px; min-height: 0; }
         .table-container { position: relative; width: 100%; height: 100%; max-width: 420px; border: 6px solid #2c2c2e; border-radius: 35px; background: radial-gradient(circle, #229a43 0%, #15662c 100%); box-shadow: inset 0 0 35px rgba(0,0,0,0.7), 0 10px 30px rgba(0,0,0,0.6); }
@@ -275,7 +326,26 @@
         .hand-card img { width: 100%; height: 100%; object-fit: fill; border-radius: 6px; background: white; }
 
         .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 0 10px; }
-        .tricks-box { background: #1c1c1e; padding: 6px 14px; border-radius: 10px; font-size: 11px; display: flex; gap: 8px; border: 1px solid #38383a; }
+        .tricks-box { background: #1c1c1e; padding: 6px 12px; border-radius: 10px; font-size: 11px; display: flex; gap: 8px; align-items: center; border: 1px solid #38383a; }
+
+        /* نص مضيء بدون مربع لآخر أكلة */
+        .glow-last-trick-trigger {
+            background: none;
+            border: none;
+            color: #111113;
+            font-size: 11.5px;
+            font-weight: 900;
+            cursor: pointer;
+            padding: 2px 4px;
+            text-shadow:
+                0 0 6px rgba(255, 214, 10, 0.95),
+                0 0 14px rgba(255, 214, 10, 0.75),
+                0 0 22px rgba(255, 214, 10, 0.45);
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+        .glow-last-trick-trigger:active {
+            transform: scale(0.96);
+        }
 
         #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(24,24,26,0.98); padding: 20px; border-radius: 20px; z-index: 180; border: 1px solid #38383a; width: 90%; max-width: 315px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
         .room-code-big { font-size: 26px; font-weight: 900; color: #ffd60a; letter-spacing: 5px; background: #121214; border: 1.5px dashed #ffd60a; padding: 8px 14px; border-radius: 12px; margin: 10px auto 4px auto; display: inline-block; }
@@ -331,20 +401,6 @@
 
     <div id="game-board">
         <div class="top-hud">
-            <div class="cross-score" title="النتائج حول الطاولة">
-                <div class="sc-cell"></div>
-                <div id="score-top" class="sc-cell sc-other">0</div>
-                <div class="sc-cell"></div>
-
-                <div id="score-left" class="sc-cell sc-other">0</div>
-                <div class="sc-cell sc-center">31</div>
-                <div id="score-right" class="sc-cell sc-other">0</div>
-
-                <div class="sc-cell"></div>
-                <div id="score-bottom" class="sc-cell sc-bottom">0</div>
-                <div class="sc-cell"></div>
-            </div>
-
             <div class="room-center-info">
                 <div class="top-bar-row">
                     <div class="room-title" id="room-display" onclick="copyRoomCodeQuick()" title="اضغط لنسخ كود الغرفة">غرفة: ----</div>
@@ -355,11 +411,10 @@
                 <div class="bids-counter" id="bids-status">الدورة 1 | بدون طلبات</div>
             </div>
 
-            <div class="last-trick-box">
-                <div class="last-trick-title">آخر أكلة</div>
-                <div class="mini-cards-grid" id="last-trick-cards">
-                    <div style="font-size:8px; color:#777; grid-column: span 2; text-align:center;">لا توجد</div>
-                </div>
+            <div class="leaderboard-box" title="ترتيب النتائج حسب الأعلى سكور">
+                <table class="leaderboard-table">
+                    <tbody id="leaderboard-body"></tbody>
+                </table>
             </div>
         </div>
 
@@ -396,6 +451,11 @@
             </div>
         </div>
 
+        <div id="last-trick-popup">
+            <div class="popup-trick-label">آخر أكلة</div>
+            <div class="popup-trick-row" id="last-trick-popup-cards"></div>
+        </div>
+
         <div id="redeal-hold-banner">
             <h4>⏳ مهلة إعادة التوزيع (30 ثانية)</h4>
             <p id="redeal-hold-desc">يوجد ورق ميت، ولا يتم اتخاذ أي إجراء من اللاعبين حتى انتهاء المهلة أو طلب إعادة التوزيع.</p>
@@ -414,6 +474,8 @@
                 <div class="tricks-box">
                     <span>أكلاتك:</span>
                     <span id="my-tricks-count" style="color:#ffd60a; font-weight:bold;">0 / -</span>
+                    <span>|</span>
+                    <button type="button" class="glow-last-trick-trigger" onclick="showLastTrickTemporarily()">آخر أكلة</button>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; position:relative;">
                     <div class="won-pile bottom-won-pile" id="pile-0"></div>
@@ -533,6 +595,8 @@
         let gameStateGlobal = "WAITING";
         let animatedThisTrick = false;
         let prevTrickLen = 0;
+        let latestLastTrick = [];
+        let lastTrickHideTimer = null;
         let isMuted = false;
         let audioCtx = null;
 
@@ -740,6 +804,7 @@
             document.getElementById('round-modal').style.display = 'none';
             document.getElementById('bid-modal').style.display = 'none';
             document.getElementById('redeal-hold-banner').style.display = 'none';
+            document.getElementById('last-trick-popup').style.display = 'none';
             document.getElementById('waiting-overlay').style.display = 'none';
             document.getElementById('game-board').style.display = 'none';
             document.getElementById('login-box').style.display = 'none';
@@ -759,6 +824,7 @@
             myIndex = data.my_index;
             currentTurnGlobal = data.current_turn;
             gameStateGlobal = data.state;
+            latestLastTrick = data.last_trick || [];
 
             if (data.room_id) {
                 currentRoom = data.room_id;
@@ -822,8 +888,7 @@
 
             renderPlayers(data.players, data.current_turn, data.dealer_idx, data.round_number);
             renderHand(data.my_hand);
-            renderLastTrick(data.last_trick);
-            updateCrossScore(data);
+            updateLeaderboard(data.players);
 
             const trickLen = data.current_trick ? data.current_trick.length : 0;
             if (trickLen > prevTrickLen && data.state === 'PLAYING') {
@@ -871,23 +936,59 @@
 
         socket.on('error', (data) => alert(data.msg));
 
-        function formatPlayerScoreLabel(player, fallbackLabel) {
-            if (!player) return `${fallbackLabel}: 0`;
-            const shortName = player.name.length > 5 ? player.name.slice(0, 5) : player.name;
-            return `${shortName} ${player.score}`;
+        function updateLeaderboard(players) {
+            const tbody = document.getElementById('leaderboard-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!players || players.length === 0) return;
+
+            const indexed = players.map((p, origIdx) => ({
+                name: p.name,
+                score: p.score,
+                isMe: origIdx === myIndex
+            }));
+
+            indexed.sort((a, b) => b.score - a.score);
+
+            indexed.forEach((item, idx) => {
+                const tr = document.createElement('tr');
+                if (idx === 0) tr.className = 'lb-row-top';
+                tr.innerHTML = `
+                    <td class="lb-rank">${idx + 1}</td>
+                    <td class="lb-name ${item.isMe ? 'is-me' : ''}">${item.name}</td>
+                    <td class="lb-score">${item.score}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
-        function updateCrossScore(data) {
-            if (!data.players) return;
-            const pBottom = data.players[myIndex];
-            const pLeft = data.players[(myIndex + 1) % 4];
-            const pTop = data.players[(myIndex + 2) % 4];
-            const pRight = data.players[(myIndex + 3) % 4];
+        function showLastTrickTemporarily() {
+            const popup = document.getElementById('last-trick-popup');
+            const row = document.getElementById('last-trick-popup-cards');
+            if (!popup || !row) return;
 
-            document.getElementById('score-bottom').innerText = formatPlayerScoreLabel(pBottom, 'أنت');
-            document.getElementById('score-left').innerText = formatPlayerScoreLabel(pLeft, 'يسار');
-            document.getElementById('score-top').innerText = formatPlayerScoreLabel(pTop, 'فوق');
-            document.getElementById('score-right').innerText = formatPlayerScoreLabel(pRight, 'يمين');
+            row.innerHTML = '';
+            if (!latestLastTrick || latestLastTrick.length === 0) {
+                row.innerHTML = `<span style="font-size:11px; color:#a1a1aa;">لا توجد أكلة سابقة</span>`;
+            } else {
+                latestLastTrick.forEach(play => {
+                    const c = play.card;
+                    const imgSrc = getCachedCardSrc(c);
+                    const cardBox = document.createElement('div');
+                    cardBox.className = 'popup-mini-card';
+                    cardBox.innerHTML = `<img src="${imgSrc}" alt="${c.rank} ${c.suit}" loading="eager" decoding="async">`;
+                    row.appendChild(cardBox);
+                });
+            }
+
+            popup.style.display = 'block';
+            if (lastTrickHideTimer) {
+                clearTimeout(lastTrickHideTimer);
+            }
+            lastTrickHideTimer = setTimeout(() => {
+                popup.style.display = 'none';
+            }, 2000);
         }
 
         function renderPlayers(players, turn, dealerIdx, roundNum) {
@@ -1009,26 +1110,6 @@
                 cardEl.className = `played-card pos-${UI_idx}`;
                 cardEl.innerHTML = renderCardHTML(c);
                 area.appendChild(cardEl);
-            });
-        }
-
-        function renderLastTrick(lastTrick) {
-            const container = document.getElementById('last-trick-cards');
-            if (!container) return;
-            container.innerHTML = '';
-
-            if (!lastTrick || lastTrick.length === 0) {
-                container.innerHTML = `<div style="font-size:8px; color:#777; grid-column: span 2; text-align:center;">لا توجد</div>`;
-                return;
-            }
-
-            lastTrick.forEach(play => {
-                let c = play.card;
-                let imgSrc = getCachedCardSrc(c);
-                let miniCard = document.createElement('div');
-                miniCard.className = `mini-card`;
-                miniCard.innerHTML = `<img src="${imgSrc}" alt="${c.rank}" loading="eager" decoding="async">`;
-                container.appendChild(miniCard);
             });
         }
 
