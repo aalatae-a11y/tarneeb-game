@@ -18,7 +18,6 @@ ROOMS = {}
 
 SUITS = ['Hearts', 'Tiles', 'Clovers', 'Pikes']
 HAND_SUIT_ORDER = {'Tiles': 0, 'Clovers': 1, 'Hearts': 2, 'Pikes': 3}
-SUIT_COLOR = {'Tiles': 'red', 'Hearts': 'red', 'Clovers': 'black', 'Pikes': 'black'}
 RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 RANK_VALUES = {r: i for i, r in enumerate(RANKS, start=2)}
 
@@ -54,29 +53,6 @@ def snap_to_allowed_bid(val):
     return 13
 
 
-def arrange_suit_alternating_colors(cards):
-    if len(cards) <= 1:
-        return list(cards)
-
-    sorted_cards = sorted(cards, key=lambda x: -x['value'])
-    reds = [c for c in sorted_cards if SUIT_COLOR.get(c['suit']) == 'red']
-    blacks = [c for c in sorted_cards if SUIT_COLOR.get(c['suit']) == 'black']
-
-    result = []
-    if len(reds) >= len(blacks):
-        first_pool, second_pool = reds, blacks
-    else:
-        first_pool, second_pool = blacks, reds
-
-    while first_pool or second_pool:
-        if first_pool:
-            result.append(first_pool.pop(0))
-        if second_pool:
-            result.append(second_pool.pop(0))
-
-    return result
-
-
 def arrange_player_hand(hand):
     grouped = {s: [] for s in ['Tiles', 'Clovers', 'Hearts', 'Pikes']}
     for c in hand:
@@ -84,7 +60,8 @@ def arrange_player_hand(hand):
 
     ordered = []
     for s in ['Tiles', 'Clovers', 'Hearts', 'Pikes']:
-        ordered.extend(arrange_suit_alternating_colors(grouped.get(s, [])))
+        suit_cards = sorted(grouped.get(s, []), key=lambda x: x['value'])
+        ordered.extend(suit_cards)
     return ordered
 
 
@@ -186,6 +163,14 @@ class TarneebRoom:
             return False
         return self.is_dead_hand(player_idx)
 
+    def can_bid_zero(self, player_idx):
+        p = self.players[player_idx]
+        if player_idx == self.dealer_idx:
+            return False
+        if p['score'] > 20 or p['score'] < 0:
+            return False
+        return True
+
     def start_new_round(self, increment_round=True):
         if increment_round:
             self.round_number += 1
@@ -269,6 +254,9 @@ class TarneebRoom:
                 strength += 0.5
 
         raw_bid = int(round(strength / 2.2))
+        if raw_bid == 0 and self.can_bid_zero(player_idx):
+            return 0
+
         smart_bid = snap_to_allowed_bid(max(min_b, min(raw_bid, 13)))
 
         if player_idx == self.dealer_idx:
@@ -281,6 +269,9 @@ class TarneebRoom:
         p = self.players[player_idx]
         min_b = snap_to_allowed_bid(get_min_bid(p['score']))
         needed = 11 - self.total_bids if player_idx == self.dealer_idx else 0
+
+        if bid_val == 0 and not self.can_bid_zero(player_idx):
+            bid_val = min_b
 
         if bid_val != 0 and bid_val not in ALLOWED_BIDS:
             bid_val = snap_to_allowed_bid(bid_val)
@@ -485,11 +476,11 @@ class TarneebRoom:
                 elif bid == 13:
                     bid_13_ended = True
                     if won == 13:
-                        round_pts = 26
-                        reason = "حقق طلب 13 وأنهى اللعبة (+26)"
+                        round_pts = 31
+                        reason = "حقق طلب 13 (+31)"
                     else:
-                        round_pts = -26
-                        reason = "كسر طلب 13 وأنهى اللعبة (-26)"
+                        round_pts = -31
+                        reason = "كسر طلب 13 (-31)"
                 else:
                     if won >= bid:
                         round_pts = bid
@@ -523,8 +514,8 @@ class TarneebRoom:
         if max_score >= 31:
             self.winner_message = f"🏆 انتهت اللعبة! الفائز: {' و '.join(leaders)} (وصل 31)"
             return True
-        if min_score <= -31:
-            self.winner_message = f"🏆 انتهت اللعبة! الأعلى نقاطاً: {' و '.join(leaders)}"
+        if min_score <= -21:
+            self.winner_message = f"🏆 انتهت اللعبة (وصول -21)! المتصدر: {' و '.join(leaders)}"
             return True
         if bid_13_ended:
             self.winner_message = f"🏆 انتهت اللعبة بطلب 13! المتصدر: {' و '.join(leaders)}"
@@ -794,6 +785,7 @@ def broadcast_state(room):
         if not p['is_bot'] and p['sid']:
             p_idx = p['idx']
             can_redeal = room.check_redeal_eligibility(p_idx)
+            allow_zero = room.can_bid_zero(p_idx)
             min_b = room.get_dealer_min_bid(p_idx)
             is_dealer = (p_idx == room.dealer_idx)
 
@@ -815,6 +807,7 @@ def broadcast_state(room):
                 'my_index': p_idx,
                 'my_hand': p['hand'],
                 'min_bid': min_b,
+                'allow_zero': allow_zero,
                 'is_dealer': is_dealer,
                 'can_redeal': can_redeal,
                 'players': [{
