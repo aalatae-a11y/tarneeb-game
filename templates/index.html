@@ -137,11 +137,31 @@
         .fly-to-2 { top: 50% !important; left: 50% !important; transform: translate(-50%, -190px) scale(0.2) !important; opacity: 0 !important; }
         .fly-to-3 { top: 50% !important; left: 50% !important; transform: translate(190px, -50%) scale(0.2) !important; opacity: 0 !important; }
 
-        .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 25; }
+        .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 260; position: relative; }
 
-        .redeal-bar { margin-bottom: 6px; display: none; }
-        .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffd60a; padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.7); animation: pulse-btn 1.5s infinite; }
-        @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
+        .redeal-bar { margin-bottom: 6px; display: none; position: relative; z-index: 270; }
+        .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffd60a; padding: 8px 18px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.85); animation: pulse-btn 1.5s infinite; }
+        @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        #redeal-hold-banner {
+            display: none;
+            position: fixed;
+            top: 38%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(28, 28, 30, 0.96);
+            border: 2px solid #ffd60a;
+            border-radius: 18px;
+            padding: 16px 20px;
+            z-index: 155;
+            width: 86%;
+            max-width: 310px;
+            text-align: center;
+            box-shadow: 0 14px 36px rgba(0,0,0,0.9);
+        }
+        #redeal-hold-banner h4 { color: #ffd60a; font-size: 14px; margin-bottom: 6px; }
+        #redeal-hold-banner p { color: #e5e5ea; font-size: 12px; line-height: 1.5; }
+        .redeal-countdown-num { color: #34c759; font-size: 22px; font-weight: 900; margin-top: 8px; }
 
         .hand-cards-container {
             display: flex;
@@ -167,7 +187,7 @@
         .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 10px; }
         .invite-wait-btn { background: #2c2c2e; color: #ffd60a; border: 1px solid #ffd60a; padding: 10px 14px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; margin-top: 8px; }
 
-        #bid-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 280px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
+        #bid-modal { display: none; position: fixed; top: 36%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 280px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
         #bid-modal h3 { font-size: 15px; margin-bottom: 4px; color: white; font-weight: 700; }
         #bid-timer-text { font-size: 12px; color: #34c759; font-weight: bold; margin-bottom: 6px; }
         #bid-hint { font-size: 11px; color: #ffd60a; margin-bottom: 12px; font-weight: 600; }
@@ -275,9 +295,15 @@
             </div>
         </div>
 
+        <div id="redeal-hold-banner">
+            <h4>⏳ مهلة إعادة التوزيع (30 ثانية)</h4>
+            <p id="redeal-hold-desc">يوجد ورق ميت، ولا يتم اتخاذ أي إجراء من اللاعبين حتى انتهاء المهلة أو طلب إعادة التوزيع.</p>
+            <div class="redeal-countdown-num" id="redeal-countdown-num">30ث</div>
+        </div>
+
         <div class="bottom-section">
             <div class="redeal-bar" id="redeal-bar">
-                <button class="redeal-btn" onclick="requestRedeal()">🔄 ورق ميت (إعادة توزيع)</button>
+                <button class="redeal-btn" id="redeal-action-btn" onclick="requestRedeal()">🔄 إعادة توزيع الورق (30ث)</button>
             </div>
 
             <div class="hand-cards-container" id="my-hand"></div>
@@ -306,7 +332,7 @@
 
         <div id="bid-modal">
             <h3>اختر طلبتك</h3>
-            <div id="bid-timer-text">الوقت المتبقي: 20ث</div>
+            <div id="bid-timer-text">الوقت المتبقي: 35ث</div>
             <div id="bid-hint"></div>
             <div class="bid-grid" id="bid-options"></div>
         </div>
@@ -576,6 +602,7 @@
             gameStateGlobal = "WAITING";
             document.getElementById('round-modal').style.display = 'none';
             document.getElementById('bid-modal').style.display = 'none';
+            document.getElementById('redeal-hold-banner').style.display = 'none';
             document.getElementById('waiting-overlay').style.display = 'none';
             document.getElementById('game-board').style.display = 'none';
             document.getElementById('login-box').style.display = 'none';
@@ -611,14 +638,17 @@
                 waitBox.style.display = 'none';
             }
 
-            if (data.round_number === 1) {
+            const secLeft = data.action_seconds_left || 0;
+
+            if (data.state === 'REDEAL_WINDOW') {
+                document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | مهلة إعادة التوزيع (${secLeft}ث)`;
+            } else if (data.round_number === 1) {
                 document.getElementById('bids-status').innerText = `الدورة 1 | بدون طلبات`;
             } else {
                 document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
             }
 
             const timerBadge = document.getElementById('turn-timer-badge');
-            const secLeft = data.action_seconds_left || 0;
             if (data.game_started && data.state === 'PLAYING' && data.current_turn === myIndex && secLeft > 0) {
                 timerBadge.style.display = 'inline-block';
                 timerBadge.innerText = `${secLeft}ث`;
@@ -627,7 +657,27 @@
                 timerBadge.style.display = 'none';
             }
 
-            document.getElementById('redeal-bar').style.display = data.can_redeal ? 'block' : 'none';
+            const holdBanner = document.getElementById('redeal-hold-banner');
+            const redealBar = document.getElementById('redeal-bar');
+            const redealBtn = document.getElementById('redeal-action-btn');
+
+            if (data.state === 'REDEAL_WINDOW') {
+                holdBanner.style.display = 'block';
+                document.getElementById('redeal-countdown-num').innerText = `${secLeft}ث`;
+                if (data.can_redeal) {
+                    redealBar.style.display = 'block';
+                    redealBtn.innerText = `🔄 إعادة توزيع الورق (${secLeft}ث)`;
+                    document.getElementById('redeal-hold-desc').innerText =
+                        'لديك ورق ميت. اضغط إعادة التوزيع الآن أو انتظر انتهاء الـ 30 ثانية بدون أي إجراء.';
+                } else {
+                    redealBar.style.display = 'none';
+                    document.getElementById('redeal-hold-desc').innerText =
+                        'مهلة 30 ثانية لإعادة التوزيع بسبب ورق ميت؛ لن يأخذ أي لاعب إجراءً حتى تنتهي المهلة.';
+                }
+            } else {
+                holdBanner.style.display = 'none';
+                redealBar.style.display = 'none';
+            }
 
             renderPlayers(data.players, data.current_turn, data.dealer_idx, data.round_number);
             renderHand(data.my_hand);
@@ -745,14 +795,45 @@
             return `<img src="${imgSrc}" alt="${card.rank} ${card.suit}" loading="eager" decoding="async">`;
         }
 
+        function getSuitColor(suit) {
+            return (suit === 'Tiles' || suit === 'Hearts') ? 'red' : 'black';
+        }
+
+        function arrangeSuitAlternating(cards) {
+            if (cards.length <= 1) return [...cards];
+            const desc = [...cards].sort((a, b) => (b.value || 0) - (a.value || 0));
+            const reds = desc.filter(c => getSuitColor(c.suit) === 'red');
+            const blacks = desc.filter(c => getSuitColor(c.suit) === 'black');
+
+            const firstPool = reds.length >= blacks.length ? reds : blacks;
+            const secondPool = reds.length >= blacks.length ? blacks : reds;
+            const result = [];
+
+            while (firstPool.length > 0 || secondPool.length > 0) {
+                if (firstPool.length > 0) result.push(firstPool.shift());
+                if (secondPool.length > 0) result.push(secondPool.shift());
+            }
+            return result;
+        }
+
         function sortHandBySuitOrder(hand) {
-            const suitRank = { 'Tiles': 0, 'Clovers': 1, 'Hearts': 2, 'Pikes': 3 };
-            return [...hand].sort((a, b) => {
-                const sa = suitRank[a.suit] ?? 99;
-                const sb = suitRank[b.suit] ?? 99;
-                if (sa !== sb) return sa - sb;
-                return (a.value || 0) - (b.value || 0);
+            const suitOrder = ['Tiles', 'Clovers', 'Hearts', 'Pikes'];
+            const buckets = { Tiles: [], Clovers: [], Hearts: [], Pikes: [], other: [] };
+
+            hand.forEach(c => {
+                if (buckets[c.suit]) {
+                    buckets[c.suit].push(c);
+                } else {
+                    buckets.other.push(c);
+                }
             });
+
+            const ordered = [];
+            suitOrder.forEach(s => {
+                ordered.push(...arrangeSuitAlternating(buckets[s]));
+            });
+            ordered.push(...buckets.other);
+            return ordered;
         }
 
         function renderHand(hand) {
@@ -838,8 +919,8 @@
             if (!modal || !opts) return;
 
             if (timerEl) {
-                timerEl.innerText = `الوقت المتبقي: ${secLeft || 20}ث`;
-                timerEl.style.color = (secLeft && secLeft <= 6) ? '#ff3b30' : '#34c759';
+                timerEl.innerText = `الوقت المتبقي: ${secLeft || 35}ث`;
+                timerEl.style.color = (secLeft && secLeft <= 7) ? '#ff3b30' : '#34c759';
             }
 
             opts.innerHTML = '';
