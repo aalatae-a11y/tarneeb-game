@@ -140,8 +140,9 @@
 
         .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 260; position: relative; }
 
-        .redeal-bar { margin-bottom: 6px; display: none; position: relative; z-index: 270; }
-        .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffd60a; padding: 8px 18px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.85); animation: pulse-btn 1.5s infinite; }
+        .redeal-bar { margin-bottom: 6px; display: none; gap: 8px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 270; }
+        .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffd60a; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.85); animation: pulse-btn 1.5s infinite; }
+        .keep-hand-btn { background: #2c2c2e; color: #f2f2f7; border: 1.5px solid #34c759; padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; }
         @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         #redeal-hold-banner {
@@ -307,6 +308,7 @@
         <div class="bottom-section">
             <div class="redeal-bar" id="redeal-bar">
                 <button class="redeal-btn" id="redeal-action-btn" onclick="requestRedeal()">🔄 إعادة توزيع الورق (30ث)</button>
+                <button class="keep-hand-btn" id="keep-hand-btn" onclick="keepCurrentHand()">عدم إعادة التوزيع</button>
             </div>
 
             <div class="hand-cards-container" id="my-hand"></div>
@@ -615,6 +617,10 @@
             socket.emit('request_redeal', { room: currentRoom });
         }
 
+        function keepCurrentHand() {
+            socket.emit('keep_current_hand', { room: currentRoom });
+        }
+
         function returnToHomeScreen() {
             const url = new URL(window.location.href);
             url.searchParams.delete('room');
@@ -666,6 +672,8 @@
                 document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | مهلة إعادة التوزيع (${secLeft}ث)`;
             } else if (data.round_number === 1) {
                 document.getElementById('bids-status').innerText = `الدورة 1 | بدون طلبات`;
+            } else if (data.has_zero_bid) {
+                document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} (يوجد صفر)`;
             } else {
                 document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
             }
@@ -687,14 +695,14 @@
                 holdBanner.style.display = 'block';
                 document.getElementById('redeal-countdown-num').innerText = `${secLeft}ث`;
                 if (data.can_redeal) {
-                    redealBar.style.display = 'block';
+                    redealBar.style.display = 'flex';
                     redealBtn.innerText = `🔄 إعادة توزيع الورق (${secLeft}ث)`;
                     document.getElementById('redeal-hold-desc').innerText =
-                        'لديك ورق ميت. اضغط إعادة التوزيع الآن أو انتظر انتهاء الـ 30 ثانية بدون أي إجراء.';
+                        'لديك 7 أوراق من نفس النوع أو K قلب أحمر وحده. يمكنك إعادة التوزيع أو الإبقاء على الورق.';
                 } else {
                     redealBar.style.display = 'none';
                     document.getElementById('redeal-hold-desc').innerText =
-                        'مهلة 30 ثانية لإعادة التوزيع بسبب ورق ميت؛ لن يأخذ أي لاعب إجراءً حتى تنتهي المهلة.';
+                        'مهلة 30 ثانية لإعادة التوزيع؛ لن يأخذ أي لاعب إجراءً حتى تنتهي المهلة.';
                 }
             } else {
                 holdBanner.style.display = 'none';
@@ -740,7 +748,7 @@
             }
 
             if (data.state === 'BIDDING' && data.current_turn === myIndex) {
-                showBidModal(data.min_bid, data.is_dealer, data.total_bids, secLeft, data.allow_zero);
+                showBidModal(data.min_bid, data.is_dealer, data.total_bids, secLeft, data.allow_zero, data.has_zero_bid, data.required_dealer_bid);
             } else {
                 document.getElementById('bid-modal').style.display = 'none';
             }
@@ -913,7 +921,7 @@
             });
         }
 
-        function showBidModal(minBid, isDealer, totalBids, secLeft, allowZero) {
+        function showBidModal(minBid, isDealer, totalBids, secLeft, allowZero, hasZeroBid, requiredDealerBid) {
             const modal = document.getElementById('bid-modal');
             const opts = document.getElementById('bid-options');
             const hint = document.getElementById('bid-hint');
@@ -928,16 +936,17 @@
             opts.innerHTML = '';
             modal.style.display = 'block';
 
-            let needed = 11 - totalBids;
-            if (isDealer && needed > 0) {
-                hint.innerText = `أنت الموزع! إجباري تطلب ${needed} على الأقل (الصفر ممنوع)`;
+            if (isDealer && !hasZeroBid && requiredDealerBid > 0) {
+                hint.innerText = `أنت الموزع! إجباري تطلب ${requiredDealerBid} على الأقل (الصفر ممنوع)`;
+            } else if (isDealer && hasZeroBid) {
+                hint.innerText = `أنت الموزع (تم إلغاء شرط 11 لوجود طلب صفر) | المجموع: ${totalBids}`;
             } else if (!allowZero) {
-                hint.innerText = `الصفر ممنوع (سكور فوق 20 أو سالب أو موزع) | مجموع الطلبات: ${totalBids}`;
+                hint.innerText = `الصفر ممنوع (سكور فوق 20 أو سالب أو موزع) | المجموع: ${totalBids}`;
             } else {
                 hint.innerText = `مجموع الطلبات الحالية: ${totalBids}`;
             }
 
-            if (allowZero && !(isDealer && needed > 0)) {
+            if (allowZero && !(isDealer && !hasZeroBid && requiredDealerBid > 0)) {
                 let b0 = document.createElement('button');
                 b0.className = 'bid-btn';
                 b0.innerText = '0';
