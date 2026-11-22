@@ -18,11 +18,13 @@ ROOMS = {}
 
 SUITS = ['Hearts', 'Tiles', 'Clovers', 'Pikes']
 HAND_SUIT_ORDER = {'Tiles': 0, 'Clovers': 1, 'Hearts': 2, 'Pikes': 3}
+SUIT_COLOR = {'Tiles': 'red', 'Hearts': 'red', 'Clovers': 'black', 'Pikes': 'black'}
 RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 RANK_VALUES = {r: i for i, r in enumerate(RANKS, start=2)}
 
 ALLOWED_BIDS = [2, 3, 4, 5, 7, 9, 13]
-BID_TIMEOUT_SECONDS = 20
+REDEAL_WINDOW_SECONDS = 30
+BID_TIMEOUT_SECONDS = 35
 TURN_TIMEOUT_SECONDS = 30
 
 
@@ -52,6 +54,40 @@ def snap_to_allowed_bid(val):
     return 13
 
 
+def arrange_suit_alternating_colors(cards):
+    if len(cards) <= 1:
+        return list(cards)
+
+    sorted_cards = sorted(cards, key=lambda x: -x['value'])
+    reds = [c for c in sorted_cards if SUIT_COLOR.get(c['suit']) == 'red']
+    blacks = [c for c in sorted_cards if SUIT_COLOR.get(c['suit']) == 'black']
+
+    result = []
+    if len(reds) >= len(blacks):
+        first_pool, second_pool = reds, blacks
+    else:
+        first_pool, second_pool = blacks, reds
+
+    while first_pool or second_pool:
+        if first_pool:
+            result.append(first_pool.pop(0))
+        if second_pool:
+            result.append(second_pool.pop(0))
+
+    return result
+
+
+def arrange_player_hand(hand):
+    grouped = {s: [] for s in ['Tiles', 'Clovers', 'Hearts', 'Pikes']}
+    for c in hand:
+        grouped.setdefault(c['suit'], []).append(c)
+
+    ordered = []
+    for s in ['Tiles', 'Clovers', 'Hearts', 'Pikes']:
+        ordered.extend(arrange_suit_alternating_colors(grouped.get(s, [])))
+    return ordered
+
+
 class TarneebRoom:
     def __init__(self, room_id):
         self.room_id = room_id
@@ -74,12 +110,17 @@ class TarneebRoom:
         self.trick_winner_idx = None
         self.is_processing_trick = False
         self.turn_token = 0
+        self.redeal_token = 0
         self.action_deadline = 0.0
         self.action_seconds_left = 0
 
     def bump_turn_token(self):
         self.turn_token += 1
         return self.turn_token
+
+    def bump_redeal_token(self):
+        self.redeal_token += 1
+        return self.redeal_token
 
     def set_action_timer(self, seconds):
         self.action_deadline = time.time() + seconds
@@ -118,16 +159,9 @@ class TarneebRoom:
             self.add_player(f"بوت {bot_count}", is_bot=True)
             bot_count += 1
 
-    def check_redeal_eligibility(self, player_idx):
+    def is_dead_hand(self, player_idx):
         if player_idx < 0 or player_idx >= len(self.players):
             return False
-        if self.round_number == 1:
-            if self.round_first_card_played:
-                return False
-        else:
-            if self.state != 'BIDDING' or self.bids_collected > 0:
-                return False
-
         hand = self.players[player_idx]['hand']
         if len(hand) != 13:
             return False
@@ -144,33 +178,32 @@ class TarneebRoom:
 
         return False
 
+    def any_player_has_dead_hand(self):
+        return any(self.is_dead_hand(i) for i in range(len(self.players)))
+
+    def check_redeal_eligibility(self, player_idx):
+        if self.state != 'REDEAL_WINDOW':
+            return False
+        return self.is_dead_hand(player_idx)
+
     def start_new_round(self, increment_round=True):
         if increment_round:
             self.round_number += 1
         self.bump_turn_token()
+        self.bump_redeal_token()
         self.clear_action_timer()
 
         deck = create_deck()
         for p in self.players:
             raw_hand = deck[p['idx'] * 13 : (p['idx'] + 1) * 13]
-            p['hand'] = sorted(
-                raw_hand,
-                key=lambda x: (HAND_SUIT_ORDER.get(x['suit'], 99), x['value'])
-            )
+            p['hand'] = arrange_player_hand(raw_hand)
             p['bid'] = 0
             p['tricks_won'] = 0
             p['won_cards_count'] = 0
             p['king_ace_delta'] = 0
 
-        if self.round_number == 1:
-            self.state = 'PLAYING'
-            self.total_bids = 0
-            self.bids_collected = 4
-        else:
-            self.state = 'BIDDING'
-            self.total_bids = 0
-            self.bids_collected = 0
-
+        self.total_bids = 0
+        self.bids_collected = 0 if self.round_number > 1 else 4
         self.current_turn = (self.dealer_idx - 1) % 4
         self.trick_lead_suit = None
         self.current_trick = []
@@ -179,6 +212,27 @@ class TarneebRoom:
         self.round_summary = []
         self.trick_winner_idx = None
         self.is_processing_trick = False
+
+        if self.any_player_has_dead_hand():
+            self.state = 'REDEAL_WINDOW'
+            self.set_action_timer(REDEAL_WINDOW_SECONDS)
+        else:
+            self.state = 'PLAYING' if self.round_number == 1 else 'BIDDING'
+
+    def finish_redeal_window(self):
+        if self.state != 'REDEAL_WINDOW':
+            return
+        self.clear_action_timer()
+        self.bump_turn_token()
+        if self.round_number == 1:
+            self.state = 'PLAYING'
+            self.total_bids = 0
+            self.bids_collected = 4
+        else:
+            self.state = 'BIDDING'
+            self.total_bids = 0
+            self.bids_collected = 0
+        self.current_turn = (self.dealer_idx - 1) % 4
 
     def get_dealer_min_bid(self, player_idx):
         min_b = snap_to_allowed_bid(get_min_bid(self.players[player_idx]['score']))
@@ -620,6 +674,23 @@ def handle_trick_pause_and_resume(room):
     socketio.start_background_task(run_game_loop, room)
 
 
+def redeal_window_watcher(room, expected_redeal_token):
+    while room.game_started and room.state == 'REDEAL_WINDOW' and room.redeal_token == expected_redeal_token:
+        rem = int(max(0, round(room.action_deadline - time.time())))
+        room.action_seconds_left = rem
+        if rem <= 0:
+            break
+        broadcast_state(room)
+        socketio.sleep(1)
+
+    if not room.game_started or room.state != 'REDEAL_WINDOW' or room.redeal_token != expected_redeal_token:
+        return
+
+    room.finish_redeal_window()
+    broadcast_state(room)
+    socketio.start_background_task(run_game_loop, room)
+
+
 def human_timeout_watcher(room, expected_token, target_state, target_player_idx):
     while (
         room.game_started
@@ -662,6 +733,13 @@ def human_timeout_watcher(room, expected_token, target_state, target_player_idx)
 
 def run_game_loop(room):
     socketio.sleep(0.3)
+
+    if room.game_started and room.state == 'REDEAL_WINDOW':
+        r_token = room.redeal_token
+        broadcast_state(room)
+        socketio.start_background_task(redeal_window_watcher, room, r_token)
+        return
+
     while room.game_started and room.state in ['BIDDING', 'PLAYING']:
         if all(len(p['hand']) == 0 for p in room.players):
             break
