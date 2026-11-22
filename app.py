@@ -17,7 +17,7 @@ socketio = SocketIO(
 ROOMS = {}
 
 SUITS = ['Hearts', 'Tiles', 'Clovers', 'Pikes']
-HAND_SUIT_ORDER = {'Tiles': 0, 'Clovers': 1, 'Hearts': 2, 'Pikes': 3}
+HAND_SUIT_ORDER = ['Tiles', 'Pikes', 'Clovers', 'Hearts']
 RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 RANK_VALUES = {r: i for i, r in enumerate(RANKS, start=2)}
 
@@ -54,12 +54,12 @@ def snap_to_allowed_bid(val):
 
 
 def arrange_player_hand(hand):
-    grouped = {s: [] for s in ['Tiles', 'Clovers', 'Hearts', 'Pikes']}
+    grouped = {s: [] for s in HAND_SUIT_ORDER}
     for c in hand:
         grouped.setdefault(c['suit'], []).append(c)
 
     ordered = []
-    for s in ['Tiles', 'Clovers', 'Hearts', 'Pikes']:
+    for s in HAND_SUIT_ORDER:
         suit_cards = sorted(grouped.get(s, []), key=lambda x: x['value'])
         ordered.extend(suit_cards)
     return ordered
@@ -78,6 +78,7 @@ class TarneebRoom:
         self.round_number = 0
         self.total_bids = 0
         self.bids_collected = 0
+        self.has_zero_bid = False
         self.current_trick = []
         self.last_completed_trick = []
         self.trick_lead_suit = None
@@ -171,6 +172,11 @@ class TarneebRoom:
             return False
         return True
 
+    def get_required_dealer_bid(self, player_idx):
+        if player_idx != self.dealer_idx or self.has_zero_bid:
+            return 0
+        return max(0, 11 - self.total_bids)
+
     def start_new_round(self, increment_round=True):
         if increment_round:
             self.round_number += 1
@@ -189,6 +195,7 @@ class TarneebRoom:
 
         self.total_bids = 0
         self.bids_collected = 0 if self.round_number > 1 else 4
+        self.has_zero_bid = False
         self.current_turn = (self.dealer_idx - 1) % 4
         self.trick_lead_suit = None
         self.current_trick = []
@@ -213,28 +220,28 @@ class TarneebRoom:
             self.state = 'PLAYING'
             self.total_bids = 0
             self.bids_collected = 4
+            self.has_zero_bid = False
         else:
             self.state = 'BIDDING'
             self.total_bids = 0
             self.bids_collected = 0
+            self.has_zero_bid = False
         self.current_turn = (self.dealer_idx - 1) % 4
 
     def get_dealer_min_bid(self, player_idx):
         min_b = snap_to_allowed_bid(get_min_bid(self.players[player_idx]['score']))
-        if player_idx == self.dealer_idx:
-            needed = 11 - self.total_bids
-            if needed > min_b:
-                return snap_to_allowed_bid(needed)
+        needed = self.get_required_dealer_bid(player_idx)
+        if needed > min_b:
+            return snap_to_allowed_bid(needed)
         return min_b
 
     def get_auto_timeout_bid(self, player_idx):
         p = self.players[player_idx]
         min_b = snap_to_allowed_bid(get_min_bid(p['score']))
         auto_b = max(2, min_b)
-        if player_idx == self.dealer_idx:
-            needed = 11 - self.total_bids
-            if needed > auto_b:
-                auto_b = snap_to_allowed_bid(needed)
+        needed = self.get_required_dealer_bid(player_idx)
+        if needed > auto_b:
+            auto_b = snap_to_allowed_bid(needed)
         return min(auto_b, 13)
 
     def calculate_smart_bid(self, player_idx):
@@ -259,16 +266,15 @@ class TarneebRoom:
 
         smart_bid = snap_to_allowed_bid(max(min_b, min(raw_bid, 13)))
 
-        if player_idx == self.dealer_idx:
-            needed = 11 - self.total_bids
-            if needed > 0 and smart_bid < needed:
-                smart_bid = snap_to_allowed_bid(needed)
+        needed = self.get_required_dealer_bid(player_idx)
+        if needed > 0 and smart_bid < needed:
+            smart_bid = snap_to_allowed_bid(needed)
         return smart_bid
 
     def process_bid(self, player_idx, bid_val):
         p = self.players[player_idx]
         min_b = snap_to_allowed_bid(get_min_bid(p['score']))
-        needed = 11 - self.total_bids if player_idx == self.dealer_idx else 0
+        needed = self.get_required_dealer_bid(player_idx)
 
         if bid_val == 0 and not self.can_bid_zero(player_idx):
             bid_val = min_b
@@ -276,12 +282,15 @@ class TarneebRoom:
         if bid_val != 0 and bid_val not in ALLOWED_BIDS:
             bid_val = snap_to_allowed_bid(bid_val)
 
-        if player_idx == self.dealer_idx and needed > 0:
+        if needed > 0:
             if bid_val < needed:
                 bid_val = snap_to_allowed_bid(needed)
         else:
             if bid_val != 0 and bid_val < min_b:
                 bid_val = min_b
+
+        if bid_val == 0:
+            self.has_zero_bid = True
 
         p['bid'] = bid_val
         self.total_bids += bid_val
@@ -613,6 +622,17 @@ def on_redeal(data):
             socketio.start_background_task(run_game_loop, room)
 
 
+@socketio.on('keep_current_hand')
+def on_keep_current_hand(data):
+    room = ROOMS.get(data.get('room'))
+    if room and room.state == 'REDEAL_WINDOW':
+        p_idx = get_player_idx_by_sid(room, request.sid)
+        if p_idx != -1 and room.check_redeal_eligibility(p_idx):
+            room.finish_redeal_window()
+            broadcast_state(room)
+            socketio.start_background_task(run_game_loop, room)
+
+
 @socketio.on('next_round')
 def on_next_round(data):
     room = ROOMS.get(data.get('room'))
@@ -787,6 +807,7 @@ def broadcast_state(room):
             can_redeal = room.check_redeal_eligibility(p_idx)
             allow_zero = room.can_bid_zero(p_idx)
             min_b = room.get_dealer_min_bid(p_idx)
+            required_dealer_bid = room.get_required_dealer_bid(p_idx)
             is_dealer = (p_idx == room.dealer_idx)
 
             p_state = {
@@ -799,6 +820,8 @@ def broadcast_state(room):
                 'current_turn': room.current_turn,
                 'dealer_idx': room.dealer_idx,
                 'total_bids': room.total_bids,
+                'has_zero_bid': room.has_zero_bid,
+                'required_dealer_bid': required_dealer_bid,
                 'current_trick': room.current_trick,
                 'trick_winner_idx': room.trick_winner_idx,
                 'last_trick': room.last_completed_trick,
