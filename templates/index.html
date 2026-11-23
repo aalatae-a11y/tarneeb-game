@@ -4,10 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>طرنيب ليبي أونلاين</title>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #121214; color: white; position: fixed; inset: 0; }
+
+        /* إشعار Toast ناعم بدل alert/prompt */
+        #toast-banner {
+            position: fixed;
+            top: 14px;
+            left: 50%;
+            transform: translate(-50%, -140%);
+            z-index: 350;
+            background: rgba(24, 24, 28, 0.96);
+            color: #ffffff;
+            border: 1px solid rgba(255, 214, 10, 0.55);
+            border-radius: 14px;
+            padding: 10px 16px;
+            font-size: 12.5px;
+            font-weight: 700;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75);
+            max-width: 90vw;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.24s ease, opacity 0.24s ease;
+        }
+        #toast-banner.show {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+        #toast-banner.error {
+            border-color: rgba(255, 59, 48, 0.8);
+            color: #ffd4d1;
+        }
+        #toast-banner.success {
+            border-color: rgba(52, 199, 89, 0.8);
+            color: #d7ffe1;
+        }
 
         #splash-screen {
             position: fixed;
@@ -41,7 +76,7 @@
 
         .splash-footer { position: relative; z-index: 2; width: 100%; text-align: center; font-size: 12px; font-weight: 700; color: #d1d1d6; background: rgba(24, 24, 27, 0.85); border: 1px solid #2c2c2e; padding: 10px 14px; border-radius: 14px; }
 
-        #login-box { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 24px; background: #1c1c1e; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.9); width: 92%; max-width: 345px; z-index: 210; border: 1px solid #2c2c2e; }
+        #login-box { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 24px; background: #1c1c1e; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.9); width: 92%; max-width: 345px; z-index: 260; border: 1px solid #2c2c2e; }
         #login-box h2 { text-align: center; margin-bottom: 12px; color: #34c759; font-size: 22px; font-weight: 800; }
         .auto-room-note { text-align: center; font-size: 11px; color: #ffd60a; margin-bottom: 14px; background: rgba(255, 214, 10, 0.08); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(255, 214, 10, 0.25); }
         .input-group { margin-bottom: 13px; }
@@ -50,9 +85,8 @@
         input.code-input { text-align: center; letter-spacing: 4px; font-weight: 800; font-size: 18px; color: #ffd60a; }
         button.login-btn { padding: 14px; font-size: 16px; border-radius: 12px; border: none; width: 100%; background: linear-gradient(135deg, #34c759, #28a745); color: white; cursor: pointer; font-weight: bold; margin-top: 6px; box-shadow: 0 4px 15px rgba(52,199,89,0.4); }
 
-        #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 8px 8px 10px 8px; overflow: hidden; background: radial-gradient(circle at center, #1e1e24 0%, #121214 100%); }
+        #game-board { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: space-between; align-items: center; padding: 8px 8px 10px 8px; overflow: hidden; background: radial-gradient(circle at center, #1e1e24 0%, #121214 100%); z-index: 10; }
 
-        /* الشق الفوقي المنظم والمستف: جدول نتائج مرتب بالسكور + تحكم الغرفة وحالة الدورة */
         .top-hud {
             width: 100%;
             display: grid;
@@ -145,7 +179,6 @@
             text-align: center;
         }
 
-        /* جدول النتائج الديناميكي المرتب حسب الأعلى سكور */
         .leaderboard-box {
             width: 148px;
             background: rgba(24,24,27,0.96);
@@ -161,46 +194,15 @@
             border-collapse: collapse;
             font-size: 10.5px;
         }
-        .leaderboard-table tr {
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        .leaderboard-table tr:last-child {
-            border-bottom: none;
-        }
-        .leaderboard-table td {
-            padding: 2px 3px;
-            vertical-align: middle;
-        }
-        .lb-rank {
-            color: #8e8e93;
-            font-weight: 800;
-            width: 14px;
-            font-size: 9.5px;
-        }
-        .lb-name {
-            color: #f2f2f7;
-            font-weight: 700;
-            max-width: 78px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .lb-name.is-me {
-            color: #34c759;
-        }
-        .lb-score {
-            text-align: left;
-            font-weight: 900;
-            color: #ffd60a;
-            direction: ltr;
-            font-size: 11px;
-        }
-        .lb-row-top .lb-rank,
-        .lb-row-top .lb-score {
-            color: #ffd60a;
-        }
+        .leaderboard-table tr { border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .leaderboard-table tr:last-child { border-bottom: none; }
+        .leaderboard-table td { padding: 2px 3px; vertical-align: middle; }
+        .lb-rank { color: #8e8e93; font-weight: 800; width: 14px; font-size: 9.5px; }
+        .lb-name { color: #f2f2f7; font-weight: 700; max-width: 78px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .lb-name.is-me { color: #34c759; }
+        .lb-score { text-align: left; font-weight: 900; color: #ffd60a; direction: ltr; font-size: 11px; }
+        .lb-row-top .lb-rank, .lb-row-top .lb-score { color: #ffd60a; }
 
-        /* عرض آخر أكلة المؤقت (لمدة ثانيتين عند الضغط على النص المضيء) */
         #last-trick-popup {
             display: none;
             position: fixed;
@@ -211,40 +213,14 @@
             border: 1.5px solid #ffd60a;
             border-radius: 14px;
             padding: 8px 12px;
-            z-index: 265;
+            z-index: 270;
             box-shadow: 0 10px 28px rgba(0, 0, 0, 0.9);
             text-align: center;
         }
-        .popup-trick-label {
-            font-size: 10px;
-            color: #ffd60a;
-            font-weight: 800;
-            margin-bottom: 6px;
-        }
-        .popup-trick-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            direction: ltr;
-        }
-        .popup-mini-card {
-            width: 34px;
-            height: 48px;
-            background: #fff;
-            border-radius: 5px;
-            overflow: hidden;
-            border: 1px solid #444;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .popup-mini-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: fill;
-            background: #fff;
-        }
+        .popup-trick-label { font-size: 10px; color: #ffd60a; font-weight: 800; margin-bottom: 6px; }
+        .popup-trick-row { display: flex; align-items: center; justify-content: center; gap: 5px; direction: ltr; }
+        .popup-mini-card { width: 34px; height: 48px; background: #fff; border-radius: 5px; overflow: hidden; border: 1px solid #444; display: flex; align-items: center; justify-content: center; }
+        .popup-mini-card img { width: 100%; height: 100%; object-fit: fill; background: #fff; }
 
         .table-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; padding: 12px 18px; min-height: 0; }
         .table-container { position: relative; width: 100%; height: 100%; max-width: 420px; border: 6px solid #2c2c2e; border-radius: 35px; background: radial-gradient(circle, #229a43 0%, #15662c 100%); box-shadow: inset 0 0 35px rgba(0,0,0,0.7), 0 10px 30px rgba(0,0,0,0.6); }
@@ -282,9 +258,10 @@
         .fly-to-2 { top: 50% !important; left: 50% !important; transform: translate(-50%, -190px) scale(0.2) !important; opacity: 0 !important; }
         .fly-to-3 { top: 50% !important; left: 50% !important; transform: translate(190px, -50%) scale(0.2) !important; opacity: 0 !important; }
 
-        .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 260; position: relative; }
+        /* القسم السفلي أدنى من نوافذ المودال لضمان عدم حجبها */
+        .bottom-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; z-index: 120; position: relative; }
 
-        .redeal-bar { margin-bottom: 6px; display: none; gap: 8px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 270; }
+        .redeal-bar { margin-bottom: 6px; display: none; gap: 8px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 125; }
         .redeal-btn { background: #ff3b30; color: white; border: 2px solid #ffd60a; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.85); animation: pulse-btn 1.5s infinite; }
         .keep-hand-btn { background: #2c2c2e; color: #f2f2f7; border: 1.5px solid #34c759; padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; }
         @keyframes pulse-btn { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
@@ -299,7 +276,7 @@
             border: 2px solid #ffd60a;
             border-radius: 18px;
             padding: 16px 20px;
-            z-index: 155;
+            z-index: 280;
             width: 86%;
             max-width: 310px;
             text-align: center;
@@ -328,7 +305,6 @@
         .bottom-info { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 0 10px; }
         .tricks-box { background: #1c1c1e; padding: 6px 12px; border-radius: 10px; font-size: 11px; display: flex; gap: 8px; align-items: center; border: 1px solid #38383a; }
 
-        /* نص مضيء بدون مربع لآخر أكلة */
         .glow-last-trick-trigger {
             background: none;
             border: none;
@@ -343,25 +319,23 @@
                 0 0 22px rgba(255, 214, 10, 0.45);
             transition: transform 0.15s ease, opacity 0.15s ease;
         }
-        .glow-last-trick-trigger:active {
-            transform: scale(0.96);
-        }
+        .glow-last-trick-trigger:active { transform: scale(0.96); }
 
-        #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(24,24,26,0.98); padding: 20px; border-radius: 20px; z-index: 180; border: 1px solid #38383a; width: 90%; max-width: 315px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
+        #waiting-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(24,24,26,0.98); padding: 20px; border-radius: 20px; z-index: 285; border: 1px solid #38383a; width: 90%; max-width: 315px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
         .room-code-big { font-size: 26px; font-weight: 900; color: #ffd60a; letter-spacing: 5px; background: #121214; border: 1.5px dashed #ffd60a; padding: 8px 14px; border-radius: 12px; margin: 10px auto 4px auto; display: inline-block; }
         .timer-circle { width: 58px; height: 58px; border-radius: 50%; border: 3px solid #34c759; display: flex; justify-content: center; align-items: center; font-size: 21px; font-weight: bold; color: #ffd60a; margin: 10px auto; background: #121214; }
         .start-now-btn { background: #ffd60a; color: #000; border: none; padding: 12px 18px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; margin-top: 8px; }
         .wa-wait-btn { background: #25d366; color: #fff; border: none; padding: 11px 14px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; margin-top: 8px; display: block; text-decoration: none; }
         .invite-wait-btn { background: #2c2c2e; color: #ffd60a; border: 1px solid #ffd60a; padding: 10px 14px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%; margin-top: 8px; }
 
-        #bid-modal { display: none; position: fixed; top: 36%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 150; border: 1px solid #38383a; width: 280px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
+        #bid-modal { display: none; position: fixed; top: 36%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 290; border: 1px solid #38383a; width: 280px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.95); }
         #bid-modal h3 { font-size: 15px; margin-bottom: 4px; color: white; font-weight: 700; }
         #bid-timer-text { font-size: 12px; color: #34c759; font-weight: bold; margin-bottom: 6px; }
         #bid-hint { font-size: 11px; color: #ffd60a; margin-bottom: 12px; font-weight: 600; }
         .bid-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 180px; overflow-y: auto; }
         .bid-btn { background: #ffd60a; color: #000; border: none; border-radius: 10px; padding: 12px 0; font-weight: bold; font-size: 14px; cursor: pointer; }
 
-        #round-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 160; border: 1px solid #38383a; width: 92%; max-width: 350px; box-shadow: 0 15px 45px rgba(0,0,0,0.95); }
+        #round-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1c1c1e; padding: 18px; border-radius: 18px; z-index: 300; border: 1px solid #38383a; width: 92%; max-width: 350px; box-shadow: 0 15px 45px rgba(0,0,0,0.95); }
         .summary-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 11px; text-align: right; }
         .summary-table th { color: #8e8e93; border-bottom: 1px solid #38383a; padding: 6px; }
         .summary-table td { padding: 8px 6px; border-bottom: 1px solid #2c2c2e; vertical-align: middle; }
@@ -370,6 +344,8 @@
     </style>
 </head>
 <body>
+
+    <div id="toast-banner" role="status" aria-live="polite"></div>
 
     <div id="splash-screen">
         <div class="splash-cards-bg" id="splash-cards-bg"></div>
@@ -390,11 +366,11 @@
         <div class="auto-room-note" id="login-room-banner">اترك رقم الغرفة فارغاً لفتح طاولة جديدة أو اكتب كود صديقك</div>
         <div class="input-group">
             <label>الاسم:</label>
-            <input type="text" id="username" placeholder="اكتب اسمك هنا...">
+            <input type="text" id="username" placeholder="اكتب اسمك هنا..." onkeydown="if(event.key==='Enter') joinGame()">
         </div>
         <div class="input-group">
             <label>رقم الغرفة (اختياري للانضمام لصديق):</label>
-            <input type="text" id="room-code-input" class="code-input" maxlength="8" placeholder="مثلاً: 4821">
+            <input type="text" id="room-code-input" class="code-input" maxlength="8" placeholder="مثلاً: 4821" onkeydown="if(event.key==='Enter') joinGame()">
         </div>
         <button class="login-btn" onclick="joinGame()">دخول الطاولة</button>
     </div>
@@ -522,6 +498,18 @@
     </div>
 
     <script>
+        let toastTimer = null;
+        function showToast(message, type = 'info', duration = 2600) {
+            const el = document.getElementById('toast-banner');
+            if (!el) return;
+            el.textContent = message;
+            el.className = type ? `show ${type}` : 'show';
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                el.className = '';
+            }, duration);
+        }
+
         function renderSplashCardsBackground() {
             const container = document.getElementById('splash-cards-bg');
             if (!container) return;
@@ -564,10 +552,10 @@
             const banner = document.getElementById('login-room-banner');
             const codeInput = document.getElementById('room-code-input');
             if (presetRoom) {
-                if (banner) banner.innerText = `أنت مدعو إلى الغرفة رقم: ${presetRoom}`;
+                if (banner) banner.textContent = `أنت مدعو إلى الغرفة رقم: ${presetRoom}`;
                 if (codeInput) codeInput.value = presetRoom;
             } else {
-                if (banner) banner.innerText = 'اترك رقم الغرفة فارغاً لفتح طاولة جديدة أو اكتب كود صديقك';
+                if (banner) banner.textContent = 'اترك رقم الغرفة فارغاً لفتح طاولة جديدة أو اكتب كود صديقك';
             }
         }
 
@@ -597,8 +585,15 @@
         let prevTrickLen = 0;
         let latestLastTrick = [];
         let lastTrickHideTimer = null;
+        let trickAnimationTimers = [];
+        let isSendingCard = false;
         let isMuted = false;
         let audioCtx = null;
+
+        function clearTrickAnimationTimers() {
+            trickAnimationTimers.forEach(t => clearTimeout(t));
+            trickAnimationTimers = [];
+        }
 
         function ensureAudioCtx() {
             if (!audioCtx) {
@@ -612,8 +607,9 @@
 
         function toggleMute() {
             isMuted = !isMuted;
-            document.getElementById('mute-btn').innerText = isMuted ? '🔇' : '🔊';
+            document.getElementById('mute-btn').textContent = isMuted ? '🔇' : '🔊';
             if (!isMuted) ensureAudioCtx();
+            showToast(isMuted ? 'تم كتم الصوت' : 'تم تشغيل الصوت', 'info', 1400);
         }
 
         function playCardSound() {
@@ -731,7 +727,10 @@
         }
 
         function smartShareRoom() {
-            if (!currentRoom) return;
+            if (!currentRoom) {
+                showToast('رقم الغرفة غير متاح بعد', 'error');
+                return;
+            }
             const inviteUrl = getInviteUrl(currentRoom);
             const shareText = `🃏 يلا طرنيب على طاولتي\nرقم الغرفة: ${currentRoom}\nادخل مباشرة:\n${inviteUrl}`;
 
@@ -749,23 +748,30 @@
         }
 
         function copyRoomCodeQuick() {
-            if (!currentRoom) return;
+            if (!currentRoom) {
+                showToast('لا يوجد رقم غرفة للنسخ حالياً', 'error');
+                return;
+            }
             const inviteUrl = getInviteUrl(currentRoom);
             const fullText = `رقم الغرفة: ${currentRoom}\n${inviteUrl}`;
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(fullText).then(() => {
-                    alert(`تم نسخ رقم الغرفة (${currentRoom}) والرابط المباشر!`);
+                    showToast(`تم نسخ كود الغرفة (${currentRoom}) والرابط`, 'success');
                 }).catch(() => {
-                    prompt("انسخ رقم الغرفة أو الرابط:", fullText);
+                    showToast(`كود الغرفة: ${currentRoom} — انسخه من شريط العنوان`, 'info', 3400);
                 });
             } else {
-                prompt("انسخ رقم الغرفة أو الرابط:", fullText);
+                showToast(`كود الغرفة: ${currentRoom} — انسخه من شريط العنوان`, 'info', 3400);
             }
         }
 
         function joinGame() {
             const name = document.getElementById('username').value.trim();
-            if (!name) return alert("يرجى كتابة الاسم");
+            if (!name) {
+                showToast('يرجى كتابة اسمك أولاً', 'error');
+                document.getElementById('username').focus();
+                return;
+            }
 
             const typedCode = (document.getElementById('room-code-input').value || '').trim();
             const targetRoom = typedCode || getRoomParamFromUrl();
@@ -782,7 +788,17 @@
         socket.on('connect', () => {
             if (currentRoom && document.getElementById('game-board').style.display === 'flex') {
                 const name = document.getElementById('username').value.trim();
-                if (name) socket.emit('join_game', { name: name, room: currentRoom });
+                if (name) {
+                    socket.emit('join_game', { name: name, room: currentRoom });
+                    showToast('تمت إعادة الاتصال بالغرفة', 'success', 1800);
+                }
+            }
+        });
+
+        socket.on('disconnect', () => {
+            isSendingCard = false;
+            if (currentRoom && document.getElementById('game-board').style.display === 'flex') {
+                showToast('انقطع الاتصال مؤقتاً، جارٍ إعادة الربط...', 'error', 2400);
             }
         });
 
@@ -799,6 +815,8 @@
             url.searchParams.delete('room');
             window.history.replaceState({}, '', url.toString());
 
+            clearTrickAnimationTimers();
+            isSendingCard = false;
             currentRoom = "";
             gameStateGlobal = "WAITING";
             document.getElementById('round-modal').style.display = 'none';
@@ -821,6 +839,7 @@
         }
 
         socket.on('game_update', (data) => {
+            isSendingCard = false;
             myIndex = data.my_index;
             currentTurnGlobal = data.current_turn;
             gameStateGlobal = data.state;
@@ -828,17 +847,17 @@
 
             if (data.room_id) {
                 currentRoom = data.room_id;
-                document.getElementById('room-display').innerText = `غرفة: ${data.room_id}`;
+                document.getElementById('room-display').textContent = `غرفة: ${data.room_id}`;
                 const waitCodeEl = document.getElementById('wait-room-code');
-                if (waitCodeEl) waitCodeEl.innerText = data.room_id;
+                if (waitCodeEl) waitCodeEl.textContent = data.room_id;
                 syncRoomToUrl(data.room_id);
             }
 
             const waitBox = document.getElementById('waiting-overlay');
             if (!data.game_started) {
                 waitBox.style.display = 'block';
-                document.getElementById('wait-timer-num').innerText = data.wait_seconds_left;
-                document.getElementById('joined-count-text').innerText = `اللاعبون المنضمون: ${data.players.length} / 4`;
+                document.getElementById('wait-timer-num').textContent = data.wait_seconds_left;
+                document.getElementById('joined-count-text').textContent = `اللاعبون المنضمون: ${data.players.length} / 4`;
             } else {
                 waitBox.style.display = 'none';
             }
@@ -846,19 +865,19 @@
             const secLeft = data.action_seconds_left || 0;
 
             if (data.state === 'REDEAL_WINDOW') {
-                document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | مهلة التوزيع (${secLeft}ث)`;
+                document.getElementById('bids-status').textContent = `الدورة ${data.round_number} | مهلة التوزيع (${secLeft}ث)`;
             } else if (data.round_number === 1) {
-                document.getElementById('bids-status').innerText = `الدورة 1 | بدون طلبات`;
+                document.getElementById('bids-status').textContent = `الدورة 1 | بدون طلبات`;
             } else if (data.has_zero_bid) {
-                document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} (صفر)`;
+                document.getElementById('bids-status').textContent = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} (صفر)`;
             } else {
-                document.getElementById('bids-status').innerText = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
+                document.getElementById('bids-status').textContent = `الدورة ${data.round_number} | الطلبات: ${data.total_bids} / 11`;
             }
 
             const timerBadge = document.getElementById('turn-timer-badge');
             if (data.game_started && data.state === 'PLAYING' && data.current_turn === myIndex && secLeft > 0) {
                 timerBadge.style.display = 'inline-block';
-                timerBadge.innerText = `${secLeft}ث`;
+                timerBadge.textContent = `${secLeft}ث`;
                 timerBadge.className = secLeft <= 7 ? 'turn-timer-pill urgent' : 'turn-timer-pill';
             } else {
                 timerBadge.style.display = 'none';
@@ -870,15 +889,15 @@
 
             if (data.state === 'REDEAL_WINDOW') {
                 holdBanner.style.display = 'block';
-                document.getElementById('redeal-countdown-num').innerText = `${secLeft}ث`;
+                document.getElementById('redeal-countdown-num').textContent = `${secLeft}ث`;
                 if (data.can_redeal) {
                     redealBar.style.display = 'flex';
-                    redealBtn.innerText = `🔄 إعادة توزيع الورق (${secLeft}ث)`;
-                    document.getElementById('redeal-hold-desc').innerText =
+                    redealBtn.textContent = `🔄 إعادة توزيع الورق (${secLeft}ث)`;
+                    document.getElementById('redeal-hold-desc').textContent =
                         'لديك 7 أوراق من نفس النوع أو K قلب أحمر وحده. يمكنك إعادة التوزيع أو الإبقاء على الورق.';
                 } else {
                     redealBar.style.display = 'none';
-                    document.getElementById('redeal-hold-desc').innerText =
+                    document.getElementById('redeal-hold-desc').textContent =
                         'مهلة 30 ثانية لإعادة التوزيع؛ لن يأخذ أي لاعب إجراءً حتى تنتهي المهلة.';
                 }
             } else {
@@ -899,27 +918,29 @@
             if (data.state === 'TRICK_PAUSE' && data.current_trick && data.current_trick.length === 4) {
                 if (!animatedThisTrick) {
                     animatedThisTrick = true;
+                    clearTrickAnimationTimers();
                     playCardSound();
                     renderTrick(data.current_trick);
 
                     let winnerUI = (data.trick_winner_idx - myIndex + 4) % 4;
 
-                    setTimeout(() => {
+                    trickAnimationTimers.push(setTimeout(() => {
                         const cards = document.querySelectorAll('#trick-area .played-card');
                         cards.forEach(c => c.classList.add('gather-center'));
-                    }, 1400);
+                    }, 1400));
 
-                    setTimeout(() => {
+                    trickAnimationTimers.push(setTimeout(() => {
                         playCollectSound();
                         const cards = document.querySelectorAll('#trick-area .played-card');
                         cards.forEach(c => {
                             c.classList.remove('gather-center');
                             c.classList.add(`fly-to-${winnerUI}`);
                         });
-                    }, 1850);
+                    }, 1850));
                 }
             } else {
                 animatedThisTrick = false;
+                clearTrickAnimationTimers();
                 renderTrick(data.current_trick);
             }
 
@@ -931,10 +952,15 @@
 
             if (data.state === 'ROUND_OVER' || data.state === 'GAME_OVER') {
                 showRoundSummary(data);
+            } else {
+                document.getElementById('round-modal').style.display = 'none';
             }
         });
 
-        socket.on('error', (data) => alert(data.msg));
+        socket.on('error', (data) => {
+            isSendingCard = false;
+            showToast(data?.msg || 'حدث خطأ غير متوقع', 'error', 2800);
+        });
 
         function updateLeaderboard(players) {
             const tbody = document.getElementById('leaderboard-body');
@@ -956,9 +982,11 @@
                 if (idx === 0) tr.className = 'lb-row-top';
                 tr.innerHTML = `
                     <td class="lb-rank">${idx + 1}</td>
-                    <td class="lb-name ${item.isMe ? 'is-me' : ''}">${item.name}</td>
-                    <td class="lb-score">${item.score}</td>
+                    <td class="lb-name ${item.isMe ? 'is-me' : ''}"></td>
+                    <td class="lb-score"></td>
                 `;
+                tr.querySelector('.lb-name').textContent = item.name;
+                tr.querySelector('.lb-score').textContent = item.score;
                 tbody.appendChild(tr);
             });
         }
@@ -1001,18 +1029,18 @@
                 const pileEl = document.getElementById(`pile-${ui}`);
 
                 if (!p) {
-                    if (nameEl) nameEl.innerText = "في الانتظار..";
-                    if (bidEl) bidEl.innerText = "-";
+                    if (nameEl) nameEl.textContent = "في الانتظار..";
+                    if (bidEl) bidEl.textContent = "-";
                     continue;
                 }
 
-                if (nameEl) nameEl.innerText = p.name;
+                if (nameEl) nameEl.textContent = p.name;
                 if (bidEl) {
-                    bidEl.innerText = roundNum === 1 ? `${p.tricks_won}` : `${p.tricks_won} / ${p.bid}`;
+                    bidEl.textContent = roundNum === 1 ? `${p.tricks_won}` : `${p.tricks_won} / ${p.bid}`;
                 }
 
                 if (ui === 0) {
-                    document.getElementById('my-tricks-count').innerText = roundNum === 1 ? `${p.tricks_won}` : `${p.tricks_won} / ${p.bid}`;
+                    document.getElementById('my-tricks-count').textContent = roundNum === 1 ? `${p.tricks_won}` : `${p.tricks_won} / ${p.bid}`;
                 }
 
                 if (pileEl) {
@@ -1087,7 +1115,8 @@
 
                 cardEl.onclick = (e) => {
                     e.preventDefault();
-                    if (gameStateGlobal !== 'PLAYING' || currentTurnGlobal !== myIndex) return;
+                    if (isSendingCard || gameStateGlobal !== 'PLAYING' || currentTurnGlobal !== myIndex) return;
+                    isSendingCard = true;
                     ensureAudioCtx();
                     socket.emit('play_card', { room: currentRoom, card: card });
                 };
@@ -1121,7 +1150,7 @@
             if (!modal || !opts) return;
 
             if (timerEl) {
-                timerEl.innerText = `الوقت المتبقي: ${secLeft || 35}ث`;
+                timerEl.textContent = `الوقت المتبقي: ${secLeft || 35}ث`;
                 timerEl.style.color = (secLeft && secLeft <= 7) ? '#ff3b30' : '#34c759';
             }
 
@@ -1129,19 +1158,19 @@
             modal.style.display = 'block';
 
             if (isDealer && !hasZeroBid && requiredDealerBid > 0) {
-                hint.innerText = `أنت الموزع! إجباري تطلب ${requiredDealerBid} على الأقل (الصفر ممنوع)`;
+                hint.textContent = `أنت الموزع! إجباري تطلب ${requiredDealerBid} على الأقل (الصفر ممنوع)`;
             } else if (isDealer && hasZeroBid) {
-                hint.innerText = `أنت الموزع (تم إلغاء شرط 11 لوجود طلب صفر) | المجموع: ${totalBids}`;
+                hint.textContent = `أنت الموزع (تم إلغاء شرط 11 لوجود طلب صفر) | المجموع: ${totalBids}`;
             } else if (!allowZero) {
-                hint.innerText = `الصفر ممنوع (سكور فوق 20 أو سالب أو موزع) | المجموع: ${totalBids}`;
+                hint.textContent = `الصفر ممنوع (سكور فوق 20 أو سالب أو موزع) | المجموع: ${totalBids}`;
             } else {
-                hint.innerText = `مجموع الطلبات الحالية: ${totalBids}`;
+                hint.textContent = `مجموع الطلبات الحالية: ${totalBids}`;
             }
 
             if (allowZero && !(isDealer && !hasZeroBid && requiredDealerBid > 0)) {
                 let b0 = document.createElement('button');
                 b0.className = 'bid-btn';
-                b0.innerText = '0';
+                b0.textContent = '0';
                 b0.onclick = () => submitBid(0);
                 opts.appendChild(b0);
             }
@@ -1151,7 +1180,7 @@
                 if (i >= minBid) {
                     let b = document.createElement('button');
                     b.className = 'bid-btn';
-                    b.innerText = i;
+                    b.textContent = i;
                     b.onclick = () => submitBid(i);
                     opts.appendChild(b);
                 }
@@ -1172,9 +1201,9 @@
             const actionBtn = document.getElementById('round-action-btn');
 
             const isGameOver = data.state === 'GAME_OVER';
-            title.innerText = isGameOver ? "نهاية اللعبة" : `ملخص الدورة ${data.round_number}`;
-            banner.innerText = data.winner_message || "";
-            actionBtn.innerText = isGameOver ? "العودة للصفحة الرئيسية" : "الدورة التالية";
+            title.textContent = isGameOver ? "نهاية اللعبة" : `ملخص الدورة ${data.round_number}`;
+            banner.textContent = data.winner_message || "";
+            actionBtn.textContent = isGameOver ? "العودة للصفحة الرئيسية" : "الدورة التالية";
             tbody.innerHTML = '';
 
             if (data.round_summary) {
@@ -1183,11 +1212,15 @@
                     let sign = row.change >= 0 ? `+${row.change}` : `${row.change}`;
                     let cls = row.change >= 0 ? 'pts-plus' : 'pts-minus';
                     tr.innerHTML = `
-                        <td style="font-weight:bold;">${row.name}</td>
-                        <td style="color:#d1d1d6; font-size:10px;">${row.detail}</td>
-                        <td class="${cls}" dir="ltr">${sign}</td>
-                        <td style="font-weight:bold; color:#ffd60a;">${row.total}</td>
+                        <td style="font-weight:bold;" class="sum-name"></td>
+                        <td style="color:#d1d1d6; font-size:10px;" class="sum-detail"></td>
+                        <td class="${cls} sum-change" dir="ltr"></td>
+                        <td style="font-weight:bold; color:#ffd60a;" class="sum-total"></td>
                     `;
+                    tr.querySelector('.sum-name').textContent = row.name;
+                    tr.querySelector('.sum-detail').textContent = row.detail;
+                    tr.querySelector('.sum-change').textContent = sign;
+                    tr.querySelector('.sum-total').textContent = row.total;
                     tbody.appendChild(tr);
                 });
             }
